@@ -13,7 +13,7 @@ type Meter struct {
 	Value        int    `xml:"Value,attr"`
 }
 
-func Parse(filepath string, writer io.Writer, handler func(*Meter, io.Writer)) {
+func Parse(filepath string, writer io.Writer, handler func(*Meter)) {
 	// open input file
 	fi, err := os.Open(filepath)
 	if err != nil { panic(err) }
@@ -45,7 +45,7 @@ func Parse(filepath string, writer io.Writer, handler func(*Meter, io.Writer)) {
 				// variable p which is a Page (se above)
 				decoder.DecodeElement(&read, &se)
 				// Do some stuff with the page.
-				handler(&read, writer)
+				handler(&read)
 			}
 		}
 	}
