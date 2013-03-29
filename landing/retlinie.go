@@ -4,16 +4,12 @@ import (
 	"parser"
 	"net/http"
 	"fmt"
-	"io"
 	"time"
 	"log"
 	"encoding/json"
 	"html/template"
+	"container/list"
 )
-
-type Response struct {
-	Content   []Individual
-}
 
 type Individual struct {
 	Name      string      `json:"name"`
@@ -21,14 +17,13 @@ type Individual struct {
 }
 type MeterRead struct {
 	LocalTime string   `json:"label"`
-	TimeValue int      `json:"x"`
+	TimeValue int64    `json:"x"`
 	Value     int      `json:"y"`
 }
 
 const (
 	TIMEFORMAT = "2006-01-02 15:04:05"
 )
-
 
 var pageTemplate = template.Must(template.New("book").Parse(page))
 
@@ -45,28 +40,56 @@ const page = `
     	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
 
     	<script src="http://code.shutterstock.com/rickshaw/rickshaw.js"></script>
-
+        <style>
+        #chart_container {
+                position: relative;
+                font-family: Arial, Helvetica, sans-serif;
+        }
+        #chart {
+                position: relative;
+                left: 40px;
+        }
+        #y_axis {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 40px;
+        }
+        </style>
   </head>
   <body>
   <div id="chart_container">
-  	<div id="chart"></div>
+          <div id="y_axis"></div>
+          <div id="chart"></div>
   </div>
 <script>
-var ajaxGraph = new Rickshaw.Graph.Ajax( {
+var graph = new Rickshaw.Graph.Ajax( {
 	element: document.getElementById("chart"),
-	width: 400,
-	height: 200,
+	width: 800,
+	height: 600,
 	renderer: 'line',
 	dataURL: '/json',
-	onData: function(d) { d[0].data[0].y = 80; return d },
-	series: [
-		{
+	series: [ {
 			name: 'You',
-            color: '#30c020',
+            color: 'steelblue',
+		} ],
+	onComplete: function(transport) {
+	    var x_axis = new Rickshaw.Graph.Axis.Time({
+	          graph: transport.graph
+	        });
+	    x_axis.graph.update();
 
-		}
-	]
+	    var y_axis = new Rickshaw.Graph.Axis.Y( {
+		            graph: transport.graph,
+		            orientation: 'left',
+		            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+		            element: document.getElementById('y_axis'),
+		} );
+
+		y_axis.graph.update();
+	  }
 } );
+
 
 </script>
 
@@ -107,20 +130,28 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-    parser.Parse("data.xml", writer, writeReadAsJson)
-	fmt.Fprintf(writer, "{}] }]")
-}
-
-func writeReadAsJson(meter *parser.Meter) {
+	reads := parser.Parse("data.xml", writer)
+	meterReads := convertAsReadsArray(reads)
 	enc := json.NewEncoder(writer)
-	meterRead := MeterRead{meter.DisplayTime, getTimeAsFloat(meter.DisplayTime), meter.Value}
-	enc.Encode(meterRead)
-	fmt.Fprintf(writer, ",")
+	individuals := make([]Individual, 1)
+	individuals[0] = Individual{"You", meterReads}
+	enc.Encode(individuals)
 }
 
-func getTimeAsFloat(timeValue string) (value int) {
+func convertAsReadsArray(meterReads *list.List) (reads []MeterRead) {
+	reads = make([]MeterRead, meterReads.Len())
+	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
+		meter := e.Value.(parser.Meter)
+		fmt.Print(meter)
+		reads[i] = MeterRead{meter.DisplayTime, getTimeAsFloat(meter.DisplayTime), meter.Value}
+	}
+
+	return reads
+}
+
+func getTimeAsFloat(timeValue string) (value int64) {
 	if timeValue, err := time.Parse(TIMEFORMAT, timeValue); err == nil {
-		return timeValue.Hour() * 60 + timeValue.Minute()
+		return timeValue.Unix()
 	} else {
 		log.Printf("Error parsing string", err)
 	}

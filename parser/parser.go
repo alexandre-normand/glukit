@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"bufio"
+	"container/list"
 )
 
 type Meter struct {
@@ -13,7 +14,7 @@ type Meter struct {
 	Value        int    `xml:"Value,attr"`
 }
 
-func Parse(filepath string, writer io.Writer, handler func(*Meter)) {
+func Parse(filepath string, writer io.Writer) (reads *list.List) {
 	// open input file
 	fi, err := os.Open(filepath)
 	if err != nil { panic(err) }
@@ -27,7 +28,8 @@ func Parse(filepath string, writer io.Writer, handler func(*Meter)) {
 	r := bufio.NewReader(fi)
 
 	decoder := xml.NewDecoder(r)
-
+	reads = list.New()
+	reads.Init()
 	for {
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
@@ -44,9 +46,10 @@ func Parse(filepath string, writer io.Writer, handler func(*Meter)) {
 				// decode a whole chunk of following XML into the
 				// variable p which is a Page (se above)
 				decoder.DecodeElement(&read, &se)
-				// Do some stuff with the page.
-				handler(&read)
+				reads.PushBack(read)
 			}
 		}
 	}
+
+	return reads
 }
