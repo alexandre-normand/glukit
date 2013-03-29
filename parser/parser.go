@@ -41,7 +41,7 @@ func Parse(filepath string, writer io.Writer) (reads *list.List) {
 		case xml.StartElement:
 			// If we just read a StartElement token
 			// ...and its name is "page"
-			if se.Name.Local == "Meter" {
+			if se.Name.Local == "Glucose" {
 				var read Meter
 				// decode a whole chunk of following XML into the
 				// variable p which is a Page (se above)

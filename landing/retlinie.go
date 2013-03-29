@@ -131,7 +131,7 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	value.Add("Content-type", "application/json")
 
 	reads := parser.Parse("data.xml", writer)
-	meterReads := convertAsReadsArray(reads)
+	meterReads := convertAsReadsArray(getLastDayOfData(reads))
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 1)
 	individuals[0] = Individual{"You", meterReads}
@@ -142,14 +142,30 @@ func convertAsReadsArray(meterReads *list.List) (reads []MeterRead) {
 	reads = make([]MeterRead, meterReads.Len())
 	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
 		meter := e.Value.(parser.Meter)
-		fmt.Print(meter)
-		reads[i] = MeterRead{meter.DisplayTime, getTimeAsFloat(meter.DisplayTime), meter.Value}
+		reads[i] = MeterRead{meter.DisplayTime, getTimeInSeconds(meter.DisplayTime), meter.Value}
 	}
 
 	return reads
 }
 
-func getTimeAsFloat(timeValue string) (value int64) {
+func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
+	lastDay = list.New()
+	lastDay.Init()
+	lastValue := meterReads.Back().Value.(parser.Meter);
+	lastTime, _ := time.Parse(TIMEFORMAT, lastValue.DisplayTime)
+	lowerBound := lastTime.Add(time.Duration(-24 * time.Hour))
+	for e := meterReads.Front(); e != nil; e = e.Next() {
+		meter := e.Value.(parser.Meter)
+		readTime, _ := time.Parse(TIMEFORMAT, meter.DisplayTime)
+		if !readTime.Before(lowerBound) && meter.Value > 0 {
+			lastDay.PushBack(meter)
+		}
+    }
+
+	return lastDay
+}
+
+func getTimeInSeconds(timeValue string) (value int64) {
 	if timeValue, err := time.Parse(TIMEFORMAT, timeValue); err == nil {
 		return timeValue.Unix()
 	} else {
