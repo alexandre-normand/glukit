@@ -72,7 +72,18 @@ var graph = new Rickshaw.Graph.Ajax( {
 	series: [ {
 			name: 'You',
             color: 'steelblue',
-		} ],
+            width: 2,
+		},  {
+			name: 'Perfection',
+		    color: '#33AD33',
+		    width: 2,
+		},
+		{
+			name: 'Scale',
+			color: '#ffffff',
+			width: 1,
+				},
+		 ],
 	onComplete: function(transport) {
 	    var x_axis = new Rickshaw.Graph.Axis.Time({
 	          graph: transport.graph
@@ -133,9 +144,28 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	reads := parser.Parse("data.xml", writer)
 	meterReads := convertAsReadsArray(getLastDayOfData(reads))
 	enc := json.NewEncoder(writer)
-	individuals := make([]Individual, 1)
+	individuals := make([]Individual, 3)
 	individuals[0] = Individual{"You", meterReads}
+	individuals[1] = Individual{"Perfection", buildPerfectBaseline(meterReads)}
+	individuals[2] = Individual{"Scale", buildScaleValues(meterReads)}
 	enc.Encode(individuals)
+}
+func buildPerfectBaseline(meterReads []MeterRead) (reads []MeterRead) {
+	reads = make([]MeterRead, len(meterReads))
+	for i := range meterReads {
+		reads[i] = MeterRead{meterReads[i].LocalTime, meterReads[i].TimeValue, 83}
+	}
+
+	return reads
+}
+
+// Stupid hack until I figure out how to set the min/max on the Y-axis
+func buildScaleValues(meterReads []MeterRead) (reads []MeterRead) {
+	reads = make([]MeterRead, 2)
+	reads[0] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 0}
+	reads[1] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 300}
+
+	return reads
 }
 
 func convertAsReadsArray(meterReads *list.List) (reads []MeterRead) {
