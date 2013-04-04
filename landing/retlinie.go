@@ -22,91 +22,12 @@ type MeterRead struct {
 }
 
 const (
-	TIMEFORMAT = "2006-01-02 15:04:05"
+	TIMEFORMAT = "2006-01-02 15:04:05 MST"
+	TIMEZONE = "PST"
 )
 
-var pageTemplate = template.Must(template.New("book").Parse(page))
-
-const page = `
-<html>
-  <head>
-
-
-    <link type="text/css" rel="stylesheet" href="http://code.shutterstock.com/rickshaw/src/css/graph.css">
-    	<link type="text/css" rel="stylesheet" href="http://code.shutterstock.com/rickshaw/css/lines.css">
-
-    	<script src="http://code.shutterstock.com/rickshaw/vendor/d3.v2.js"></script>
-
-    	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-
-    	<script src="http://code.shutterstock.com/rickshaw/rickshaw.js"></script>
-        <style>
-        #chart_container {
-                position: relative;
-                font-family: Arial, Helvetica, sans-serif;
-        }
-        #chart {
-                position: relative;
-                left: 40px;
-        }
-        #y_axis {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                width: 40px;
-        }
-        </style>
-  </head>
-  <body>
-  <div id="chart_container">
-          <div id="y_axis"></div>
-          <div id="chart"></div>
-  </div>
-<script>
-var graph = new Rickshaw.Graph.Ajax( {
-	element: document.getElementById("chart"),
-	width: 800,
-	height: 600,
-	renderer: 'line',
-	dataURL: '/json',
-	series: [ {
-			name: 'You',
-            color: 'steelblue',
-            width: 2,
-		},  {
-			name: 'Perfection',
-		    color: '#33AD33',
-		    width: 2,
-		},
-		{
-			name: 'Scale',
-			color: '#ffffff',
-			width: 1,
-				},
-		 ],
-	onComplete: function(transport) {
-	    var x_axis = new Rickshaw.Graph.Axis.Time({
-	          graph: transport.graph
-	        });
-	    x_axis.graph.update();
-
-	    var y_axis = new Rickshaw.Graph.Axis.Y( {
-		            graph: transport.graph,
-		            orientation: 'left',
-		            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-		            element: document.getElementById('y_axis'),
-		} );
-
-		y_axis.graph.update();
-	  }
-} );
-
-
-</script>
-
-  </body>
-</html>
-`
+var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
+var pageTemplate = template.Must(template.ParseFiles("templates/landing.html"))
 
 func init() {
 	http.HandleFunc("/json", content)
@@ -161,11 +82,14 @@ func buildPerfectBaseline(meterReads []MeterRead) (reads []MeterRead) {
 
 // Stupid hack until I figure out how to set the min/max on the Y-axis
 func buildScaleValues(meterReads []MeterRead) (reads []MeterRead) {
-	reads = make([]MeterRead, 2)
-	reads[0] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 0}
-	reads[1] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 300}
+	if len(meterReads) > 0 {
+		reads = make([]MeterRead, 2)
+		reads[0] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 0}
+		reads[1] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 300}
+		return reads
+	}
 
-	return reads
+	return []MeterRead {};
 }
 
 func convertAsReadsArray(meterReads *list.List) (reads []MeterRead) {
@@ -182,12 +106,22 @@ func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
 	lastDay = list.New()
 	lastDay.Init()
 	lastValue := meterReads.Back().Value.(parser.Meter);
-	lastTime, _ := time.Parse(TIMEFORMAT, lastValue.DisplayTime)
-	lowerBound := lastTime.Add(time.Duration(-24 * time.Hour))
+	lastTime, _ := parseTime(lastValue.DisplayTime)
+	var upperBound time.Time;
+	if (lastTime.Hour() < 6) {
+		// Rewind by one more day
+		previousDay := lastTime.Add(time.Duration(-24 * time.Hour))
+		upperBound = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
+	} else {
+		upperBound = time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
+	}
+	lowerBound := upperBound.Add(time.Duration(-24 * time.Hour))
 	for e := meterReads.Front(); e != nil; e = e.Next() {
 		meter := e.Value.(parser.Meter)
-		readTime, _ := time.Parse(TIMEFORMAT, meter.DisplayTime)
-		if !readTime.Before(lowerBound) && meter.Value > 0 {
+		readTime, _ := parseTime(meter.DisplayTime)
+		log.Printf("ReadTime is %s, lower bound is %s, upperBound is %s", readTime.String(),
+			lowerBound.String(), upperBound.String())
+		if readTime.Before(upperBound) && readTime.After(lowerBound) && meter.Value > 0 {
 			lastDay.PushBack(meter)
 		}
     }
@@ -196,10 +130,22 @@ func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
 }
 
 func getTimeInSeconds(timeValue string) (value int64) {
-	if timeValue, err := time.Parse(TIMEFORMAT, timeValue); err == nil {
+	if timeValue, err := parseTime(timeValue); err == nil {
 		return timeValue.Unix()
 	} else {
 		log.Printf("Error parsing string", err)
 	}
 	return 0
+}
+
+func parseTime(timeValue string) (value time.Time, err error) {
+	if value, err = time.Parse(TIMEFORMAT, timeValue + " " + TIMEZONE); err == nil {
+		value = time.Date(value.Year(), value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(),
+			value.Nanosecond(), TIMEZONE_LOCATION)
+
+		log.Printf("Parsed time from %s is %s", timeValue + " " + TIMEZONE, value.String())
+
+	}
+
+	return value, err;
 }
