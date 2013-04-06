@@ -11,6 +11,7 @@ import (
 	"container/list"
 	"goauth2/oauth"
 	"appengine"
+	"appengine/user"
 	"appengine/urlfetch"
 	"drive"
 	"strings"
@@ -55,18 +56,25 @@ type MeterRead struct {
 	Value     int      `json:"y"`
 }
 
+type RenderVariables struct {
+	DataPath string
+}
+
 const (
 	TIMEFORMAT = "2006-01-02 15:04:05 MST"
 	TIMEZONE   = "PST"
 )
 
 var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
-var pageTemplate = template.Must(template.ParseFiles("templates/landing.html"))
+var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
+var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"))
 
 func init() {
-	http.HandleFunc("/json", content)
-	http.HandleFunc("/", render)
-	http.HandleFunc("/timezone", timezone)
+	http.HandleFunc("/json.demo", demoContent)
+	//http.HandleFunc("/json", content)
+	http.HandleFunc("/demo", renderDemo)
+	http.HandleFunc("/", landing)
+	http.HandleFunc("/realuser", updateData)
 	http.HandleFunc("/oauth2callback", callback)
 }
 
@@ -113,33 +121,32 @@ func FetchDataFileLocation(client *http.Client) (file *drive.File, err error) {
 }
 
 func DownloadFile(t http.RoundTripper, f *drive.File) (string, error) {
-  // t parameter should use an oauth.Transport
-  downloadUrl := f.DownloadUrl
-  if downloadUrl == "" {
-    // If there is no downloadUrl, there is no body
-    log.Printf("An error occurred: File is not downloadable")
-    return "", nil
-  }
-  req, err := http.NewRequest("GET", downloadUrl, nil)
-  if err != nil {
-    fmt.Printf("An error occurred: %v\n", err)
-    return "", err
-  }
-  resp, err := t.RoundTrip(req)
-  // Make sure we close the Body later
-  defer resp.Body.Close()
-  if err != nil {
-    fmt.Printf("An error occurred: %v\n", err)
-    return "", err
-  }
-  body, err := ioutil.ReadAll(resp.Body)
-  if err != nil {
-    fmt.Printf("An error occurred: %v\n", err)
-    return "", err
-  }
-  return string(body), nil
+	// t parameter should use an oauth.Transport
+	downloadUrl := f.DownloadUrl
+	if downloadUrl == "" {
+		// If there is no downloadUrl, there is no body
+		log.Printf("An error occurred: File is not downloadable")
+		return "", nil
+	}
+	req, err := http.NewRequest("GET", downloadUrl, nil)
+	if err != nil {
+		fmt.Printf("An error occurred: %v\n", err)
+		return "", err
+	}
+	resp, err := t.RoundTrip(req)
+	// Make sure we close the Body later
+	defer resp.Body.Close()
+	if err != nil {
+		fmt.Printf("An error occurred: %v\n", err)
+		return "", err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("An error occurred: %v\n", err)
+		return "", err
+	}
+	return string(body), nil
 }
-
 
 // check aborts the current execution if err is non-nil.
 func check(err error) {
@@ -148,20 +155,35 @@ func check(err error) {
 	}
 }
 
-func timezone(w http.ResponseWriter, r *http.Request) {
+func updateData(w http.ResponseWriter, r *http.Request) {
 	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func render(w http.ResponseWriter, r *http.Request) {
-	if err := pageTemplate.Execute(w, nil); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	fmt.Printf("New Request\n")
-
+func renderDemo(w http.ResponseWriter, r *http.Request) {
+	renderVariables := &RenderVariables{DataPath: "/json.demo"}
+	render(w, r, renderVariables)
 }
 
-func content(writer http.ResponseWriter, request *http.Request) {
+func render(w http.ResponseWriter, request *http.Request, renderVariables *RenderVariables) {
+	if err := graphTemplate.Execute(w, renderVariables); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func landing(w http.ResponseWriter, request *http.Request) {
+	c := appengine.NewContext(request)
+	u := user.Current(c)
+	if u != nil {
+		http.Redirect(w, request, "/realuser", http.StatusFound)
+	} else {
+		if err := landingTemplate.Execute(w, nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+func demoContent(writer http.ResponseWriter, request *http.Request) {
 	//	c := appengine.NewContext(request)
 	//	u := user.Current(c)
 	//	if u == nil {
@@ -189,6 +211,7 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	individuals[2] = Individual{"Scale", buildScaleValues(meterReads)}
 	enc.Encode(individuals)
 }
+
 func buildPerfectBaseline(meterReads []MeterRead) (reads []MeterRead) {
 	reads = make([]MeterRead, len(meterReads))
 	for i := range meterReads {

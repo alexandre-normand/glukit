@@ -37,70 +37,7 @@
         </style>
   </head>
   <body>
-  <div id="chart_container">
-    <div id="y_axis"></div>
-  	<div id="chart"></div>
-  	<div id="legend_container">
-  		<div id="smoother" title="Smoothing"></div>
-  		<div id="legend"></div>
-  	</div>
-  	<div id="slider"></div>
-  </div>
-
-<script>
-var graph = new Rickshaw.Graph.Ajax( {
-	element: document.getElementById("chart"),
-	width: 800,
-	height: 600,
-	renderer: 'line',
-	dataURL: '/json',
-	series: [ {
-			name: 'You',
-            color: 'steelblue',
-            width: 2,
-		},  {
-			name: 'Perfection',
-		    color: '#33AD33',
-		    width: 2,
-		},
-		{
-			name: 'Scale',
-			color: '#ffffff',
-			width: 1,
-				},
-		 ],
-	onComplete: function(transport) {
-	    var x_axis = new Rickshaw.Graph.Axis.Time({
-	          graph: transport.graph
-	        });
-	    x_axis.graph.update();
-
-	    var y_axis = new Rickshaw.Graph.Axis.Y( {
-		            graph: transport.graph,
-		            orientation: 'left',
-		            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-		            element: document.getElementById('y_axis'),
-		} );
-        y_axis.graph.update();
-
-        var hoverDetail = new Rickshaw.Graph.HoverDetail( {
-                graph: transport.graph,
-                formatter: function(series, x, y) {
-                        var date = '<span class="date">' + new Date(x * 1000).toTimeString() + '</span>';
-                        var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
-                        var content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
-                        return content;
-                    },
-                xFormatter: function(x) {
-                    return new Date(x * 1000).toTimeString();
-                },
-            } );
-
-	  }
-} );
-
-
-</script>
+  Go the the <a href="/demo">demo</a> or <a href="/realuser">continue</a> to use your own data!
 
   </body>
 </html>
