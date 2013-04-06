@@ -18,9 +18,11 @@ _cgo_gotypes.go
 _cgo_export.*
 
 _testmain.go
-
+.DS_Store
 *.exe
 
 # IDE
 .idea
 *.iml
+
+.hg

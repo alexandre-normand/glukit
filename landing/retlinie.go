@@ -6,10 +6,43 @@ import (
 	"fmt"
 	"time"
 	"log"
+	"io/ioutil"
 	"encoding/json"
 	"html/template"
 	"container/list"
+	"goauth2/oauth"
+	"appengine"
+	"appengine/urlfetch"
 )
+
+// Appengine
+//const (
+//	// Created at http://code.google.com/apis/console, these identify
+//	// our app for the OAuth protocol.
+//	CLIENT_ID     = "414109645872-adbrmoh7te4mgbvr9f7rnj26j66bverl.apps.googleusercontent.com"
+//	CLIENT_SECRET = "IcbtRurZqPa2PV6NnSIgay73"
+//)
+
+// Local
+const (
+	// Created at http://code.google.com/apis/console, these identify
+	// our app for the OAuth protocol.
+	CLIENT_ID     = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
+	CLIENT_SECRET = "U3KV6G8sYqxa-qtjoxRnk6tX"
+)
+
+
+// config returns the configuration information for OAuth and Drive.
+func config(host string) *oauth.Config {
+	return &oauth.Config{
+		ClientId:     CLIENT_ID,
+		ClientSecret: CLIENT_SECRET,
+		Scope:        "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.readonly",
+		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
+		TokenURL:     "https://accounts.google.com/o/oauth2/token",
+		RedirectURL:  fmt.Sprintf("http://%s/oauth2callback", host),
+	}
+}
 
 type Individual struct {
 	Name      string      `json:"name"`
@@ -32,8 +65,57 @@ var pageTemplate = template.Must(template.ParseFiles("templates/landing.html"))
 func init() {
 	http.HandleFunc("/json", content)
 	http.HandleFunc("/", render)
+	http.HandleFunc("/timezone", timezone)
+	http.HandleFunc("/oauth2callback", receiveUserProfile)
 }
 
+func receiveUserProfile(w http.ResponseWriter, r *http.Request) {
+	// Exchange code for an access token at OAuth provider.
+	code := r.FormValue("code")
+	t := &oauth.Transport{
+		Config: config(r.Host),
+		Transport: &urlfetch.Transport{
+			Context: appengine.NewContext(r),
+		},
+	}
+
+    // TODO: save the token to the datastore?!
+	_, err := t.Exchange(code)
+	check(err)
+
+	timezone, err := fetchDataFile(t.Client())
+	fmt.Fprintf(w, timezone)
+}
+
+func fetchDataFile(client *http.Client) (filepath string, err error) {
+
+	if resp, err := client.Get("https://www.googleapis.com/drive/v2/files?maxResults=10&projection=BASIC&q=fullText+contains+%22%3CGlucose%22"); err != nil {
+		return "", err
+	} else {
+		defer resp.Body.Close()
+
+		if response, err := ioutil.ReadAll(resp.Body); err != nil {
+			return "", err
+		} else {
+			return string(response), nil
+		}
+
+	}
+
+	return filepath, nil
+}
+
+// check aborts the current execution if err is non-nil.
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func timezone(w http.ResponseWriter, r *http.Request) {
+	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
+	http.Redirect(w, r, url, http.StatusFound)
+}
 
 func render(w http.ResponseWriter, r *http.Request) {
 	if err := pageTemplate.Execute(w, nil); err != nil {
@@ -119,8 +201,6 @@ func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
 	for e := meterReads.Front(); e != nil; e = e.Next() {
 		meter := e.Value.(parser.Meter)
 		readTime, _ := parseTime(meter.DisplayTime)
-		log.Printf("ReadTime is %s, lower bound is %s, upperBound is %s", readTime.String(),
-			lowerBound.String(), upperBound.String())
 		if readTime.Before(upperBound) && readTime.After(lowerBound) && meter.Value > 0 {
 			lastDay.PushBack(meter)
 		}
@@ -142,9 +222,6 @@ func parseTime(timeValue string) (value time.Time, err error) {
 	if value, err = time.Parse(TIMEFORMAT, timeValue + " " + TIMEZONE); err == nil {
 		value = time.Date(value.Year(), value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(),
 			value.Nanosecond(), TIMEZONE_LOCATION)
-
-		log.Printf("Parsed time from %s is %s", timeValue + " " + TIMEZONE, value.String())
-
 	}
 
 	return value, err;
