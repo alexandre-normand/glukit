@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"time"
 	"log"
-	"io/ioutil"
 	"encoding/json"
 	"html/template"
 	"container/list"
 	"goauth2/oauth"
 	"appengine"
 	"appengine/urlfetch"
+	"drive"
+	"strings"
+	"io/ioutil"
 )
 
 // Appengine
@@ -31,13 +33,12 @@ const (
 	CLIENT_SECRET = "U3KV6G8sYqxa-qtjoxRnk6tX"
 )
 
-
 // config returns the configuration information for OAuth and Drive.
 func config(host string) *oauth.Config {
 	return &oauth.Config{
 		ClientId:     CLIENT_ID,
 		ClientSecret: CLIENT_SECRET,
-		Scope:        "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.readonly",
+		Scope:        "https://www.googleapis.com/auth/userinfo.profile " + drive.DriveReadonlyScope,
 		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
 		TokenURL:     "https://accounts.google.com/o/oauth2/token",
 		RedirectURL:  fmt.Sprintf("http://%s/oauth2callback", host),
@@ -56,7 +57,7 @@ type MeterRead struct {
 
 const (
 	TIMEFORMAT = "2006-01-02 15:04:05 MST"
-	TIMEZONE = "PST"
+	TIMEZONE   = "PST"
 )
 
 var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
@@ -66,10 +67,10 @@ func init() {
 	http.HandleFunc("/json", content)
 	http.HandleFunc("/", render)
 	http.HandleFunc("/timezone", timezone)
-	http.HandleFunc("/oauth2callback", receiveUserProfile)
+	http.HandleFunc("/oauth2callback", callback)
 }
 
-func receiveUserProfile(w http.ResponseWriter, r *http.Request) {
+func callback(w http.ResponseWriter, r *http.Request) {
 	// Exchange code for an access token at OAuth provider.
 	code := r.FormValue("code")
 	t := &oauth.Transport{
@@ -79,31 +80,66 @@ func receiveUserProfile(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-    // TODO: save the token to the datastore?!
+	// TODO: save the token to the datastore?!
 	_, err := t.Exchange(code)
 	check(err)
 
-	timezone, err := fetchDataFile(t.Client())
-	fmt.Fprintf(w, timezone)
+	file, err := FetchDataFileLocation(t.Client())
+	content, err := DownloadFile(t, file)
+	fmt.Fprintf(w, content)
 }
 
-func fetchDataFile(client *http.Client) (filepath string, err error) {
-
-	if resp, err := client.Get("https://www.googleapis.com/drive/v2/files?maxResults=10&projection=BASIC&q=fullText+contains+%22%3CGlucose%22"); err != nil {
-		return "", err
+func FetchDataFileLocation(client *http.Client) (file *drive.File, err error) {
+	if service, err := drive.New(client); err != nil {
+		return nil, err
 	} else {
-		defer resp.Body.Close()
-
-		if response, err := ioutil.ReadAll(resp.Body); err != nil {
-			return "", err
+		call := service.Files.List().MaxResults(10).Q("fullText contains \"<Glucose\" and fullText contains \"<Patient Id=\"")
+		if filelist, err := call.Do(); err != nil {
+			return nil, err
 		} else {
-			return string(response), nil
+			for i := range filelist.Items {
+				file := filelist.Items[i]
+				if strings.HasSuffix(file.OriginalFilename, ".Export.xml") {
+					log.Printf("Found match: %s\n", file)
+					return file, nil
+				} else {
+					log.Printf("Skipping search result item: %s\n", file)
+				}
+			}
 		}
-
 	}
 
-	return filepath, nil
+	return nil, nil
 }
+
+func DownloadFile(t http.RoundTripper, f *drive.File) (string, error) {
+  // t parameter should use an oauth.Transport
+  downloadUrl := f.DownloadUrl
+  if downloadUrl == "" {
+    // If there is no downloadUrl, there is no body
+    log.Printf("An error occurred: File is not downloadable")
+    return "", nil
+  }
+  req, err := http.NewRequest("GET", downloadUrl, nil)
+  if err != nil {
+    fmt.Printf("An error occurred: %v\n", err)
+    return "", err
+  }
+  resp, err := t.RoundTrip(req)
+  // Make sure we close the Body later
+  defer resp.Body.Close()
+  if err != nil {
+    fmt.Printf("An error occurred: %v\n", err)
+    return "", err
+  }
+  body, err := ioutil.ReadAll(resp.Body)
+  if err != nil {
+    fmt.Printf("An error occurred: %v\n", err)
+    return "", err
+  }
+  return string(body), nil
+}
+
 
 // check aborts the current execution if err is non-nil.
 func check(err error) {
@@ -192,19 +228,19 @@ func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
 	var upperBound time.Time;
 	if (lastTime.Hour() < 6) {
 		// Rewind by one more day
-		previousDay := lastTime.Add(time.Duration(-24 * time.Hour))
+		previousDay := lastTime.Add(time.Duration(-24*time.Hour))
 		upperBound = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
 	} else {
 		upperBound = time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
 	}
-	lowerBound := upperBound.Add(time.Duration(-24 * time.Hour))
+	lowerBound := upperBound.Add(time.Duration(-24*time.Hour))
 	for e := meterReads.Front(); e != nil; e = e.Next() {
 		meter := e.Value.(parser.Meter)
 		readTime, _ := parseTime(meter.DisplayTime)
 		if readTime.Before(upperBound) && readTime.After(lowerBound) && meter.Value > 0 {
 			lastDay.PushBack(meter)
 		}
-    }
+	}
 
 	return lastDay
 }
