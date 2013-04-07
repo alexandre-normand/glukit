@@ -14,7 +14,7 @@ type Meter struct {
 	Value        int    `xml:"Value,attr"`
 }
 
-func Parse(filepath string, writer io.Writer) (reads *list.List) {
+func Parse(filepath string) (reads *list.List) {
 	// open input file
 	fi, err := os.Open(filepath)
 	if err != nil { panic(err) }
@@ -27,7 +27,11 @@ func Parse(filepath string, writer io.Writer) (reads *list.List) {
 	// make a read buffer
 	r := bufio.NewReader(fi)
 
-	decoder := xml.NewDecoder(r)
+	return ParseContent(r)
+}
+
+func ParseContent(reader io.Reader) (reads *list.List) {
+	decoder := xml.NewDecoder(reader)
 	reads = list.New()
 	reads.Init()
 	for {
