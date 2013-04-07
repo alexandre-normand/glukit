@@ -13,6 +13,8 @@ import (
 	"appengine"
 	"appengine/user"
 	"appengine/urlfetch"
+	"appengine/datastore"
+	"appengine/blobstore"
 	"drive"
 	"strings"
 	"io/ioutil"
@@ -56,13 +58,21 @@ type MeterRead struct {
 	Value     int      `json:"y"`
 }
 
+type ReadData struct {
+	Email         string
+	Name          string
+	LastUpdated   time.Time
+	ReadsBlobKey  appengine.BlobKey
+}
+
 type RenderVariables struct {
 	DataPath string
 }
 
 const (
-	TIMEFORMAT = "2006-01-02 15:04:05 MST"
-	TIMEZONE   = "PST"
+	TIMEFORMAT       = "2006-01-02 15:04:05 MST"
+	DRIVE_TIMEFORMAT = "2006-01-02T15:04:05.000Z"
+	TIMEZONE         = "PST"
 )
 
 var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
@@ -71,30 +81,102 @@ var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
-	//http.HandleFunc("/json", content)
+	http.HandleFunc("/json", content)
 	http.HandleFunc("/demo", renderDemo)
+	http.HandleFunc("/graph", renderRealUser)
 	http.HandleFunc("/", landing)
 	http.HandleFunc("/realuser", updateData)
 	http.HandleFunc("/oauth2callback", callback)
 }
 
-func callback(w http.ResponseWriter, r *http.Request) {
+func callback(w http.ResponseWriter, request *http.Request) {
 	// Exchange code for an access token at OAuth provider.
-	code := r.FormValue("code")
+	code := request.FormValue("code")
 	t := &oauth.Transport{
-		Config: config(r.Host),
+		Config: config(request.Host),
 		Transport: &urlfetch.Transport{
-			Context: appengine.NewContext(r),
+			Context: appengine.NewContext(request),
 		},
 	}
 
-	// TODO: save the token to the datastore?!
+	// TODO: save the token to the memcache/datastore?!
 	_, err := t.Exchange(code)
 	check(err)
 
 	file, err := FetchDataFileLocation(t.Client())
 	content, err := DownloadFile(t, file)
-	fmt.Fprintf(w, content)
+	context := appengine.NewContext(request)
+	if user, err := user.CurrentOAuth(context, ""); err == nil {
+		if key, err := StoreUserData(file, user, w, context, content); err == nil {
+			log.Printf("Stored user data with key: %s", key.String())
+			http.Redirect(w, request, "/graph", 200)
+		} else {
+			check(err)
+		}
+	} else {
+		check(err)
+	}
+
+}
+
+func StoreUserData(file *drive.File, user *user.User, writer http.ResponseWriter, context appengine.Context, content string) (key *datastore.Key, err error) {
+	reads := convertAsReadsArray(parser.ParseContent(strings.NewReader(content)))
+	blobKey, err := StoreReadsBlob(context, reads)
+	if err != nil {
+		check(err)
+	}
+
+	modifiedDate, error := parseGoogleDriveDate(file.ModifiedDate)
+	log.Printf("Modified date is: %s", modifiedDate.String())
+	if error != nil {
+		check(error)
+	}
+	readData := ReadData{Email: user.Email,
+		Name: user.String(),
+		LastUpdated: modifiedDate,
+		ReadsBlobKey: blobKey}
+
+
+	key, error = datastore.Put(context, datastore.NewKey(context, "ReadData", user.Email, 0, nil), &readData)
+	if error != nil {
+		check(error)
+	}
+
+	return key, nil
+}
+
+func StoreReadsBlob(context appengine.Context, reads []MeterRead) (blobKey appengine.BlobKey, err error) {
+	var k appengine.BlobKey
+	w, err := blobstore.Create(context, "application/json")
+	if err != nil {
+		return k, err
+	}
+	enc := json.NewEncoder(w)
+	err = enc.Encode(reads)
+	if err != nil {
+		return k, err
+	}
+	err = w.Close()
+	if err != nil {
+		return k, err
+	}
+
+	return w.Key()
+}
+
+func FetchReadsBlob(context appengine.Context, blobKey appengine.BlobKey) (reads []MeterRead, err error) {
+	reader := blobstore.NewReader(context, blobKey)
+
+	decoder := json.NewDecoder(reader)
+	if err := decoder.Decode(&reads); err != nil {
+		return nil, err
+	}
+
+	return reads, nil
+}
+
+func parseGoogleDriveDate(value string) (timeValue time.Time, err error) {
+	return time.Parse(DRIVE_TIMEFORMAT, value)
 }
 
 func FetchDataFileLocation(client *http.Client) (file *drive.File, err error) {
@@ -165,6 +247,11 @@ func renderDemo(w http.ResponseWriter, r *http.Request) {
 	render(w, r, renderVariables)
 }
 
+func renderRealUser(w http.ResponseWriter, r *http.Request) {
+	renderVariables := &RenderVariables{DataPath: "/json"}
+	render(w, r, renderVariables)
+}
+
 func render(w http.ResponseWriter, request *http.Request, renderVariables *RenderVariables) {
 	if err := graphTemplate.Execute(w, renderVariables); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -184,31 +271,48 @@ func landing(w http.ResponseWriter, request *http.Request) {
 }
 
 func demoContent(writer http.ResponseWriter, request *http.Request) {
-	//	c := appengine.NewContext(request)
-	//	u := user.Current(c)
-	//	if u == nil {
-	//		url, err := user.LoginURL(c, request.URL.String())
-	//		if err != nil {
-	//			http.Error(writer, err.Error(), http.StatusInternalServerError)
-	//			return
-	//		}
-	//		writer.Header().Set("Location", url)
-	//		writer.WriteHeader(http.StatusFound)
-	//		return
-	//	}
-
-	fmt.Printf("New Request\n")
 	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	reads := parser.Parse("data.xml", writer)
+	reads := parser.Parse("data.xml")
 	meterReads := convertAsReadsArray(getLastDayOfData(reads))
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 3)
 	individuals[0] = Individual{"You", meterReads}
 	individuals[1] = Individual{"Perfection", buildPerfectBaseline(meterReads)}
 	individuals[2] = Individual{"Scale", buildScaleValues(meterReads)}
+	enc.Encode(individuals)
+}
+
+func content(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	readData := new(ReadData)
+	user, err := user.CurrentOAuth(context, "")
+    if err != nil {
+		check(err)
+	}
+
+	error := datastore.Get(context, datastore.NewKey(context, "ReadData", user.Email, 0, nil), &readData)
+	if error != nil {
+		check(error)
+	}
+
+	reads, err := FetchReadsBlob(context, readData.ReadsBlobKey)
+	if err != nil {
+		check(err)
+	}
+
+	writer.WriteHeader(200)
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	//meterReads := convertAsReadsArray(getLastDayOfData(reads))
+	enc := json.NewEncoder(writer)
+	individuals := make([]Individual, 3)
+	individuals[0] = Individual{"You", reads}
+	individuals[1] = Individual{"Perfection", buildPerfectBaseline(reads)}
+	individuals[2] = Individual{"Scale", buildScaleValues(reads)}
 	enc.Encode(individuals)
 }
 
