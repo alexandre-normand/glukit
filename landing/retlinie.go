@@ -87,6 +87,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	file, err := FetchDataFileLocation(t.Client())
 	content, err := DownloadFile(t, file)
 	context := appengine.NewContext(request)
+	// TODO Find a better way to get the user's email, not working on GAE
 	if user, err := user.CurrentOAuth(context, ""); err == nil {
 		if key, err := store.StoreUserData(file, user, w, context, content); err == nil {
 			log.Printf("Stored user data with key: %s", key.String())
@@ -203,6 +204,7 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 
 func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
+	// TODO Find a better way to get the user's email, not working on GAE
 	user, err := user.CurrentOAuth(context, "")
 	if err != nil {
 		utils.Propagate(err)
