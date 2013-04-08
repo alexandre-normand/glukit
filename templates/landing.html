@@ -34,10 +34,57 @@
         }
         .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
 
+        .landing { margin-left: auto; margin-right: auto }
+        table.landing { text-shadow: #E6E6E6 0.05em 0.05em 0.1em; margin-top: 50px; font-family: helvetica, arial, sans-serif; text-align: center ; font-color: #3F6778; font-size: 21px}
+            a:link {color:#7995A0;}      /* unvisited link */
+            a:visited {color:#7995A0;}  /* visited link */
+            a:hover {color:#556870;}  /* mouse over link */
+            a:active {color:#556870;}  /* selected link */
+
+            table{
+                table-layout: fixed;
+                width: 1240px;
+            }
+
+
+            th, td {
+                overflow: hidden;
+                width: 600px;
+            }
+
+
+            tr > td
+            {
+              padding-top: 1em;
+              padding-bottom: 1em;
+              vertical-align: middle;
+            }
+
+            td.content {
+
+            }
+
+            td.content:hover {
+                background-color: #6A8996;
+            }
+
+            td.or {
+                width: 40px;
+            }
+
         </style>
   </head>
   <body>
-  Go the the <a href="/demo">demo</a> or <a href="/realuser">continue</a> to use your own data!
+  <div >
+      <table class="landing">
+          <tr>
+              <td>Go the the <a href="/demo">demo</a></td><td class="or">or</td><td><a href="/realuser">continue</a> to use your own data!</td>
+          </tr>
+          <tr class="content"><td class="content"><a href="/demo"><img src="/images/demo.png" width="70%"/></a></td><td></td><td class="content"><a href="/realuser"><img src="/images/google_drive.png"/></td></tr>
+      </table>
+
+  </div>
+
 
   </body>
 </html>
