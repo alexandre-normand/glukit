@@ -710,7 +710,7 @@ type FileImageMediaMetadata struct {
 	// CameraMake: The make of the camera used to create the photo.
 	CameraMake string `json:"cameraMake,omitempty"`
 
-	// CameraModel: The model of the camera used to create the photo.
+	// CameraModel: The models of the camera used to create the photo.
 	CameraModel string `json:"cameraModel,omitempty"`
 
 	// ColorSpace: The color space of the photo.

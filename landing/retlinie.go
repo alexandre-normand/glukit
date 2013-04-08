@@ -13,11 +13,12 @@ import (
 	"appengine"
 	"appengine/user"
 	"appengine/urlfetch"
-	"appengine/datastore"
-	"appengine/blobstore"
+	"models"
 	"drive"
 	"strings"
 	"io/ioutil"
+	"utils"
+	"store"
 )
 
 // Appengine
@@ -50,32 +51,13 @@ func config(host string) *oauth.Config {
 
 type Individual struct {
 	Name      string      `json:"name"`
-	Reads     []MeterRead `json:"data"`
-}
-type MeterRead struct {
-	LocalTime string   `json:"label"`
-	TimeValue int64    `json:"x"`
-	Value     int      `json:"y"`
-}
-
-type ReadData struct {
-	Email         string
-	Name          string
-	LastUpdated   time.Time
-	ReadsBlobKey  appengine.BlobKey
+	Reads     []models.MeterRead `json:"data"`
 }
 
 type RenderVariables struct {
 	DataPath string
 }
 
-const (
-	TIMEFORMAT       = "2006-01-02 15:04:05 MST"
-	DRIVE_TIMEFORMAT = "2006-01-02T15:04:05.000Z"
-	TIMEZONE         = "PST"
-)
-
-var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
 var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
 var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"))
 
@@ -101,82 +83,22 @@ func callback(w http.ResponseWriter, request *http.Request) {
 
 	// TODO: save the token to the memcache/datastore?!
 	_, err := t.Exchange(code)
-	check(err)
+	utils.Propagate(err)
 
 	file, err := FetchDataFileLocation(t.Client())
 	content, err := DownloadFile(t, file)
 	context := appengine.NewContext(request)
 	if user, err := user.CurrentOAuth(context, ""); err == nil {
-		if key, err := StoreUserData(file, user, w, context, content); err == nil {
+		if key, err := store.StoreUserData(file, user, w, context, content); err == nil {
 			log.Printf("Stored user data with key: %s", key.String())
-			http.Redirect(w, request, "/graph", 200)
+			http.Redirect(w, request, "/graph", 303)
 		} else {
-			check(err)
+			utils.Propagate(err)
 		}
 	} else {
-		check(err)
+		utils.Propagate(err)
 	}
 
-}
-
-func StoreUserData(file *drive.File, user *user.User, writer http.ResponseWriter, context appengine.Context, content string) (key *datastore.Key, err error) {
-	reads := convertAsReadsArray(parser.ParseContent(strings.NewReader(content)))
-	blobKey, err := StoreReadsBlob(context, reads)
-	if err != nil {
-		check(err)
-	}
-
-	modifiedDate, error := parseGoogleDriveDate(file.ModifiedDate)
-	log.Printf("Modified date is: %s", modifiedDate.String())
-	if error != nil {
-		check(error)
-	}
-	readData := ReadData{Email: user.Email,
-		Name: user.String(),
-		LastUpdated: modifiedDate,
-		ReadsBlobKey: blobKey}
-
-
-	key, error = datastore.Put(context, datastore.NewKey(context, "ReadData", user.Email, 0, nil), &readData)
-	if error != nil {
-		check(error)
-	}
-
-	return key, nil
-}
-
-func StoreReadsBlob(context appengine.Context, reads []MeterRead) (blobKey appengine.BlobKey, err error) {
-	var k appengine.BlobKey
-	w, err := blobstore.Create(context, "application/json")
-	if err != nil {
-		return k, err
-	}
-	enc := json.NewEncoder(w)
-	err = enc.Encode(reads)
-	if err != nil {
-		return k, err
-	}
-	err = w.Close()
-	if err != nil {
-		return k, err
-	}
-
-	return w.Key()
-}
-
-func FetchReadsBlob(context appengine.Context, blobKey appengine.BlobKey) (reads []MeterRead, err error) {
-	reader := blobstore.NewReader(context, blobKey)
-
-	decoder := json.NewDecoder(reader)
-	if err := decoder.Decode(&reads); err != nil {
-		return nil, err
-	}
-
-	return reads, nil
-}
-
-func parseGoogleDriveDate(value string) (timeValue time.Time, err error) {
-	return time.Parse(DRIVE_TIMEFORMAT, value)
 }
 
 func FetchDataFileLocation(client *http.Client) (file *drive.File, err error) {
@@ -230,12 +152,6 @@ func DownloadFile(t http.RoundTripper, f *drive.File) (string, error) {
 	return string(body), nil
 }
 
-// check aborts the current execution if err is non-nil.
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
 
 func updateData(w http.ResponseWriter, r *http.Request) {
 	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
@@ -275,8 +191,8 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	reads := parser.Parse("data.xml")
-	meterReads := convertAsReadsArray(getLastDayOfData(reads))
+	meterReads := parser.Parse("data.xml")
+
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 3)
 	individuals[0] = Individual{"You", meterReads}
@@ -287,27 +203,20 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 
 func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	readData := new(ReadData)
-	user, err := user.CurrentOAuth(context, "")
+ 	user, err := user.CurrentOAuth(context, "")
     if err != nil {
-		check(err)
+		utils.Propagate(err)
 	}
 
-	error := datastore.Get(context, datastore.NewKey(context, "ReadData", user.Email, 0, nil), &readData)
-	if error != nil {
-		check(error)
-	}
-
-	reads, err := FetchReadsBlob(context, readData.ReadsBlobKey)
+	_, reads, err := store.GetUserData(context, user)
 	if err != nil {
-		check(err)
+		utils.Propagate(err)
 	}
 
 	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	//meterReads := convertAsReadsArray(getLastDayOfData(reads))
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 3)
 	individuals[0] = Individual{"You", reads}
@@ -316,76 +225,48 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	enc.Encode(individuals)
 }
 
-func buildPerfectBaseline(meterReads []MeterRead) (reads []MeterRead) {
-	reads = make([]MeterRead, len(meterReads))
+func buildPerfectBaseline(meterReads []models.MeterRead) (reads []models.MeterRead) {
+	reads = make([]models.MeterRead, len(meterReads))
 	for i := range meterReads {
-		reads[i] = MeterRead{meterReads[i].LocalTime, meterReads[i].TimeValue, 83}
+		reads[i] = models.MeterRead{meterReads[i].LocalTime, meterReads[i].TimeValue, 83}
 	}
 
 	return reads
 }
 
 // Stupid hack until I figure out how to set the min/max on the Y-axis
-func buildScaleValues(meterReads []MeterRead) (reads []MeterRead) {
+func buildScaleValues(meterReads []models.MeterRead) (reads []models.MeterRead) {
 	if len(meterReads) > 0 {
-		reads = make([]MeterRead, 2)
-		reads[0] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 0}
-		reads[1] = MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 300}
+		reads = make([]models.MeterRead, 2)
+		reads[0] = models.MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 0}
+		reads[1] = models.MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 300}
 		return reads
 	}
 
-	return []MeterRead {};
-}
-
-func convertAsReadsArray(meterReads *list.List) (reads []MeterRead) {
-	reads = make([]MeterRead, meterReads.Len())
-	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
-		meter := e.Value.(parser.Meter)
-		reads[i] = MeterRead{meter.DisplayTime, getTimeInSeconds(meter.DisplayTime), meter.Value}
-	}
-
-	return reads
+	return []models.MeterRead {};
 }
 
 func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
 	lastDay = list.New()
 	lastDay.Init()
 	lastValue := meterReads.Back().Value.(parser.Meter);
-	lastTime, _ := parseTime(lastValue.DisplayTime)
+	lastTime, _ := utils.ParseTime(lastValue.DisplayTime)
 	var upperBound time.Time;
 	if (lastTime.Hour() < 6) {
 		// Rewind by one more day
 		previousDay := lastTime.Add(time.Duration(-24*time.Hour))
-		upperBound = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
+		upperBound = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, utils.TIMEZONE_LOCATION)
 	} else {
-		upperBound = time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
+		upperBound = time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), 6, 0, 0, 0, utils.TIMEZONE_LOCATION)
 	}
 	lowerBound := upperBound.Add(time.Duration(-24*time.Hour))
 	for e := meterReads.Front(); e != nil; e = e.Next() {
 		meter := e.Value.(parser.Meter)
-		readTime, _ := parseTime(meter.DisplayTime)
+		readTime, _ := utils.ParseTime(meter.DisplayTime)
 		if readTime.Before(upperBound) && readTime.After(lowerBound) && meter.Value > 0 {
 			lastDay.PushBack(meter)
 		}
 	}
 
 	return lastDay
-}
-
-func getTimeInSeconds(timeValue string) (value int64) {
-	if timeValue, err := parseTime(timeValue); err == nil {
-		return timeValue.Unix()
-	} else {
-		log.Printf("Error parsing string", err)
-	}
-	return 0
-}
-
-func parseTime(timeValue string) (value time.Time, err error) {
-	if value, err = time.Parse(TIMEFORMAT, timeValue + " " + TIMEZONE); err == nil {
-		value = time.Date(value.Year(), value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(),
-			value.Nanosecond(), TIMEZONE_LOCATION)
-	}
-
-	return value, err;
 }
