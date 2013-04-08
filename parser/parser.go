@@ -52,7 +52,9 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead) {
 				// decode a whole chunk of following XML into the
 				// variable p which is a Page (se above)
 				decoder.DecodeElement(&read, &se)
-				readsList.PushBack(read)
+				if (read.Value > 0) {
+					readsList.PushBack(read)
+				}
 			}
 		}
 	}

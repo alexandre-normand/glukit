@@ -8,7 +8,6 @@ import (
 	"log"
 	"encoding/json"
 	"html/template"
-	"container/list"
 	"goauth2/oauth"
 	"appengine"
 	"appengine/user"
@@ -192,6 +191,7 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	value.Add("Content-type", "application/json")
 
 	meterReads := parser.Parse("data.xml")
+	meterReads = GetLastDayOfData(meterReads)
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 3)
@@ -203,8 +203,8 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 
 func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
- 	user, err := user.CurrentOAuth(context, "")
-    if err != nil {
+	user, err := user.CurrentOAuth(context, "")
+	if err != nil {
 		utils.Propagate(err)
 	}
 
@@ -212,6 +212,8 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		utils.Propagate(err)
 	}
+
+	reads = GetLastDayOfData(reads)
 
 	writer.WriteHeader(200)
 	value := writer.Header()
@@ -246,11 +248,14 @@ func buildScaleValues(meterReads []models.MeterRead) (reads []models.MeterRead) 
 	return []models.MeterRead {};
 }
 
-func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
-	lastDay = list.New()
-	lastDay.Init()
-	lastValue := meterReads.Back().Value.(parser.Meter);
-	lastTime, _ := utils.ParseTime(lastValue.DisplayTime)
+// Assumes reads are ordered by time
+func GetLastDayOfData(meterReads []models.MeterRead) (lastDayOfReads []models.MeterRead) {
+	dataSize := len(meterReads)
+	startOfDayIndex := -1
+	endOfDayIndex := -1
+
+	lastValue := meterReads[dataSize - 1]
+	lastTime, _ := utils.ParseTime(lastValue.LocalTime)
 	var upperBound time.Time;
 	if (lastTime.Hour() < 6) {
 		// Rewind by one more day
@@ -260,13 +265,17 @@ func getLastDayOfData(meterReads *list.List) (lastDay *list.List) {
 		upperBound = time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), 6, 0, 0, 0, utils.TIMEZONE_LOCATION)
 	}
 	lowerBound := upperBound.Add(time.Duration(-24*time.Hour))
-	for e := meterReads.Front(); e != nil; e = e.Next() {
-		meter := e.Value.(parser.Meter)
-		readTime, _ := utils.ParseTime(meter.DisplayTime)
-		if readTime.Before(upperBound) && readTime.After(lowerBound) && meter.Value > 0 {
-			lastDay.PushBack(meter)
+	for i := dataSize - 1; i > 0; i-- {
+		meter := meterReads[i]
+		readTime, _ := utils.ParseTime(meter.LocalTime)
+		if endOfDayIndex < 0 && readTime.Before(upperBound) {
+			endOfDayIndex = i
+		}
+
+		if startOfDayIndex < 0 && readTime.Before(lowerBound) {
+			startOfDayIndex = i + 1
 		}
 	}
 
-	return lastDay
+	return meterReads[startOfDayIndex:endOfDayIndex + 1]
 }
