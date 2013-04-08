@@ -6,6 +6,8 @@ import (
 	"os"
 	"bufio"
 	"container/list"
+	"models"
+	"utils"
 )
 
 type Meter struct {
@@ -14,7 +16,7 @@ type Meter struct {
 	Value        int    `xml:"Value,attr"`
 }
 
-func Parse(filepath string) (reads *list.List) {
+func Parse(filepath string) (reads []models.MeterRead) {
 	// open input file
 	fi, err := os.Open(filepath)
 	if err != nil { panic(err) }
@@ -30,10 +32,10 @@ func Parse(filepath string) (reads *list.List) {
 	return ParseContent(r)
 }
 
-func ParseContent(reader io.Reader) (reads *list.List) {
+func ParseContent(reader io.Reader) (reads []models.MeterRead) {
 	decoder := xml.NewDecoder(reader)
-	reads = list.New()
-	reads.Init()
+	readsList := list.New()
+	readsList.Init()
 	for {
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
@@ -50,9 +52,19 @@ func ParseContent(reader io.Reader) (reads *list.List) {
 				// decode a whole chunk of following XML into the
 				// variable p which is a Page (se above)
 				decoder.DecodeElement(&read, &se)
-				reads.PushBack(read)
+				readsList.PushBack(read)
 			}
 		}
+	}
+
+	return ConvertAsReadsArray(readsList)
+}
+
+func ConvertAsReadsArray(meterReads *list.List) (reads []models.MeterRead) {
+	reads = make([]models.MeterRead, meterReads.Len())
+	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
+		meter := e.Value.(Meter)
+		reads[i] = models.MeterRead{meter.DisplayTime, utils.GetTimeInSeconds(meter.DisplayTime), meter.Value}
 	}
 
 	return reads
