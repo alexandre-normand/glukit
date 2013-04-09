@@ -87,18 +87,14 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	file, err := FetchDataFileLocation(t.Client())
 	content, err := DownloadFile(t, file)
 	context := appengine.NewContext(request)
-	// TODO Find a better way to get the user's email, not working on GAE
-	if user, err := user.CurrentOAuth(context, ""); err == nil {
-		if key, err := store.StoreUserData(file, user, w, context, content); err == nil {
-			log.Printf("Stored user data with key: %s", key.String())
-			http.Redirect(w, request, "/graph", 303)
-		} else {
-			utils.Propagate(err)
-		}
+
+	user := user.Current(context)
+	if key, err := store.StoreUserData(file, user, w, context, content); err == nil {
+		log.Printf("Stored user data with key: %s", key.String())
+		http.Redirect(w, request, "/graph", 303)
 	} else {
 		utils.Propagate(err)
 	}
-
 }
 
 func FetchDataFileLocation(client *http.Client) (file *drive.File, err error) {
@@ -175,14 +171,8 @@ func render(w http.ResponseWriter, request *http.Request, renderVariables *Rende
 }
 
 func landing(w http.ResponseWriter, request *http.Request) {
-	c := appengine.NewContext(request)
-	u := user.Current(c)
-	if u != nil {
-		http.Redirect(w, request, "/realuser", http.StatusFound)
-	} else {
-		if err := landingTemplate.Execute(w, nil); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	if err := landingTemplate.Execute(w, nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -204,11 +194,7 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 
 func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	// TODO Find a better way to get the user's email, not working on GAE
-	user, err := user.CurrentOAuth(context, "")
-	if err != nil {
-		utils.Propagate(err)
-	}
+	user := user.Current(context)
 
 	_, reads, err := store.GetUserData(context, user)
 	if err != nil {
