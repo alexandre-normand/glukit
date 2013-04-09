@@ -10,6 +10,14 @@ handlers:
 - url: /images
   static_dir: images
 
+- url: /graph
+  script: _go_app
+  login: required
+
+- url: /realuser
+  script: _go_app
+  login: required
+
 - url: /.*
   script: _go_app
 
