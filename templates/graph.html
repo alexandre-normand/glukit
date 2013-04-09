@@ -13,7 +13,7 @@
 
         <style>
         #chart_container {
-                position: relative;
+                position: fixed;
                 font-family: Arial, Helvetica, sans-serif;
         }
         #chart {
@@ -50,8 +50,8 @@
 <script>
 var graph = new Rickshaw.Graph.Ajax( {
 	element: document.getElementById("chart"),
-	width: 800,
-	height: 600,
+	width: 1200,
+	height: 700,
 	renderer: 'line',
 	dataURL: '{{.DataPath}}',
 	series: [ {
@@ -71,7 +71,7 @@ var graph = new Rickshaw.Graph.Ajax( {
 		 ],
 	onComplete: function(transport) {
 	    var x_axis = new Rickshaw.Graph.Axis.Time({
-	          graph: transport.graph
+	          graph: transport.graph,
 	        });
 	    x_axis.graph.update();
 
