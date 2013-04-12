@@ -7,15 +7,18 @@ import (
 	"drive"
 	"strings"
 	"io/ioutil"
+	"time"
+	"utils"
 )
 
-func FetchDataFileLocation(client *http.Client) (file []*drive.File, err error) {
+func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.File, err error) {
 	var files []*drive.File
 
 	if service, err := drive.New(client); err != nil {
 		return nil, err
 	} else {
-		call := service.Files.List().MaxResults(10).Q("fullText contains \"<Glucose\" and fullText contains \"<Patient Id=\"")
+		query := fmt.Sprintf("fullText contains \"<Glucose\" and fullText contains \"<Patient Id=\" and modifiedDate > '%s'", lastUpdate.Format(utils.DRIVE_TIMEFORMAT))
+		call := service.Files.List().MaxResults(10).Q(query)
 		if filelist, err := call.Do(); err != nil {
 			return nil, err
 		} else {

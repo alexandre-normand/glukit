@@ -75,12 +75,12 @@ func GetUserData(context appengine.Context, u *user.User) (readData *models.Read
 	log.Printf("Fetching readData for key: %s", key.String())
 	error := datastore.Get(context, key, readData)
 	if error != nil {
-		utils.Propagate(error)
+		return nil, nil, error
 	}
 
 	reads, err = FetchReadsBlob(context, readData.ReadsBlobKey)
 	if err != nil {
-		utils.Propagate(err)
+		return nil, nil, err
 	}
 
 	return readData, reads, nil
