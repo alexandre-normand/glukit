@@ -6,34 +6,28 @@ import (
 	"appengine/user"
 	"appengine/blobstore"
 	"appengine/datastore"
-	"drive"
+	"time"
 	"net/http"
-	"parser"
 	"utils"
 	"log"
-	"strings"
 	"models"
 )
 
-func StoreUserData(file *drive.File, u *user.User, writer http.ResponseWriter, context appengine.Context, content string) (key *datastore.Key, err error) {
-	reads := parser.ParseContent(strings.NewReader(content))
+func StoreUserData(updatedAt time.Time, u *user.User, writer http.ResponseWriter, context appengine.Context, reads []models.MeterRead) (key *datastore.Key, err error) {
 	blobKey, err := StoreReadsBlob(context, reads)
 	if err != nil {
 		utils.Propagate(err)
 	}
 
-	modifiedDate, error := utils.ParseGoogleDriveDate(file.ModifiedDate)
-	log.Printf("Modified date is: %s", modifiedDate.String())
-	if error != nil {
-		utils.Propagate(error)
-	}
+	//modifiedDate, error := utils.ParseGoogleDriveDate(file.ModifiedDate)
+	//log.Printf("Modified date is: %s", modifiedDate.String())
 	readData := models.ReadData{Email: u.Email,
 		Name: u.String(),
-		LastUpdated: modifiedDate,
+		LastUpdated: updatedAt,
 		ReadsBlobKey: blobKey}
 
 
-	key, error = datastore.Put(context, GetKey(context, u), &readData)
+	key, error := datastore.Put(context, GetKey(context, u), &readData)
 	if error != nil {
 		utils.Propagate(error)
 	}

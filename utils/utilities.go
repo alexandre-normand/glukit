@@ -3,6 +3,7 @@ package utils
 import (
 	"time"
 	"log"
+	"models"
 )
 
 
@@ -41,4 +42,11 @@ func Propagate(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func MergeArrays(first, second []models.MeterRead) []models.MeterRead {
+   newslice := make([]models.MeterRead, len(first) + len(second))
+   copy(newslice, first)
+   copy(newslice[len(first):], second)
+   return newslice
 }

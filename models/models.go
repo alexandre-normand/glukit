@@ -24,3 +24,17 @@ type ReadData struct {
 	LastUpdated   time.Time
 	ReadsBlobKey  appengine.BlobKey
 }
+
+type MeterReadSlice []MeterRead
+
+func (slice MeterReadSlice) Len() int {
+  return len(slice)
+}
+
+func (slice MeterReadSlice) Less(i, j int) bool {
+  return slice[i].TimeValue < slice[j].TimeValue
+}
+
+func (slice MeterReadSlice) Swap(i, j int) {
+  slice[i], slice[j] = slice[j], slice[i]
+}

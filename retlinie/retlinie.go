@@ -1,4 +1,4 @@
-package landing
+package retlinie
 
 import (
 	"parser"
@@ -14,10 +14,11 @@ import (
 	"appengine/urlfetch"
 	"models"
 	"drive"
-	"strings"
-	"io/ioutil"
 	"utils"
 	"store"
+	"fetcher"
+	"strings"
+	"sort"
 )
 
 // Appengine
@@ -84,70 +85,34 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	_, err := t.Exchange(code)
 	utils.Propagate(err)
 
-	file, err := FetchDataFileLocation(t.Client())
-	content, err := DownloadFile(t, file)
+	updateTime := time.Now()
+	files, err := fetcher.FetchDataFileLocation(t.Client())
+	if err != nil {
+		utils.Propagate(err)
+	}
+
+	var reads []models.MeterRead
+	for i := range files {
+		content, err := fetcher.DownloadFile(t, files[i])
+		if err != nil {
+			log.Printf("Error reading file %s, skipping...", files[i].OriginalFilename)
+		} else {
+			fileReads := parser.ParseContent(strings.NewReader(content))
+			reads = utils.MergeArrays(reads, fileReads)
+		}
+	}
+
+	sort.Sort(models.MeterReadSlice(reads))
 	context := appengine.NewContext(request)
 
 	user := user.Current(context)
-	if key, err := store.StoreUserData(file, user, w, context, content); err == nil {
+	if key, err := store.StoreUserData(updateTime, user, w, context, reads); err == nil {
 		log.Printf("Stored user data with key: %s", key.String())
 		http.Redirect(w, request, "/graph", 303)
 	} else {
 		utils.Propagate(err)
 	}
 }
-
-func FetchDataFileLocation(client *http.Client) (file *drive.File, err error) {
-	if service, err := drive.New(client); err != nil {
-		return nil, err
-	} else {
-		call := service.Files.List().MaxResults(10).Q("fullText contains \"<Glucose\" and fullText contains \"<Patient Id=\"")
-		if filelist, err := call.Do(); err != nil {
-			return nil, err
-		} else {
-			for i := range filelist.Items {
-				file := filelist.Items[i]
-				if strings.HasSuffix(file.OriginalFilename, ".Export.xml") {
-					log.Printf("Found match: %s\n", file)
-					return file, nil
-				} else {
-					log.Printf("Skipping search result item: %s\n", file)
-				}
-			}
-		}
-	}
-
-	return nil, nil
-}
-
-func DownloadFile(t http.RoundTripper, f *drive.File) (string, error) {
-	// t parameter should use an oauth.Transport
-	downloadUrl := f.DownloadUrl
-	if downloadUrl == "" {
-		// If there is no downloadUrl, there is no body
-		log.Printf("An error occurred: File is not downloadable")
-		return "", nil
-	}
-	req, err := http.NewRequest("GET", downloadUrl, nil)
-	if err != nil {
-		fmt.Printf("An error occurred: %v\n", err)
-		return "", err
-	}
-	resp, err := t.RoundTrip(req)
-	// Make sure we close the Body later
-	defer resp.Body.Close()
-	if err != nil {
-		fmt.Printf("An error occurred: %v\n", err)
-		return "", err
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("An error occurred: %v\n", err)
-		return "", err
-	}
-	return string(body), nil
-}
-
 
 func updateData(w http.ResponseWriter, r *http.Request) {
 	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
