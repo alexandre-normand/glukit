@@ -12,6 +12,7 @@ import (
 	"appengine"
 	"appengine/user"
 	"appengine/urlfetch"
+	"appengine/datastore"
 	"models"
 	"drive"
 	"utils"
@@ -60,6 +61,7 @@ type RenderVariables struct {
 
 var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
 var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"))
+var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
@@ -67,11 +69,15 @@ func init() {
 	http.HandleFunc("/demo", renderDemo)
 	http.HandleFunc("/graph", renderRealUser)
 	http.HandleFunc("/", landing)
+	http.HandleFunc("/nodata", nodata)
 	http.HandleFunc("/realuser", updateData)
 	http.HandleFunc("/oauth2callback", callback)
 }
 
 func callback(w http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
 	t := &oauth.Transport{
@@ -85,12 +91,45 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	_, err := t.Exchange(code)
 	utils.Propagate(err)
 
-	updateTime := time.Now()
-	files, err := fetcher.FetchDataFileLocation(t.Client())
+	readData, _, err := store.GetUserData(context, user)
+	if err == datastore.ErrNoSuchEntity {
+		log.Printf("No data found for user [%s]", user.Email)
+	} else {
+		utils.Propagate(err)
+	}
+
+	lastUpdate := time.Unix(0, 0)
+	if readData != nil {
+		lastUpdate = readData.LastUpdated
+	}
+
+	thisUpdate := time.Now()
+	files, err := fetcher.SearchDataFiles(t.Client(), lastUpdate)
 	if err != nil {
 		utils.Propagate(err)
 	}
 
+	switch {
+	case len(files) == 0 && readData == nil:
+		log.Printf("No files found and user [%s] has no previous data stored", user.Email)
+		http.Redirect(w, request, "/nodata", 303)
+	case len(files) == 0 && readData != nil:
+		log.Printf("No new or updated data found for existing user [%s]", user.Email)
+		http.Redirect(w, request, "/graph", 303)
+	case len(files) > 0:
+		log.Printf("Found new data files for user [%s], downloading and storing...", user.Email)
+		reads := getAllData(t, files)
+
+		if key, err := store.StoreUserData(thisUpdate, user, w, context, reads); err == nil {
+			log.Printf("Stored user data with key: %s", key.String())
+			http.Redirect(w, request, "/graph", 303)
+		} else {
+			utils.Propagate(err)
+		}
+	}
+}
+
+func getAllData(t http.RoundTripper, files []*drive.File) (readData []models.MeterRead) {
 	var reads []models.MeterRead
 	for i := range files {
 		content, err := fetcher.DownloadFile(t, files[i])
@@ -101,17 +140,9 @@ func callback(w http.ResponseWriter, request *http.Request) {
 			reads = utils.MergeArrays(reads, fileReads)
 		}
 	}
-
 	sort.Sort(models.MeterReadSlice(reads))
-	context := appengine.NewContext(request)
 
-	user := user.Current(context)
-	if key, err := store.StoreUserData(updateTime, user, w, context, reads); err == nil {
-		log.Printf("Stored user data with key: %s", key.String())
-		http.Redirect(w, request, "/graph", 303)
-	} else {
-		utils.Propagate(err)
-	}
+	return reads
 }
 
 func updateData(w http.ResponseWriter, r *http.Request) {
@@ -137,6 +168,12 @@ func render(w http.ResponseWriter, request *http.Request, renderVariables *Rende
 
 func landing(w http.ResponseWriter, request *http.Request) {
 	if err := landingTemplate.Execute(w, nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func nodata(w http.ResponseWriter, request *http.Request) {
+	if err := nodataTemplate.Execute(w, nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
