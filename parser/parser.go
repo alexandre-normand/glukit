@@ -66,7 +66,7 @@ func ConvertAsReadsArray(meterReads *list.List) (reads []models.MeterRead) {
 	reads = make([]models.MeterRead, meterReads.Len())
 	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
 		meter := e.Value.(Meter)
-		reads[i] = models.MeterRead{meter.DisplayTime, utils.GetTimeInSeconds(meter.DisplayTime), meter.Value}
+		reads[i] = models.MeterRead{meter.DisplayTime, utils.GetTimeInSeconds(meter.DisplayTime, utils.TIMEZONE), meter.Value}
 	}
 
 	return reads
