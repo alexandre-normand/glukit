@@ -245,7 +245,7 @@ func GetLastDayOfData(meterReads []models.MeterRead) (lastDayOfReads []models.Me
 	endOfDayIndex := -1
 
 	lastValue := meterReads[dataSize - 1]
-	lastTime, _ := utils.ParseTime(lastValue.LocalTime)
+	lastTime, _ := utils.ParseTime(lastValue.LocalTime, utils.TIMEZONE)
 	var upperBound time.Time;
 	if (lastTime.Hour() < 6) {
 		// Rewind by one more day
@@ -257,7 +257,7 @@ func GetLastDayOfData(meterReads []models.MeterRead) (lastDayOfReads []models.Me
 	lowerBound := upperBound.Add(time.Duration(-24*time.Hour))
 	for i := dataSize - 1; i > 0; i-- {
 		meter := meterReads[i]
-		readTime, _ := utils.ParseTime(meter.LocalTime)
+		readTime, _ := utils.ParseTime(meter.LocalTime, utils.TIMEZONE)
 		if endOfDayIndex < 0 && readTime.Before(upperBound) {
 			endOfDayIndex = i
 		}
