@@ -51,8 +51,10 @@ func config(host string) *oauth.Config {
 }
 
 type Individual struct {
-	Name      string      `json:"name"`
-	Reads     []models.MeterRead `json:"data"`
+	Name        string              `json:"name"`
+	Reads       []models.MeterRead  `json:"data"`
+	Injections  []models.Injection  `json:"injections"`
+	CarbIntakes []models.CarbIntake `json:"carbIntakes"`
 }
 
 type RenderVariables struct {
@@ -91,7 +93,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	_, err := t.Exchange(code)
 	utils.Propagate(err)
 
-	readData, _, err := store.GetUserData(context, user)
+	readData, _, _, _, err := store.GetUserData(context, user)
 	if err == datastore.ErrNoSuchEntity {
 		log.Printf("No data found for user [%s]", user.Email)
 	} else {
@@ -118,9 +120,9 @@ func callback(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, "/graph", 303)
 	case len(files) > 0:
 		log.Printf("Found new data files for user [%s], downloading and storing...", user.Email)
-		reads := getAllData(t, files)
+		reads, injections, carbIntakes := getAllData(t, files)
 
-		if key, err := store.StoreUserData(thisUpdate, user, w, context, reads); err == nil {
+		if key, err := store.StoreUserData(thisUpdate, user, w, context, reads, injections, carbIntakes); err == nil {
 			log.Printf("Stored user data with key: %s", key.String())
 			http.Redirect(w, request, "/graph", 303)
 		} else {
@@ -129,20 +131,27 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func getAllData(t http.RoundTripper, files []*drive.File) (readData []models.MeterRead) {
+func getAllData(t http.RoundTripper, files []*drive.File) (readData []models.MeterRead, injectionData []models.Injection, carbIntakeData []models.CarbIntake) {
 	var reads []models.MeterRead
+	var carbIntakes []models.CarbIntake
+	var injections []models.Injection
+
 	for i := range files {
 		content, err := fetcher.DownloadFile(t, files[i])
 		if err != nil {
 			log.Printf("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
-			fileReads := parser.ParseContent(strings.NewReader(content))
-			reads = utils.MergeArrays(reads, fileReads)
+			fileReads, fileCarbIntakes, _, fileInjections := parser.ParseContent(strings.NewReader(content))
+			reads = utils.MergeReadArrays(reads, fileReads)
+			carbIntakes = utils.MergeCarbIntakeArrays(carbIntakes, fileCarbIntakes)
+			injections = utils.MergeInjectionArrays(injections, fileInjections)
 		}
 	}
 	sort.Sort(models.MeterReadSlice(reads))
+	sort.Sort(models.CarbIntakeSlice(carbIntakes))
+	sort.Sort(models.InjectionSlice(injections))
 
-	return reads
+	return reads, injections, carbIntakes
 }
 
 func updateData(w http.ResponseWriter, r *http.Request) {
@@ -183,14 +192,14 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	meterReads := parser.Parse("data.xml")
+	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
 	meterReads = GetLastDayOfData(meterReads)
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 3)
-	individuals[0] = Individual{"You", meterReads}
-	individuals[1] = Individual{"Perfection", buildPerfectBaseline(meterReads)}
-	individuals[2] = Individual{"Scale", buildScaleValues(meterReads)}
+	individuals[0] = Individual{"You", meterReads, injections, carbIntakes}
+	individuals[1] = Individual{"Perfection", buildPerfectBaseline(meterReads), nil, nil}
+	individuals[2] = Individual{"Scale", buildScaleValues(meterReads), nil, nil}
 	enc.Encode(individuals)
 }
 
@@ -198,7 +207,7 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, reads, err := store.GetUserData(context, user)
+	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
 	if err != nil {
 		utils.Propagate(err)
 	}
@@ -211,9 +220,10 @@ func content(writer http.ResponseWriter, request *http.Request) {
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 3)
-	individuals[0] = Individual{"You", reads}
-	individuals[1] = Individual{"Perfection", buildPerfectBaseline(reads)}
-	individuals[2] = Individual{"Scale", buildScaleValues(reads)}
+	// TODO: filter events to align with the reads
+	individuals[0] = Individual{"You", reads, injections, carbIntakes}
+	individuals[1] = Individual{"Perfection", buildPerfectBaseline(reads), nil, nil}
+	individuals[2] = Individual{"Scale", buildScaleValues(reads), nil, nil}
 	enc.Encode(individuals)
 }
 
