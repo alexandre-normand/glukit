@@ -18,23 +18,71 @@ type MeterRead struct {
 	Value     int      `json:"y"`
 }
 
+type Injection struct {
+	LocalTime string   `json:"label"`
+	TimeValue int64    `json:"unixtime"`
+	Value     int      `json:"units"`
+}
+
+type CarbIntake struct {
+	LocalTime string   `json:"label"`
+	TimeValue int64    `json:"unixtime"`
+	Value     int      `json:"carbs"`
+}
+
+type Exercise struct {
+	LocalTime         string   `json:"label"`
+	TimeValue         int64    `json:"unixtime"`
+	DurationInMinutes int      `json:"duration"`
+	// One of: light, medium, heavy
+	Intensity         string   `json:"intensity"`
+}
+
 type ReadData struct {
-	Email         string
-	Name          string
-	LastUpdated   time.Time
-	ReadsBlobKey  appengine.BlobKey
+	Email              string
+	Name               string
+	LastUpdated        time.Time
+	ReadsBlobKey       appengine.BlobKey
+	InjectionsBlobKey  appengine.BlobKey
+	CarbIntakesBlobKey appengine.BlobKey
 }
 
 type MeterReadSlice []MeterRead
+type InjectionSlice []Injection
+type CarbIntakeSlice []CarbIntake
 
 func (slice MeterReadSlice) Len() int {
-  return len(slice)
+	return len(slice)
 }
 
 func (slice MeterReadSlice) Less(i, j int) bool {
-  return slice[i].TimeValue < slice[j].TimeValue
+	return slice[i].TimeValue < slice[j].TimeValue
 }
 
 func (slice MeterReadSlice) Swap(i, j int) {
-  slice[i], slice[j] = slice[j], slice[i]
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice InjectionSlice) Len() int {
+	return len(slice)
+}
+
+func (slice InjectionSlice) Less(i, j int) bool {
+	return slice[i].TimeValue < slice[j].TimeValue
+}
+
+func (slice InjectionSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice CarbIntakeSlice) Len() int {
+	return len(slice)
+}
+
+func (slice CarbIntakeSlice) Less(i, j int) bool {
+	return slice[i].TimeValue < slice[j].TimeValue
+}
+
+func (slice CarbIntakeSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
 }
