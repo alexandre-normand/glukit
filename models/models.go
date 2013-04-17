@@ -10,6 +10,7 @@ package models
 import (
 	"time"
 	"appengine"
+	"timeutils"
 )
 
 type MeterRead struct {
@@ -45,6 +46,30 @@ type ReadData struct {
 	ReadsBlobKey       appengine.BlobKey
 	InjectionsBlobKey  appengine.BlobKey
 	CarbIntakesBlobKey appengine.BlobKey
+}
+
+type PointData interface {
+	GetTime()   time.Time
+}
+
+func (read MeterRead) GetTime() (timeValue time.Time) {
+	value, _ := timeutils.ParseTime(read.LocalTime, timeutils.TIMEZONE)
+	return value
+}
+
+func (exercise Exercise) GetTime() (timeValue time.Time) {
+	value, _ := timeutils.ParseTime(exercise.LocalTime, timeutils.TIMEZONE)
+	return value
+}
+
+func (carbIntake CarbIntake) GetTime() (timeValue time.Time) {
+	value, _ := timeutils.ParseTime(carbIntake.LocalTime, timeutils.TIMEZONE)
+	return value
+}
+
+func (injection Injection) GetTime() (timeValue time.Time) {
+	value, _ := timeutils.ParseTime(injection.LocalTime, timeutils.TIMEZONE)
+	return value
 }
 
 type MeterReadSlice []MeterRead
