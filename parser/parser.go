@@ -8,6 +8,7 @@ import (
 	"container/list"
 	"models"
 	"utils"
+	"timeutils"
 	"fmt"
 	"strings"
 )
@@ -79,7 +80,7 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 				if (event.EventType == "Carbs") {
 					var carbQuantityInGrams int
 					fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
-					carbIntake := models.CarbIntake{event.DisplayTime, utils.GetTimeInSeconds(event.DisplayTime, utils.TIMEZONE), carbQuantityInGrams}
+					carbIntake := models.CarbIntake{event.DisplayTime, timeutils.GetTimeInSeconds(event.DisplayTime, timeutils.TIMEZONE), carbQuantityInGrams}
 					carbIntakes = append(carbIntakes, carbIntake)
 				} else if (event.EventType == "Insulin") {
 					var insulinUnits float32
@@ -87,13 +88,13 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 					if err != nil {
 						utils.Propagate(err)
 					}
-					injection := models.Injection{event.DisplayTime, utils.GetTimeInSeconds(event.DisplayTime, utils.TIMEZONE), insulinUnits}
+					injection := models.Injection{event.DisplayTime, timeutils.GetTimeInSeconds(event.DisplayTime, timeutils.TIMEZONE), insulinUnits}
 					injections = append(injections, injection)
 				} else if (strings.HasPrefix(event.EventType, "Exercise")) {
 					var duration int
 					var intensity string
 					fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
-					exercise := models.Exercise{event.DisplayTime, utils.GetTimeInSeconds(event.DisplayTime, utils.TIMEZONE), duration, intensity}
+					exercise := models.Exercise{event.DisplayTime, timeutils.GetTimeInSeconds(event.DisplayTime, timeutils.TIMEZONE), duration, intensity}
 					exercises = append(exercises, exercise)
 				}
 
@@ -110,7 +111,7 @@ func ConvertAsReadsArray(meterReads *list.List) (reads []models.MeterRead) {
 	reads = make([]models.MeterRead, meterReads.Len())
 	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
 		meter := e.Value.(Meter)
-		reads[i] = models.MeterRead{meter.DisplayTime, utils.GetTimeInSeconds(meter.DisplayTime, utils.TIMEZONE), meter.Value}
+		reads[i] = models.MeterRead{meter.DisplayTime, timeutils.GetTimeInSeconds(meter.DisplayTime, timeutils.TIMEZONE), meter.Value}
 	}
 
 	return reads

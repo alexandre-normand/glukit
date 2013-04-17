@@ -20,6 +20,7 @@ import (
 	"fetcher"
 	"strings"
 	"sort"
+	"datautils"
 )
 
 // Appengine
@@ -193,7 +194,7 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	value.Add("Content-type", "application/json")
 
 	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
-	meterReads = GetLastDayOfData(meterReads)
+	meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]Individual, 3)
@@ -212,7 +213,7 @@ func content(writer http.ResponseWriter, request *http.Request) {
 		utils.Propagate(err)
 	}
 
-	reads = GetLastDayOfData(reads)
+	reads, injections, carbIntakes = datautils.GetLastDayOfData(reads, injections, carbIntakes)
 
 	writer.WriteHeader(200)
 	value := writer.Header()
@@ -246,36 +247,4 @@ func buildScaleValues(meterReads []models.MeterRead) (reads []models.MeterRead) 
 	}
 
 	return []models.MeterRead {};
-}
-
-// Assumes reads are ordered by time
-func GetLastDayOfData(meterReads []models.MeterRead) (lastDayOfReads []models.MeterRead) {
-	dataSize := len(meterReads)
-	startOfDayIndex := -1
-	endOfDayIndex := -1
-
-	lastValue := meterReads[dataSize - 1]
-	lastTime, _ := utils.ParseTime(lastValue.LocalTime, utils.TIMEZONE)
-	var upperBound time.Time;
-	if (lastTime.Hour() < 6) {
-		// Rewind by one more day
-		previousDay := lastTime.Add(time.Duration(-24*time.Hour))
-		upperBound = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, utils.TIMEZONE_LOCATION)
-	} else {
-		upperBound = time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), 6, 0, 0, 0, utils.TIMEZONE_LOCATION)
-	}
-	lowerBound := upperBound.Add(time.Duration(-24*time.Hour))
-	for i := dataSize - 1; i > 0; i-- {
-		meter := meterReads[i]
-		readTime, _ := utils.ParseTime(meter.LocalTime, utils.TIMEZONE)
-		if endOfDayIndex < 0 && readTime.Before(upperBound) {
-			endOfDayIndex = i
-		}
-
-		if startOfDayIndex < 0 && readTime.Before(lowerBound) {
-			startOfDayIndex = i + 1
-		}
-	}
-
-	return meterReads[startOfDayIndex:endOfDayIndex + 1]
 }
