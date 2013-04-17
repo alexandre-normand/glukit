@@ -21,9 +21,9 @@ type Meter struct {
 type Event struct {
 	InternalTime string `xml:"InternalTime,attr"`
 	DisplayTime  string `xml:"DisplayTime,attr"`
-	EventTime    string `xml:"DisplayTime,attr"`
+	EventTime    string `xml:"EventTime,attr"`
 	EventType    string `xml:"EventType,attr"`
-	Description  string `xml:"EventType,attr"`
+	Description  string `xml:"Decription,attr"`
 }
 
 // <Event InternalTime="2013-04-02 03:56:19" DisplayTime="2013-04-01 20:55:46" EventTime="2013-04-01 20:55:00"
@@ -82,8 +82,11 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 					carbIntake := models.CarbIntake{event.DisplayTime, utils.GetTimeInSeconds(event.DisplayTime, utils.TIMEZONE), carbQuantityInGrams}
 					carbIntakes = append(carbIntakes, carbIntake)
 				} else if (event.EventType == "Insulin") {
-					var insulinUnits int
-					fmt.Sscanf(event.Description, "Insulin %d units", &insulinUnits)
+					var insulinUnits float32
+					_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
+					if err != nil {
+						utils.Propagate(err)
+					}
 					injection := models.Injection{event.DisplayTime, utils.GetTimeInSeconds(event.DisplayTime, utils.TIMEZONE), insulinUnits}
 					injections = append(injections, injection)
 				} else if (strings.HasPrefix(event.EventType, "Exercise")) {

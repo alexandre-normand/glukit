@@ -21,7 +21,7 @@ type MeterRead struct {
 type Injection struct {
 	LocalTime string   `json:"label"`
 	TimeValue int64    `json:"unixtime"`
-	Value     int      `json:"units"`
+	Value     float32  `json:"units"`
 }
 
 type CarbIntake struct {
