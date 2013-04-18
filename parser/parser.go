@@ -80,7 +80,7 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 				if (event.EventType == "Carbs") {
 					var carbQuantityInGrams int
 					fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
-					carbIntake := models.CarbIntake{event.DisplayTime, timeutils.GetTimeInSeconds(event.DisplayTime, timeutils.TIMEZONE), carbQuantityInGrams}
+					carbIntake := models.CarbIntake{event.EventTime, timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE), carbQuantityInGrams}
 					carbIntakes = append(carbIntakes, carbIntake)
 				} else if (event.EventType == "Insulin") {
 					var insulinUnits float32
@@ -88,13 +88,13 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 					if err != nil {
 						utils.Propagate(err)
 					}
-					injection := models.Injection{event.DisplayTime, timeutils.GetTimeInSeconds(event.DisplayTime, timeutils.TIMEZONE), insulinUnits}
+					injection := models.Injection{event.EventTime, timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE), insulinUnits}
 					injections = append(injections, injection)
 				} else if (strings.HasPrefix(event.EventType, "Exercise")) {
 					var duration int
 					var intensity string
 					fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
-					exercise := models.Exercise{event.DisplayTime, timeutils.GetTimeInSeconds(event.DisplayTime, timeutils.TIMEZONE), duration, intensity}
+					exercise := models.Exercise{event.EventTime, timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE), duration, intensity}
 					exercises = append(exercises, exercise)
 				}
 
