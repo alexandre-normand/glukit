@@ -24,20 +24,20 @@ import (
 )
 
 // Appengine
-const (
-	// Created at http://code.google.com/apis/console, these identify
-	// our app for the OAuth protocol.
-	CLIENT_ID     = "414109645872-adbrmoh7te4mgbvr9f7rnj26j66bverl.apps.googleusercontent.com"
-	CLIENT_SECRET = "IcbtRurZqPa2PV6NnSIgay73"
-)
-
-// Local
 //const (
 //	// Created at http://code.google.com/apis/console, these identify
 //	// our app for the OAuth protocol.
-//	CLIENT_ID     = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
-//	CLIENT_SECRET = "U3KV6G8sYqxa-qtjoxRnk6tX"
+//	CLIENT_ID     = "414109645872-adbrmoh7te4mgbvr9f7rnj26j66bverl.apps.googleusercontent.com"
+//	CLIENT_SECRET = "IcbtRurZqPa2PV6NnSIgay73"
 //)
+
+// Local
+const (
+	// Created at http://code.google.com/apis/console, these identify
+	// our app for the OAuth protocol.
+	CLIENT_ID     = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
+	CLIENT_SECRET = "U3KV6G8sYqxa-qtjoxRnk6tX"
+)
 
 // config returns the configuration information for OAuth and Drive.
 func config(host string) *oauth.Config {
@@ -51,11 +51,19 @@ func config(host string) *oauth.Config {
 	}
 }
 
-type Individual struct {
+type IndividualReads struct {
 	Name        string              `json:"name"`
 	Reads       []models.MeterRead  `json:"data"`
-	Injections  []models.Injection  `json:"injections"`
-	CarbIntakes []models.CarbIntake `json:"carbIntakes"`
+}
+
+type IndividualCarbIntakes struct {
+	Name        string              `json:"name"`
+	CarbIntakes []models.CarbIntake `json:"data"`
+}
+
+type IndividualInjections struct {
+	Name        string              `json:"name"`
+	Injections  []models.Injection  `json:"data"`
 }
 
 type RenderVariables struct {
@@ -68,7 +76,12 @@ var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
+	http.HandleFunc("/json.demo.injections", demoInjections)
+	http.HandleFunc("/json.demo.carbs", demoCarbs)
 	http.HandleFunc("/json", content)
+	http.HandleFunc("/json.injections", injections)
+	http.HandleFunc("/json.carbs", carbs)
+
 	http.HandleFunc("/demo", renderDemo)
 	http.HandleFunc("/graph", renderRealUser)
 	http.HandleFunc("/", landing)
@@ -197,10 +210,38 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 
 	enc := json.NewEncoder(writer)
-	individuals := make([]Individual, 3)
-	individuals[0] = Individual{"You", meterReads, injections, carbIntakes}
-	individuals[1] = Individual{"Perfection", buildPerfectBaseline(meterReads), nil, nil}
-	individuals[2] = Individual{"Scale", buildScaleValues(meterReads), nil, nil}
+	individuals := make([]IndividualReads, 3)
+	individuals[0] = IndividualReads{"You", meterReads}
+	individuals[1] = IndividualReads{"Perfection", buildPerfectBaseline(meterReads)}
+	individuals[2] = IndividualReads{"Scale", buildScaleValues(meterReads)}
+	enc.Encode(individuals)
+}
+
+func demoInjections(writer http.ResponseWriter, request *http.Request) {
+	writer.WriteHeader(200)
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
+	_, injections, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
+
+	enc := json.NewEncoder(writer)
+	individuals := make([]IndividualInjections, 1)
+	individuals[0] = IndividualInjections{"You", injections}
+	enc.Encode(individuals)
+}
+
+func demoCarbs(writer http.ResponseWriter, request *http.Request) {
+	writer.WriteHeader(200)
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
+	_, _, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
+
+	enc := json.NewEncoder(writer)
+	individuals := make([]IndividualCarbIntakes, 1)
+	individuals[0] = IndividualCarbIntakes{"You", carbIntakes}
 	enc.Encode(individuals)
 }
 
@@ -220,11 +261,55 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	value.Add("Content-type", "application/json")
 
 	enc := json.NewEncoder(writer)
-	individuals := make([]Individual, 3)
+	individuals := make([]IndividualReads, 3)
 	// TODO: filter events to align with the reads
-	individuals[0] = Individual{"You", reads, injections, carbIntakes}
-	individuals[1] = Individual{"Perfection", buildPerfectBaseline(reads), nil, nil}
-	individuals[2] = Individual{"Scale", buildScaleValues(reads), nil, nil}
+	individuals[0] = IndividualReads{"You", reads}
+	individuals[1] = IndividualReads{"Perfection", buildPerfectBaseline(reads)}
+	individuals[2] = IndividualReads{"Scale", buildScaleValues(reads)}
+	enc.Encode(individuals)
+}
+
+func injections(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
+	if err != nil {
+		utils.Propagate(err)
+	}
+
+	_, injections, _ = datautils.GetLastDayOfData(reads, injections, carbIntakes)
+
+	writer.WriteHeader(200)
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	enc := json.NewEncoder(writer)
+	individuals := make([]IndividualInjections, 1)
+	// TODO: filter events to align with the reads
+	individuals[0] = IndividualInjections{"You", injections}
+	enc.Encode(individuals)
+}
+
+func carbs(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
+	if err != nil {
+		utils.Propagate(err)
+	}
+
+	_, _, carbIntakes = datautils.GetLastDayOfData(reads, injections, carbIntakes)
+
+	writer.WriteHeader(200)
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	enc := json.NewEncoder(writer)
+	individuals := make([]IndividualCarbIntakes, 1)
+	// TODO: filter events to align with the reads
+	individuals[0] = IndividualCarbIntakes{"You", carbIntakes}
 	enc.Encode(individuals)
 }
 
