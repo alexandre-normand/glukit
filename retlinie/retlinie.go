@@ -24,20 +24,20 @@ import (
 )
 
 // Appengine
-//const (
-//	// Created at http://code.google.com/apis/console, these identify
-//	// our app for the OAuth protocol.
-//	CLIENT_ID     = "414109645872-adbrmoh7te4mgbvr9f7rnj26j66bverl.apps.googleusercontent.com"
-//	CLIENT_SECRET = "IcbtRurZqPa2PV6NnSIgay73"
-//)
-
-// Local
 const (
 	// Created at http://code.google.com/apis/console, these identify
 	// our app for the OAuth protocol.
-	CLIENT_ID     = "***REMOVED***"
-	CLIENT_SECRET = "***REMOVED***"
+	CLIENT_ID     = "414109645872-adbrmoh7te4mgbvr9f7rnj26j66bverl.apps.googleusercontent.com"
+	CLIENT_SECRET = "IcbtRurZqPa2PV6NnSIgay73"
 )
+
+// Local
+//const (
+//	// Created at http://code.google.com/apis/console, these identify
+//	// our app for the OAuth protocol.
+//	CLIENT_ID     = "***REMOVED***"
+//	CLIENT_SECRET = "***REMOVED***"
+//)
 
 // config returns the configuration information for OAuth and Drive.
 func config(host string) *oauth.Config {
