@@ -51,19 +51,10 @@ func config(host string) *oauth.Config {
 	}
 }
 
-type IndividualReads struct {
+type DataSeries struct {
 	Name        string              `json:"name"`
-	Reads       []models.MeterRead  `json:"data"`
-}
-
-type IndividualCarbIntakes struct {
-	Name        string              `json:"name"`
-	CarbIntakes []models.CarbIntake `json:"data"`
-}
-
-type IndividualInjections struct {
-	Name        string              `json:"name"`
-	Injections  []models.Injection  `json:"data"`
+	Data        []models.DataPoint  `json:"data"`
+	Type        string              `json:"type"`
 }
 
 type RenderVariables struct {
@@ -76,14 +67,11 @@ var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
-	http.HandleFunc("/json.demo.injections", demoInjections)
-	http.HandleFunc("/json.demo.carbs", demoCarbs)
 	http.HandleFunc("/json", content)
-	http.HandleFunc("/json.injections", injections)
-	http.HandleFunc("/json.carbs", carbs)
 
 	http.HandleFunc("/demo", renderDemo)
 	http.HandleFunc("/graph", renderRealUser)
+
 	http.HandleFunc("/", landing)
 	http.HandleFunc("/nodata", nodata)
 	http.HandleFunc("/realuser", updateData)
@@ -210,38 +198,13 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 
 	enc := json.NewEncoder(writer)
-	individuals := make([]IndividualReads, 3)
-	individuals[0] = IndividualReads{"You", meterReads}
-	individuals[1] = IndividualReads{"Perfection", buildPerfectBaseline(meterReads)}
-	individuals[2] = IndividualReads{"Scale", buildScaleValues(meterReads)}
-	enc.Encode(individuals)
-}
+	individuals := make([]DataSeries, 5)
+	individuals[0] = DataSeries{"You", models.MeterReadSlice(meterReads).ToDataPointSlice(), "MeterReads"}
+	individuals[1] = DataSeries{"You.injections", models.InjectionSlice(injections).ToDataPointSlice(meterReads), "Injections"}
+	individuals[2] = DataSeries{"You.carbs", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(meterReads), "CarbIntakes"}
+	individuals[3] = DataSeries{"Perfection", models.MeterReadSlice(buildPerfectBaseline(meterReads)).ToDataPointSlice(), "ComparisonReads"}
+	individuals[4] = DataSeries{"Scale", models.MeterReadSlice(buildScaleValues(meterReads)).ToDataPointSlice(), "Hack"}
 
-func demoInjections(writer http.ResponseWriter, request *http.Request) {
-	writer.WriteHeader(200)
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
-	_, injections, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
-
-	enc := json.NewEncoder(writer)
-	individuals := make([]IndividualInjections, 1)
-	individuals[0] = IndividualInjections{"You", injections}
-	enc.Encode(individuals)
-}
-
-func demoCarbs(writer http.ResponseWriter, request *http.Request) {
-	writer.WriteHeader(200)
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
-	_, _, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
-
-	enc := json.NewEncoder(writer)
-	individuals := make([]IndividualCarbIntakes, 1)
-	individuals[0] = IndividualCarbIntakes{"You", carbIntakes}
 	enc.Encode(individuals)
 }
 
@@ -261,55 +224,14 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	value.Add("Content-type", "application/json")
 
 	enc := json.NewEncoder(writer)
-	individuals := make([]IndividualReads, 3)
+	individuals := make([]DataSeries, 5)
 	// TODO: filter events to align with the reads
-	individuals[0] = IndividualReads{"You", reads}
-	individuals[1] = IndividualReads{"Perfection", buildPerfectBaseline(reads)}
-	individuals[2] = IndividualReads{"Scale", buildScaleValues(reads)}
-	enc.Encode(individuals)
-}
+	individuals[0] = DataSeries{"You", models.MeterReadSlice(reads).ToDataPointSlice(), "MeterReads"}
+	individuals[1] = DataSeries{"You.injections", models.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
+    individuals[2] = DataSeries{"You.carbs", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(reads), "CarbIntakes"}
+	individuals[3] = DataSeries{"Perfection", models.MeterReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
+	individuals[4] = DataSeries{"Scale", models.MeterReadSlice(buildScaleValues(reads)).ToDataPointSlice(), "Hack"}
 
-func injections(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	user := user.Current(context)
-
-	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
-	if err != nil {
-		utils.Propagate(err)
-	}
-
-	_, injections, _ = datautils.GetLastDayOfData(reads, injections, carbIntakes)
-
-	writer.WriteHeader(200)
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	enc := json.NewEncoder(writer)
-	individuals := make([]IndividualInjections, 1)
-	// TODO: filter events to align with the reads
-	individuals[0] = IndividualInjections{"You", injections}
-	enc.Encode(individuals)
-}
-
-func carbs(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	user := user.Current(context)
-
-	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
-	if err != nil {
-		utils.Propagate(err)
-	}
-
-	_, _, carbIntakes = datautils.GetLastDayOfData(reads, injections, carbIntakes)
-
-	writer.WriteHeader(200)
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	enc := json.NewEncoder(writer)
-	individuals := make([]IndividualCarbIntakes, 1)
-	// TODO: filter events to align with the reads
-	individuals[0] = IndividualCarbIntakes{"You", carbIntakes}
 	enc.Encode(individuals)
 }
 
