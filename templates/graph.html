@@ -16,7 +16,8 @@
                 font-family: Arial, Helvetica, sans-serif;
         }
         #chart {
-                position: relative;
+                position: absolute;
+                top: 0;
                 left: 40px;
         }
         #y_axis {
@@ -33,12 +34,19 @@
         }
         .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
 
+        #injections_chart {
+            position: absolute;
+            top: 0;
+            left: 40px;
+          }
+
         </style>
   </head>
   <body>
   <div id="chart_container">
     <div id="y_axis"></div>
-  	<div id="chart"></div>
+  	<div id="chart" style="clear: both"></div>
+  	<div id="injections_chart" style="clear: both"></div>
   	<div id="legend_container">
   		<div id="smoother" title="Smoothing"></div>
   		<div id="legend"></div>
@@ -46,27 +54,47 @@
   	<div id="slider"></div>
   </div>
 
+
+
 <script>
 var graph = new Rickshaw.Graph.Ajax( {
 	element: document.getElementById("chart"),
 	width: 1200,
 	height: 600,
-	renderer: 'line',
+	renderer: 'multi',
+    max: 300,
+    min: 0,
 	dataURL: '{{.DataPath}}',
 	series: [ {
 			name: 'You',
             color: 'steelblue',
             width: 2,
-		},  {
+            renderer: 'line'
+		},
+         // Ugly workaround because scatterplot for injections and carbs are not placed correctly unless the reads line
+         // has a scatterplot too..and we don't want to show it so we set the color to none
+           {
+            name: 'You',
+            color: 'none',
+            opacity: '0',
+            width: 2,
+            renderer: 'scatterplot'
+        }, {
 			name: 'Perfection',
 		    color: '#33AD33',
 		    width: 2,
-		},
-		{
-			name: 'Scale',
-			color: '#ffffff',
-			width: 0,
-				},
+            renderer: 'line'
+		}, {
+            name: 'You.Injection',
+            color: '#4D94FF',
+            width: 2,
+            renderer: 'scatterplot'
+        }, {
+            name: 'You.Carbohydrates',
+            color: '#E65C5C',
+            width: 2,
+            renderer: 'scatterplot'
+        }
 		 ],
 	onComplete: function(transport) {
 	    var x_axis = new Rickshaw.Graph.Axis.Time({
@@ -84,10 +112,15 @@ var graph = new Rickshaw.Graph.Ajax( {
 
         var hoverDetail = new Rickshaw.Graph.HoverDetail( {
                 graph: transport.graph,
-                formatter: function(series, x, y) {
+                formatter: function(series, x, y, formattedX, formattedY, d) {
                         var date = '<span class="date">' + new Date(x * 1000).toTimeString() + '</span>';
                         var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
-                        var content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
+                        var content = null;
+                        if (series.name.indexOf('.') > 0) {
+                            content = swatch + series.name.substring(series.name.indexOf('.')+1) + ": " + parseFloat(d.value.r) + '<br>' + date;
+                        } else {
+                            content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
+                        }
                         return content;
                     },
                 xFormatter: function(x) {
@@ -96,30 +129,6 @@ var graph = new Rickshaw.Graph.Ajax( {
             } );
 	  }
 } );
-
-<!--var injections = null;-->
-<!--$.getJSON('{{.DataPath}}', function(data) {-->
-  <!--injections = data.filter(function(element, index, array) {-->
-    <!--return (element.type === "Injections");-->
-  <!--})-->
-
-
-    <!--var injectionGraph = new Rickshaw.Graph( {-->
-    	<!--element: document.getElementById("chart"),-->
-    	<!--width: 1200,-->
-    	<!--height: 600,-->
-    	<!--renderer: 'scatterplot',-->
-    	<!--series: [-->
-        <!--{-->
-    <!--name: "You.injections",-->
-    <!--color: 'red',-->
-    <!--data: injections[0].data-->
-    <!--}-->
-    <!--]-->
-    <!--} );-->
-
-    <!--injectionGraph.render();-->
-<!--});-->
 
 </script>
 

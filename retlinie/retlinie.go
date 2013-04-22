@@ -198,12 +198,11 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 
 	enc := json.NewEncoder(writer)
-	individuals := make([]DataSeries, 5)
+	individuals := make([]DataSeries, 4)
 	individuals[0] = DataSeries{"You", models.MeterReadSlice(meterReads).ToDataPointSlice(), "MeterReads"}
-	individuals[1] = DataSeries{"You.injections", models.InjectionSlice(injections).ToDataPointSlice(meterReads), "Injections"}
-	individuals[2] = DataSeries{"You.carbs", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(meterReads), "CarbIntakes"}
+	individuals[1] = DataSeries{"You.Injection", models.InjectionSlice(injections).ToDataPointSlice(meterReads), "Injections"}
+	individuals[2] = DataSeries{"You.Carbohydrates", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(meterReads), "CarbIntakes"}
 	individuals[3] = DataSeries{"Perfection", models.MeterReadSlice(buildPerfectBaseline(meterReads)).ToDataPointSlice(), "ComparisonReads"}
-	individuals[4] = DataSeries{"Scale", models.MeterReadSlice(buildScaleValues(meterReads)).ToDataPointSlice(), "Hack"}
 
 	enc.Encode(individuals)
 }
@@ -224,13 +223,12 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	value.Add("Content-type", "application/json")
 
 	enc := json.NewEncoder(writer)
-	individuals := make([]DataSeries, 5)
+	individuals := make([]DataSeries, 4)
 	// TODO: filter events to align with the reads
 	individuals[0] = DataSeries{"You", models.MeterReadSlice(reads).ToDataPointSlice(), "MeterReads"}
-	individuals[1] = DataSeries{"You.injections", models.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
-    individuals[2] = DataSeries{"You.carbs", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(reads), "CarbIntakes"}
+	individuals[1] = DataSeries{"You.Injection", models.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
+    individuals[2] = DataSeries{"You.Carbohydrates", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(reads), "CarbIntakes"}
 	individuals[3] = DataSeries{"Perfection", models.MeterReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
-	individuals[4] = DataSeries{"Scale", models.MeterReadSlice(buildScaleValues(reads)).ToDataPointSlice(), "Hack"}
 
 	enc.Encode(individuals)
 }
@@ -242,16 +240,4 @@ func buildPerfectBaseline(meterReads []models.MeterRead) (reads []models.MeterRe
 	}
 
 	return reads
-}
-
-// Stupid hack until I figure out how to set the min/max on the Y-axis
-func buildScaleValues(meterReads []models.MeterRead) (reads []models.MeterRead) {
-	if len(meterReads) > 0 {
-		reads = make([]models.MeterRead, 2)
-		reads[0] = models.MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 0}
-		reads[1] = models.MeterRead{meterReads[0].LocalTime, meterReads[0].TimeValue, 300}
-		return reads
-	}
-
-	return []models.MeterRead {};
 }
