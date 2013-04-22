@@ -24,7 +24,7 @@ type DataPoint struct {
 	LocalTime string    `json:"label"`
 	TimeValue TimeValue `json:"x"`
 	Y         int       `json:"y"`
-	Value     float32   `json:"value"`
+	Value     float32   `json:"r"`
 }
 
 type MeterRead struct {
@@ -168,7 +168,6 @@ func ExtrapolateYValueFromTime(reads []MeterRead, timeValue TimeValue) (yValue i
 			break;
 		}
 	}
-
 
 	lowerTimeValue := reads[lowerIndex].TimeValue
 	upperTimeValue := reads[upperIndex].TimeValue
