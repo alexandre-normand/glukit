@@ -65,7 +65,18 @@ var graph = new Rickshaw.Graph.Ajax( {
     max: 300,
     min: 0,
 	dataURL: '{{.DataPath}}',
-	series: [ {
+	series: [
+        {
+            name: 'You.Injection',
+            color: '#4D94FF',
+            width: 2,
+            renderer: 'scatterplot'
+        }, {
+            name: 'You.Carbohydrates',
+            color: '#E65C5C',
+            width: 2,
+            renderer: 'scatterplot'
+        }, {
 			name: 'You',
             color: 'steelblue',
             width: 2,
@@ -84,17 +95,7 @@ var graph = new Rickshaw.Graph.Ajax( {
 		    color: '#33AD33',
 		    width: 2,
             renderer: 'line'
-		}, {
-            name: 'You.Injection',
-            color: '#4D94FF',
-            width: 2,
-            renderer: 'scatterplot'
-        }, {
-            name: 'You.Carbohydrates',
-            color: '#E65C5C',
-            width: 2,
-            renderer: 'scatterplot'
-        }
+		}
 		 ],
 	onComplete: function(transport) {
 	    var x_axis = new Rickshaw.Graph.Axis.Time({
