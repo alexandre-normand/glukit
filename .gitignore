@@ -26,3 +26,5 @@ _testmain.go
 *.iml
 
 .hg
+
+github.com/grd/stat
