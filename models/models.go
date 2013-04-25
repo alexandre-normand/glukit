@@ -20,6 +20,14 @@ const (
 
 type TimeValue int64
 
+type TrackingData struct {
+	Mean      float64   `json: "mean"`
+	Median    float64   `json: "median"`
+	Variance  float64   `json: "variance"`
+	Min       float64   `json: "min"`
+	Max       float64   `json: "max"`
+}
+
 type DataPoint struct {
 	LocalTime string    `json:"label"`
 	TimeValue TimeValue `json:"x"`
@@ -94,6 +102,10 @@ type CarbIntakeSlice []CarbIntake
 
 func (slice MeterReadSlice) Len() int {
 	return len(slice)
+}
+
+func (slice MeterReadSlice) Get(i int) float64 {
+	return float64(slice[i].Value)
 }
 
 func (slice MeterReadSlice) Less(i, j int) bool {
