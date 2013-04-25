@@ -21,11 +21,12 @@ const (
 type TimeValue int64
 
 type TrackingData struct {
-	Mean      float64   `json: "mean"`
-	Median    float64   `json: "median"`
-	Variance  float64   `json: "variance"`
-	Min       float64   `json: "min"`
-	Max       float64   `json: "max"`
+	Mean      float64         `json: "mean"`
+	Median    float64         `json: "median"`
+	Variance  float64         `json: "variance"`
+	Min       float64         `json: "min"`
+	Max       float64         `json: "max"`
+	History   map[string] int `json: "distribution"`
 }
 
 type DataPoint struct {
@@ -97,6 +98,7 @@ func (injection Injection) GetTime() (timeValue time.Time) {
 }
 
 type MeterReadSlice []MeterRead
+type ReadStatsSlice []MeterRead
 type InjectionSlice []Injection
 type CarbIntakeSlice []CarbIntake
 
@@ -124,6 +126,22 @@ func (slice MeterReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	}
 
 	return dataPoints
+}
+
+func (slice ReadStatsSlice) Len() int {
+	return len(slice)
+}
+
+func (slice ReadStatsSlice) Get(i int) float64 {
+	return float64(slice[i].Value)
+}
+
+func (slice ReadStatsSlice) Less(i, j int) bool {
+	return slice[i].Value < slice[j].Value
+}
+
+func (slice ReadStatsSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
 }
 
 func (slice InjectionSlice) Len() int {
@@ -187,7 +205,7 @@ func ExtrapolateYValueFromTime(reads []MeterRead, timeValue TimeValue) (yValue i
 	upperYValue := reads[upperIndex].Value
 
 	relativeTimePosition := float32((timeValue - lowerTimeValue))/float32((upperTimeValue - lowerTimeValue))
-	yValue = int(relativeTimePosition * float32(upperYValue - lowerYValue) + float32(lowerYValue))
+	yValue = int(relativeTimePosition*float32(upperYValue - lowerYValue) + float32(lowerYValue))
 
 	log.Printf("Extrapolated Y value [%d] from timeValue [%d] which was found between [%d]:[%d] and [%d]:[%d] with respective values [%d] and [%d]", yValue, timeValue, lowerIndex, lowerTimeValue, upperIndex, upperTimeValue, lowerYValue, upperYValue)
 	return yValue

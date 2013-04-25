@@ -4,6 +4,7 @@ import (
 	"models"
 	"timeutils"
 	"time"
+	"strconv"
 )
 
 // Assumes reads are ordered by time
@@ -83,4 +84,20 @@ func GetLastDayOfCarbIntakes(data []models.CarbIntake, lowerBound, upperBound ti
 	}
 
 	return data[startOfDayIndex:endOfDayIndex + 1]
+}
+
+func BuildHistogram(reads []models.MeterRead) (histogram map[string] int) {
+	histogram = make(map[string] int)
+
+	for i := range reads {
+		currentReadValue := strconv.Itoa(reads[i].Value)
+		currentValue, found := histogram[currentReadValue]
+		if found {
+			histogram[currentReadValue] = currentValue + 1
+		} else {
+			histogram[currentReadValue] = 1
+		}
+	}
+
+	return histogram
 }
