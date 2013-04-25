@@ -23,7 +23,7 @@ type TimeValue int64
 type TrackingData struct {
 	Mean      float64         `json: "mean"`
 	Median    float64         `json: "median"`
-	Variance  float64         `json: "variance"`
+	Deviation float64         `json: "deviation"`
 	Min       float64         `json: "min"`
 	Max       float64         `json: "max"`
 	History   map[string] int `json: "distribution"`
