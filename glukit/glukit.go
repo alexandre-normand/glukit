@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sort"
 	"datautils"
-	stat "grd/stat"
+	stat "github.com/grd/stat"
 )
 
 // Appengine
@@ -69,6 +69,7 @@ var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
 	http.HandleFunc("/json", content)
+	http.HandleFunc("/json.demo.tracking", tracking)
 	http.HandleFunc("/json.tracking", tracking)
 
 	http.HandleFunc("/demo", renderDemo)
@@ -229,35 +230,55 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	// TODO: filter events to align with the reads
 	individuals[0] = DataSeries{"You", models.MeterReadSlice(reads).ToDataPointSlice(), "MeterReads"}
 	individuals[1] = DataSeries{"You.Injection", models.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
-    individuals[2] = DataSeries{"You.Carbohydrates", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(reads), "CarbIntakes"}
+	individuals[2] = DataSeries{"You.Carbohydrates", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(reads), "CarbIntakes"}
 	individuals[3] = DataSeries{"Perfection", models.MeterReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
 
 	enc.Encode(individuals)
+}
+
+func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []models.MeterRead) {
+	writer.WriteHeader(200)
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	var trackingData models.TrackingData
+	sort.Sort(models.ReadStatsSlice(reads))
+	trackingData.Mean = stat.Mean(models.ReadStatsSlice(reads))
+	trackingData.Variance = stat.VarianceWithFixedMean(models.ReadStatsSlice(reads), 83)
+	trackingData.Max, _ = stat.Max(models.ReadStatsSlice(reads))
+	trackingData.Min, _ = stat.Min(models.ReadStatsSlice(reads))
+	trackingData.Median = stat.MedianFromSortedData(models.ReadStatsSlice(reads))
+	trackingData.History = datautils.BuildHistogram(reads)
+
+	enc := json.NewEncoder(writer)
+	enc.Encode(trackingData)
 }
 
 func tracking(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, reads, _, _, err := store.GetUserData(context, user)
+	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
 	if err != nil {
 		utils.Propagate(err)
 	}
 
 	reads, _, _ = datautils.GetLastDayOfData(reads, injections, carbIntakes)
+	generateTrackingData(writer, request, reads)
+}
 
+func demoTracking(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	var trackingData models.TrackingData
-	trackingData.Mean = stat.Mean(models.MeterReadSlice(reads))
-	trackingData.Median = stat.Mean(models.MeterReadSlice(reads))
+	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
+	meterReads, _, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 
-	enc := json.NewEncoder(writer)
-
-	enc.Encode(individuals)
+	meterReads, _, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
+	generateTrackingData(writer, request, meterReads)
 }
+
 
 func buildPerfectBaseline(meterReads []models.MeterRead) (reads []models.MeterRead) {
 	reads = make([]models.MeterRead, len(meterReads))
