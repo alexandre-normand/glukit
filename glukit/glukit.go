@@ -1,4 +1,4 @@
-package retlinie
+package glukit
 
 import (
 	"parser"

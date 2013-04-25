@@ -1,4 +1,4 @@
-application: retlinie
+application: glukit
 version: 1
 runtime: go
 api_version: go1
