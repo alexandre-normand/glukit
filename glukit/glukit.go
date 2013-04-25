@@ -244,7 +244,7 @@ func generateTrackingData(writer http.ResponseWriter, request *http.Request, rea
 	var trackingData models.TrackingData
 	sort.Sort(models.ReadStatsSlice(reads))
 	trackingData.Mean = stat.Mean(models.ReadStatsSlice(reads))
-	trackingData.Variance = stat.VarianceWithFixedMean(models.ReadStatsSlice(reads), 83)
+	trackingData.Deviation = stat.AbsdevMean(models.ReadStatsSlice(reads), 83)
 	trackingData.Max, _ = stat.Max(models.ReadStatsSlice(reads))
 	trackingData.Min, _ = stat.Min(models.ReadStatsSlice(reads))
 	trackingData.Median = stat.MedianFromSortedData(models.ReadStatsSlice(reads))
