@@ -28,8 +28,8 @@ import (
 //const (
 //	// Created at http://code.google.com/apis/console, these identify
 //	// our app for the OAuth protocol.
-//	CLIENT_ID     = "414109645872-adbrmoh7te4mgbvr9f7rnj26j66bverl.apps.googleusercontent.com"
-//	CLIENT_SECRET = "IcbtRurZqPa2PV6NnSIgay73"
+//	CLIENT_ID     = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
+//	CLIENT_SECRET = "IYbOW0Aha34xMqTaPVO-_ar5"
 //)
 
 // Local
@@ -69,7 +69,7 @@ var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
 	http.HandleFunc("/json", content)
-	http.HandleFunc("/json.demo.tracking", tracking)
+	http.HandleFunc("/json.demo.tracking", demoTracking)
 	http.HandleFunc("/json.tracking", tracking)
 
 	http.HandleFunc("/demo", renderDemo)
@@ -275,9 +275,8 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 	value.Add("Content-type", "application/json")
 
 	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
-	meterReads, _, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
+    meterReads, _, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 
-	meterReads, _, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 	generateTrackingData(writer, request, meterReads)
 }
 
