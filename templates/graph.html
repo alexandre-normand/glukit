@@ -34,6 +34,24 @@
         }
         .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
 
+        #tracker {
+            width: 150px;
+            height: 300px;
+            background-color: #D1E6F0;
+            margin-right: 5em;
+            padding-right: 1em;
+            padding-top: 1em;
+            padding-bottom: 1em;
+            padding-left: 1em;
+
+        }
+
+        #trackerDistribution {
+            padding-top: 1em;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         #injections_chart {
             position: absolute;
             top: 0;
@@ -54,6 +72,11 @@
   	<div id="slider"></div>
   </div>
 
+  <div style="float: right;" id="tracker">
+      Oh yesterday...
+      <div id="trackerData"></div>
+      <div id="trackerDistribution"></div>
+  </div>
 
 
 <script>
@@ -131,6 +154,41 @@ var graph = new Rickshaw.Graph.Ajax( {
 	  }
 } );
 
+</script>
+
+<script>
+    var distribution = null;
+    $.getJSON('{{.DataPath}}.tracking', function(data) {
+      var items = [];
+
+      $.each(data, function(key, val) {
+        if (key != 'distribution') {
+            items.push('<tr><td>' + key + ': ' + Math.round(val*100)/100 + '</td></tr>');
+        } else {
+            distribution = val
+        }
+      });
+
+      $('<table/>', {
+        'class': 'tracking_table',
+        html: items.join('')
+      }).appendTo('#trackerData');
+
+    var distributionGraph = new Rickshaw.Graph( {
+        element: document.getElementById("trackerDistribution"),
+        width: 150,
+        height: 160,
+        renderer: 'multi',
+        stroke: true,
+        series: [{
+            color: 'steelblue',
+            data: distribution,
+            renderer: 'area'
+        }]
+    });
+
+    distributionGraph.render();
+    });
 </script>
 
   </body>

@@ -21,12 +21,17 @@ const (
 type TimeValue int64
 
 type TrackingData struct {
-	Mean      float64         `json: "mean"`
-	Median    float64         `json: "median"`
-	Deviation float64         `json: "deviation"`
-	Min       float64         `json: "min"`
-	Max       float64         `json: "max"`
-	History   map[string] int `json: "distribution"`
+	Mean           float64         `json:"mean"`
+	Median         float64         `json:"median"`
+	Deviation      float64         `json:"deviation"`
+	Min      	   float64         `json:"min"`
+	Max      	   float64         `json:"max"`
+	Distribution   []Coordinate    `json:"distribution"`
+}
+
+type Coordinate struct {
+	X    int   `json:"x"`
+	Y    int   `json:"y"`
 }
 
 type DataPoint struct {
@@ -101,6 +106,7 @@ type MeterReadSlice []MeterRead
 type ReadStatsSlice []MeterRead
 type InjectionSlice []Injection
 type CarbIntakeSlice []CarbIntake
+type CoordinateSlice []Coordinate
 
 func (slice MeterReadSlice) Len() int {
 	return len(slice)
@@ -186,6 +192,22 @@ func (slice CarbIntakeSlice) ToDataPointSlice(matchingReads []MeterRead) (dataPo
 	}
 
 	return dataPoints
+}
+
+func (slice CoordinateSlice) Len() int {
+	return len(slice)
+}
+
+func (slice CoordinateSlice) Get(i int) int {
+	return slice[i].X
+}
+
+func (slice CoordinateSlice) Less(i, j int) bool {
+	return slice[i].X < slice[j].X
+}
+
+func (slice CoordinateSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
 }
 
 func ExtrapolateYValueFromTime(reads []MeterRead, timeValue TimeValue) (yValue int) {
