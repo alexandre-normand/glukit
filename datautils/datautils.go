@@ -10,6 +10,10 @@ import (
 func GetLastDayOfData(meterReads []models.MeterRead, injections []models.Injection, carbIntakes []models.CarbIntake) (lastDayOfReads []models.MeterRead, lastDayOfInjections []models.Injection, lastDayOfCarbIntakes []models.CarbIntake) {
 	dataSize := len(meterReads)
 
+	if (dataSize == 0) {
+		return nil, nil, nil
+	}
+
 	lastValue := meterReads[dataSize - 1]
 	lastTime, _ := timeutils.ParseTime(lastValue.LocalTime, timeutils.TIMEZONE)
 	var upperBound time.Time;
