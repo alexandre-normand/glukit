@@ -3,9 +3,10 @@ package parser
 import (
 	"encoding/xml"
 	"io"
-	"os"
-	"bufio"
+	"log"
 	"container/list"
+	"appengine/datastore"
+	"appengine"
 	"models"
 	"utils"
 	"timeutils"
@@ -30,30 +31,28 @@ type Event struct {
 // <Event InternalTime="2013-04-02 03:56:19" DisplayTime="2013-04-01 20:55:46" EventTime="2013-04-01 20:55:00"
 //               EventType="Carbs" Decription="Carbs 8 grams"/>
 
-func Parse(filepath string) (reads []models.MeterRead, carbIntakes []models.CarbIntake, exercises []models.Exercise, injections []models.Injection) {
-	// open input file
-	fi, err := os.Open(filepath)
-	if err != nil { panic(err) }
-	// close fi on exit and check for its returned error
-	defer func() {
-		if fi.Close() != nil {
-			panic(err)
-		}
-	}()
-	// make a read buffer
-	r := bufio.NewReader(fi)
+//func Parse(filepath string) (reads []models.MeterRead, carbIntakes []models.CarbIntake, exercises []models.Exercise, injections []models.Injection) {
+//	// open input file
+//	fi, err := os.Open(filepath)
+//	if err != nil { panic(err) }
+//	// close fi on exit and check for its returned error
+//	defer func() {
+//		if fi.Close() != nil {
+//			panic(err)
+//		}
+//	}()
+//	// make a read buffer
+//	r := bufio.NewReader(fi)
+//
+//	return ParseContent(r)
+//}
 
-	return ParseContent(r)
-}
-
-func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []models.CarbIntake, exercises []models.Exercise, injections []models.Injection) {
+func ParseContent(reader io.Reader, batchSize int, context appengine.Context, parentKey *datastore.Key, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) {
 	decoder := xml.NewDecoder(reader)
-	injections = make([]models.Injection,0, 100)
-	carbIntakes = make([]models.CarbIntake,0, 100)
-	exercises = make([]models.Exercise,0, 100)
-
-	readsList := list.New()
-	readsList.Init()
+	reads := make([]models.MeterRead,0, batchSize)
+	injections := make([]models.Injection,0, batchSize)
+	carbIntakes := make([]models.CarbIntake,0, batchSize)
+	exercises := make([]models.Exercise,0, batchSize)
 
 	for {
 		// Read tokens from the XML document in a stream.
@@ -72,7 +71,13 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
 				if (read.Value > 0) {
-					readsList.PushBack(read)
+					meterRead := models.MeterRead{read.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(read.DisplayTime, timeutils.TIMEZONE)), read.Value}
+					reads = append(reads, meterRead)
+					if (len(reads) == batchSize) {
+						// Send the batch to be handled and restart another one
+						readsBatchHandler(context, parentKey, reads)
+						reads = make([]models.MeterRead,0, batchSize)
+					}
 				}
 			case "Event":
 				var event Event
@@ -82,6 +87,11 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 					fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
 					carbIntake := models.CarbIntake{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE)), float32(carbQuantityInGrams), models.UNDEFINED_READ}
 					carbIntakes = append(carbIntakes, carbIntake)
+					if (len(carbIntakes) == batchSize) {
+						// Send the batch to be handled and restart another one
+						carbsBatchHandler(context, parentKey, carbIntakes)
+						carbIntakes = make([]models.CarbIntake,0, batchSize)
+					}
 				} else if (event.EventType == "Insulin") {
 					var insulinUnits float32
 					_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
@@ -90,12 +100,22 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 					}
 					injection := models.Injection{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE)), float32(insulinUnits), models.UNDEFINED_READ}
 					injections = append(injections, injection)
+					if (len(injections) == batchSize) {
+						// Send the batch to be handled and restart another one
+						injectionBatchHandler(context, parentKey, injections)
+						injections = make([]models.Injection,0, batchSize)
+					}
 				} else if (strings.HasPrefix(event.EventType, "Exercise")) {
 					var duration int
 					var intensity string
 					fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
 					exercise := models.Exercise{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE)), duration, intensity}
 					exercises = append(exercises, exercise)
+					if (len(exercises) == batchSize) {
+						// Send the batch to be handled and restart another one
+						exerciseBatchHandler(context, parentKey, exercises)
+						exercises = make([]models.Exercise,0, batchSize)
+					}
 				}
 
 			case "Meter":
@@ -104,7 +124,27 @@ func ParseContent(reader io.Reader) (reads []models.MeterRead, carbIntakes []mod
 		}
 	}
 
-	return ConvertAsReadsArray(readsList), carbIntakes, exercises, injections
+	// Run the final batch for each
+	if (len(reads) > 0) {
+		// Send the batch to be handled and restart another one
+		readsBatchHandler(context, parentKey, reads)
+	}
+
+	if (len(injections) > 0) {
+		// Send the batch to be handled and restart another one
+		injectionBatchHandler(context, parentKey, injections)
+	}
+
+	if (len(carbIntakes) > 0) {
+		// Send the batch to be handled and restart another one
+		carbsBatchHandler(context, parentKey, carbIntakes)
+	}
+
+	if (len(exercises) > 0) {
+		// Send the batch to be handled and restart another one
+		exerciseBatchHandler(context, parentKey, exercises)
+	}
+	log.Printf("Done parsing and storing all data")
 }
 
 func ConvertAsReadsArray(meterReads *list.List) (reads []models.MeterRead) {

@@ -9,7 +9,6 @@ package models
 
 import (
 	"time"
-	"appengine"
 	"timeutils"
 	"log"
 )
@@ -21,12 +20,12 @@ const (
 type TimeValue int64
 
 type TrackingData struct {
-	Mean           float64         `json:"mean"`
-	Median         float64         `json:"median"`
-	Deviation      float64         `json:"deviation"`
+	Mean            float64         `json:"mean"`
+	Median          float64         `json:"median"`
+	Deviation       float64         `json:"deviation"`
 	Min      	   float64         `json:"min"`
 	Max      	   float64         `json:"max"`
-	Distribution   []Coordinate    `json:"distribution"`
+	Distribution    []Coordinate    `json:"distribution"`
 }
 
 type Coordinate struct {
@@ -42,40 +41,41 @@ type DataPoint struct {
 }
 
 type MeterRead struct {
-	LocalTime string    `json:"label"`
-	TimeValue TimeValue `json:"x"`
-	Value     int       `json:"y"`
+	LocalTime string    `json:"label" datastore:"localtime,noindex"`
+	TimeValue TimeValue `json:"x" datastore:"timestamp"`
+	Value     int       `json:"y" datastore:"value,noindex"`
 }
 
 type Injection struct {
-	LocalTime          string       `json:"label"`
-	TimeValue          TimeValue    `json:"x"`
-	Units              float32      `json:"units"`
-	ReferenceReadValue int          `json:"y"`
+	LocalTime          string       `json:"label" datastore:"localtime,noindex"`
+	TimeValue          TimeValue    `json:"x" datastore:"timestamp"`
+	Units              float32      `json:"units" datastore:"units,noindex"`
+	ReferenceReadValue int          `json:"y" datastore:"referenceReadValue,noindex"`
 }
 
 type CarbIntake struct {
-	LocalTime          string     `json:"label"`
-	TimeValue          TimeValue  `json:"x"`
-	Grams              float32    `json:"carbs"`
-	ReferenceReadValue int        `json:"y"`
+	LocalTime          string     `json:"label" datastore:"localtime,noindex"`
+	TimeValue          TimeValue  `json:"x" datastore:"timestamp"`
+	Grams              float32    `json:"carbs" datastore:"grams,noindex"`
+	ReferenceReadValue int        `json:"y" datastore:"referenceReadValue,noindex"`
 }
 
 type Exercise struct {
-	LocalTime         string      `json:"label"`
-	TimeValue         TimeValue   `json:"unixtime"`
-	DurationInMinutes int         `json:"duration"`
+	LocalTime         string      `json:"label" datastore:"localtime,noindex"`
+	TimeValue         TimeValue   `json:"unixtime" datastore:"timestamp"`
+	DurationInMinutes int         `json:"duration" datastore:"duration,noindex"`
 	// One of: light, medium, heavy
-	Intensity         string      `json:"intensity"`
+	Intensity         string      `json:"intensity" datastore:"intensity,noindex"`
 }
 
-type ReadData struct {
+type GlukitUser struct {
 	Email              string
-	Name               string
+	FirstName          string
+	LastName           string
+	DateOfBirth        time.Time
+	DiabetesType       string
+	Timezone           string
 	LastUpdated        time.Time
-	ReadsBlobKey       appengine.BlobKey
-	InjectionsBlobKey  appengine.BlobKey
-	CarbIntakesBlobKey appengine.BlobKey
 }
 
 type PointData interface {

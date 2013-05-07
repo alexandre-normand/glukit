@@ -21,6 +21,8 @@ import (
 	"strings"
 	"sort"
 	"datautils"
+	"bufio"
+	"os"
 	stat "github.com/grd/stat"
 )
 
@@ -98,9 +100,14 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	_, err := t.Exchange(code)
 	utils.Propagate(err)
 
-	readData, _, _, _, err := store.GetUserData(context, user)
+	readData, key, _, _, _, err := store.GetUserData(context, user.Email)
 	if err == datastore.ErrNoSuchEntity {
-		log.Printf("No data found for user [%s]", user.Email)
+		log.Printf("No data found for user [%s], creating it", user.Email)
+		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
+		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now()})
+		if err != nil {
+			utils.Propagate(err)
+		}
 	} else {
 		utils.Propagate(err)
 	}
@@ -110,7 +117,6 @@ func callback(w http.ResponseWriter, request *http.Request) {
 		lastUpdate = readData.LastUpdated
 	}
 
-	thisUpdate := time.Now()
 	files, err := fetcher.SearchDataFiles(t.Client(), lastUpdate)
 	if err != nil {
 		utils.Propagate(err)
@@ -125,38 +131,25 @@ func callback(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, "/graph", 303)
 	case len(files) > 0:
 		log.Printf("Found new data files for user [%s], downloading and storing...", user.Email)
-		reads, injections, carbIntakes := getAllData(t, files)
+		processData(t, files, context, key)
 
-		if key, err := store.StoreUserData(thisUpdate, user, w, context, reads, injections, carbIntakes); err == nil {
-			log.Printf("Stored user data with key: %s", key.String())
-			http.Redirect(w, request, "/graph", 303)
-		} else {
-			utils.Propagate(err)
-		}
+		log.Printf("Storing user data with key: %s", key.String())
+
+		http.Redirect(w, request, "/graph", 303)
 	}
+
 }
 
-func getAllData(t http.RoundTripper, files []*drive.File) (readData []models.MeterRead, injectionData []models.Injection, carbIntakeData []models.CarbIntake) {
-	var reads []models.MeterRead
-	var carbIntakes []models.CarbIntake
-	var injections []models.Injection
-
+func processData(t http.RoundTripper, files []*drive.File, context appengine.Context, userProfileKey *datastore.Key) {
 	for i := range files {
+		// TODO: Make this stream the content
 		content, err := fetcher.DownloadFile(t, files[i])
 		if err != nil {
 			log.Printf("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
-			fileReads, fileCarbIntakes, _, fileInjections := parser.ParseContent(strings.NewReader(content))
-			reads = utils.MergeReadArrays(reads, fileReads)
-			carbIntakes = utils.MergeCarbIntakeArrays(carbIntakes, fileCarbIntakes)
-			injections = utils.MergeInjectionArrays(injections, fileInjections)
+			parser.ParseContent(strings.NewReader(content), 1000, context, userProfileKey, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 		}
 	}
-	sort.Sort(models.MeterReadSlice(reads))
-	sort.Sort(models.CarbIntakeSlice(carbIntakes))
-	sort.Sort(models.InjectionSlice(injections))
-
-	return reads, injections, carbIntakes
 }
 
 func updateData(w http.ResponseWriter, r *http.Request) {
@@ -164,9 +157,40 @@ func updateData(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func renderDemo(w http.ResponseWriter, r *http.Request) {
+func renderDemo(w http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+
 	renderVariables := &RenderVariables{DataPath: "/json.demo"}
-	render(w, r, renderVariables)
+	_, key, _, _, _, err := store.GetUserData(context, "demo@glukit.com")
+	if err == datastore.ErrNoSuchEntity {
+		log.Printf("No data found for demo user [%s], creating it", "demo@glukit.com")
+		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
+		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{"demo@glukit.com", "", "", time.Now(), "", "", time.Now()})
+		if err != nil {
+			utils.Propagate(err)
+		}
+
+		// open input file
+		fi, err := os.Open("data.xml")
+		if err != nil { panic(err) }
+		// close fi on exit and check for its returned error
+		defer func() {
+			if fi.Close() != nil {
+				panic(err)
+			}
+		}()
+		// make a read buffer
+		reader := bufio.NewReader(fi)
+
+		parser.ParseContent(reader, 1000, context, key, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+
+		log.Printf("waiting 10 seconds for the store to persist data...")
+		time.Sleep(time.Duration(10)*time.Second)
+	} else {
+		utils.Propagate(err)
+	}
+
+	render(w, request, renderVariables)
 }
 
 func renderRealUser(w http.ResponseWriter, r *http.Request) {
@@ -193,11 +217,17 @@ func nodata(w http.ResponseWriter, request *http.Request) {
 }
 
 func demoContent(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+
 	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
+	_, _, meterReads, injections, carbIntakes, err := store.GetUserData(context, "demo@glukit.com")
+	if err != nil {
+		utils.Propagate(err)
+	}
+
 	meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
 
 	enc := json.NewEncoder(writer)
@@ -214,7 +244,7 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
+	_, _, reads, injections, carbIntakes, err := store.GetUserData(context, user.Email)
 	if err != nil {
 		utils.Propagate(err)
 	}
@@ -260,7 +290,7 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, reads, injections, carbIntakes, err := store.GetUserData(context, user)
+	_, _, reads, injections, carbIntakes, err := store.GetUserData(context, user.Email)
 	if err != nil {
 		utils.Propagate(err)
 	}
@@ -270,14 +300,19 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 }
 
 func demoTracking(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+
 	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	meterReads, carbIntakes, _, injections := parser.Parse("data.xml")
-    meterReads, _, _ = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
+	_, _, reads, injections, carbIntakes, err := store.GetUserData(context, "demo@glukit.com")
+	if (err != nil) {
+		utils.Propagate(err)
+	}
+	reads, _, _ = datautils.GetLastDayOfData(reads, injections, carbIntakes)
 
-	generateTrackingData(writer, request, meterReads)
+	generateTrackingData(writer, request, reads)
 }
 
 
