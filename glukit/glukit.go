@@ -104,7 +104,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	if err == datastore.ErrNoSuchEntity {
 		log.Printf("No data found for user [%s], creating it", user.Email)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now()})
+		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
 		if err != nil {
 			utils.Propagate(err)
 		}
@@ -147,7 +147,7 @@ func processData(t http.RoundTripper, files []*drive.File, context appengine.Con
 		if err != nil {
 			log.Printf("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
-			parser.ParseContent(strings.NewReader(content), 1000, context, userProfileKey, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+			parser.ParseContent(strings.NewReader(content), 500, context, userProfileKey, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 		}
 	}
 }
@@ -165,7 +165,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	if err == datastore.ErrNoSuchEntity {
 		log.Printf("No data found for demo user [%s], creating it", "demo@glukit.com")
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{"demo@glukit.com", "", "", time.Now(), "", "", time.Now()})
+		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{"demo@glukit.com", "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
 		if err != nil {
 			utils.Propagate(err)
 		}
@@ -182,10 +182,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// make a read buffer
 		reader := bufio.NewReader(fi)
 
-		parser.ParseContent(reader, 1000, context, key, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
-
-		log.Printf("waiting 10 seconds for the store to persist data...")
-		time.Sleep(time.Duration(10)*time.Second)
+		parser.ParseContent(reader, 500, context, key, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 	} else {
 		utils.Propagate(err)
 	}
@@ -228,7 +225,9 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 		utils.Propagate(err)
 	}
 
-	meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
+	log.Printf("Got %d reads", len(meterReads))
+	//meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
+	//log.Printf("Got %d reads for the last day", len(meterReads))
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]DataSeries, 4)
@@ -249,15 +248,13 @@ func content(writer http.ResponseWriter, request *http.Request) {
 		utils.Propagate(err)
 	}
 
-	reads, injections, carbIntakes = datautils.GetLastDayOfData(reads, injections, carbIntakes)
-
 	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]DataSeries, 4)
-	// TODO: filter events to align with the reads
+
 	individuals[0] = DataSeries{"You", models.MeterReadSlice(reads).ToDataPointSlice(), "MeterReads"}
 	individuals[1] = DataSeries{"You.Injection", models.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
 	individuals[2] = DataSeries{"You.Carbohydrates", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(reads), "CarbIntakes"}
@@ -290,12 +287,11 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, _, reads, injections, carbIntakes, err := store.GetUserData(context, user.Email)
+	_, _, reads, _, _, err := store.GetUserData(context, user.Email)
 	if err != nil {
 		utils.Propagate(err)
 	}
 
-	reads, _, _ = datautils.GetLastDayOfData(reads, injections, carbIntakes)
 	generateTrackingData(writer, request, reads)
 }
 
@@ -306,11 +302,10 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	_, _, reads, injections, carbIntakes, err := store.GetUserData(context, "demo@glukit.com")
+	_, _, reads, _, _, err := store.GetUserData(context, "demo@glukit.com")
 	if (err != nil) {
 		utils.Propagate(err)
 	}
-	reads, _, _ = datautils.GetLastDayOfData(reads, injections, carbIntakes)
 
 	generateTrackingData(writer, request, reads)
 }

@@ -10,7 +10,6 @@ package models
 import (
 	"time"
 	"timeutils"
-	"log"
 )
 
 const (
@@ -76,6 +75,7 @@ type GlukitUser struct {
 	DiabetesType       string
 	Timezone           string
 	LastUpdated        time.Time
+	MostRecentRead     time.Time
 }
 
 type PointData interface {
@@ -130,7 +130,6 @@ func (slice MeterReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue, slice[i].Value, float32(slice[i].Value)}
 		dataPoints[i] = dataPoint
 	}
-
 	return dataPoints
 }
 
@@ -229,6 +228,5 @@ func ExtrapolateYValueFromTime(reads []MeterRead, timeValue TimeValue) (yValue i
 	relativeTimePosition := float32((timeValue - lowerTimeValue))/float32((upperTimeValue - lowerTimeValue))
 	yValue = int(relativeTimePosition*float32(upperYValue - lowerYValue) + float32(lowerYValue))
 
-	log.Printf("Extrapolated Y value [%d] from timeValue [%d] which was found between [%d]:[%d] and [%d]:[%d] with respective values [%d] and [%d]", yValue, timeValue, lowerIndex, lowerTimeValue, upperIndex, upperTimeValue, lowerYValue, upperYValue)
 	return yValue
 }
