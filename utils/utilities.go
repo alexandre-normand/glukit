@@ -4,13 +4,6 @@ import (
 	"models"
 )
 
-// Propagate aborts the current execution if err is non-nil.
-func Propagate(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func MergeReadArrays(first, second []models.MeterRead) []models.MeterRead {
    newslice := make([]models.MeterRead, len(first) + len(second))
    copy(newslice, first)

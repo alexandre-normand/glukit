@@ -37,3 +37,6 @@ func ParseTime(timeValue string, timezoneString string) (value time.Time, err er
 	return value, err;
 }
 
+func LocalTimeWithDefaultTimezone(timevalue time.Time) (localTime string) {
+	return timevalue.In(TIMEZONE_LOCATION).Format(TIMEFORMAT)
+}

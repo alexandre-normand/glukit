@@ -8,7 +8,7 @@ import (
 	"appengine/datastore"
 	"appengine"
 	"models"
-	"utils"
+	"sysutils"
 	"timeutils"
 	"fmt"
 	"strings"
@@ -47,7 +47,7 @@ type Event struct {
 //	return ParseContent(r)
 //}
 
-func ParseContent(reader io.Reader, batchSize int, context appengine.Context, parentKey *datastore.Key, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) {
+func ParseContent(reader io.Reader, batchSize int, context appengine.Context, parentKey *datastore.Key, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (*datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) {
 	decoder := xml.NewDecoder(reader)
 	reads := make([]models.MeterRead,0, batchSize)
 	injections := make([]models.Injection,0, batchSize)
@@ -96,7 +96,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 					var insulinUnits float32
 					_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
 					if err != nil {
-						utils.Propagate(err)
+						sysutils.Propagate(err)
 					}
 					injection := models.Injection{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE)), float32(insulinUnits), models.UNDEFINED_READ}
 					injections = append(injections, injection)
