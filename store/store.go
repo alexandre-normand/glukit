@@ -6,7 +6,7 @@ import (
 	"appengine/blobstore"
 	"appengine/datastore"
 	"time"
-	"utils"
+	"sysutils"
 	"log"
 	"models"
 	"timeutils"
@@ -15,29 +15,30 @@ import (
 func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfile models.GlukitUser) (key *datastore.Key, err error) {
 	key, error := datastore.Put(context, GetUserKey(context, userProfile.Email), &userProfile)
 	if error != nil {
-		utils.Propagate(error)
+		sysutils.Propagate(error)
 	}
 
 	return key, nil
 }
 
-func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (key[] *datastore.Key, err error) {
-	elementKeys := make([] *datastore.Key, len(reads))
-	for i := range reads {
-		//log.Printf("Prepare store for read (%s, %d, %d)", reads[i].LocalTime, reads[i].TimeValue, reads[i].Value)
-		elementKeys[i] = datastore.NewKey(context, "MeterRead", "", int64(reads[i].TimeValue), userProfileKey)
-	}
+func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (key *datastore.Key, err error) {
+//	elementKeys := make([] *datastore.Key, len(reads))
+//	for i := range reads {
+//		//log.Printf("Prepare store for read (%s, %d, %d)", reads[i].LocalTime, reads[i].TimeValue, reads[i].Value)
+//		elementKeys[i] = datastore.NewKey(context, "MeterRead", "", int64(reads[i].TimeValue), userProfileKey)
+//	}
 
-	log.Printf("Emitting a PutMulti with %d keys for all %d reads", len(elementKeys), len(reads))
-	key, error := datastore.PutMulti(context, elementKeys, reads)
+	elementKey := datastore.NewKey(context, "MeterReadSlice", "", int64(reads[0].TimeValue), userProfileKey)
+	log.Printf("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
+	key, error := datastore.Put(context, elementKey, models.MeterReadSlice(reads))
 	if error != nil {
-		utils.Propagate(error)
+		sysutils.Propagate(error)
 	}
 
 	// Get the time of the batch's last read and update the most recent read timestamp if necessary
 	userProfile, err := GetUserProfile(context, userProfileKey)
 	if err != nil {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	lastRead := reads[len(reads) - 1]
@@ -46,7 +47,7 @@ func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads 
 		userProfile.MostRecentRead = lastRead.GetTime()
 		_, err := StoreUserProfile(context, time.Now(), *userProfile)
 		if err != nil {
-			utils.Propagate(err)
+			sysutils.Propagate(err)
 		}
 	}
 
@@ -62,7 +63,7 @@ func StoreInjections(context appengine.Context, userProfileKey *datastore.Key, i
 	log.Printf("Emitting a PutMulti with %d keys for all %d injections", len(elementKeys), len(injections))
 	key, error := datastore.PutMulti(context, elementKeys, injections)
 	if error != nil {
-		utils.Propagate(error)
+		sysutils.Propagate(error)
 	}
 
 	return key, nil
@@ -77,7 +78,7 @@ func StoreCarbs(context appengine.Context, userProfileKey *datastore.Key, carbs 
 	log.Printf("Emitting a PutMulti with %d keys for all %d carbs", len(elementKeys), len(carbs))
 	key, error := datastore.PutMulti(context, elementKeys, carbs)
 	if error != nil {
-		utils.Propagate(error)
+		sysutils.Propagate(error)
 	}
 
 	return key, nil
@@ -92,7 +93,7 @@ func StoreExerciseData(context appengine.Context, userProfileKey *datastore.Key,
 	log.Printf("Emitting a PutMulti with %d keys for all %d exercises", len(elementKeys), len(exercises))
 	key, error := datastore.PutMulti(context, elementKeys, exercises)
 	if error != nil {
-		utils.Propagate(error)
+		sysutils.Propagate(error)
 	}
 
 	return key, nil
@@ -162,8 +163,10 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	}
 	lowerBound := upperBound.Add(time.Duration(-24*time.Hour))
 
-	readQuery := datastore.NewQuery("MeterRead").Ancestor(key).Filter("timestamp >", lowerBound.Unix()).Filter("timestamp <", upperBound.Unix()).Order("timestamp")
-	_, err = readQuery.GetAll(context, &reads)
+	readQuery := datastore.NewQuery("MeterReadSlice").Ancestor(key).Filter("startTime <", upperBound.Unix()).Order("startTime")
+	var readSlice models.MeterReadSlice
+	// TODO Use iterator instead and apply filtering *again* since some reads in some rows might be outside the filter
+	_, err = readQuery.GetAll(context, &readSlice)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
@@ -183,12 +186,12 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	}
 	//log.Printf("Loaded %d injections...", len(injections))
 
-//	exercisesQuery := datastore.NewQuery("Exercise").Ancestor(key).Filter("timestamp >", lowerBound.Unix()).Filter("timestamp <", upperBound.Unix()).Order("-timestamp")
-//	_, err = exercisesQuery.GetAll(context, &exercises)
-//	if err != nil {
-//		return nil, nil, nil, nil, nil, err
-//	}
-//	log.Printf("Loaded %d exercises...", len(exercises))
+	//	exercisesQuery := datastore.NewQuery("Exercise").Ancestor(key).Filter("timestamp >", lowerBound.Unix()).Filter("timestamp <", upperBound.Unix()).Order("-timestamp")
+	//	_, err = exercisesQuery.GetAll(context, &exercises)
+	//	if err != nil {
+	//		return nil, nil, nil, nil, nil, err
+	//	}
+	//	log.Printf("Loaded %d exercises...", len(exercises))
 
-	return userProfile, key, reads, injections, carbIntakes, nil
+	return userProfile, key, readSlice, injections, carbIntakes, nil
 }

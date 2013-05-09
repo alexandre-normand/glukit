@@ -1,15 +1,12 @@
-/**
- * Created with IntelliJ IDEA.
- * User: skippyjon
- * Date: 2013-04-07
- * Time: 8:26 PM
- * To change this template use File | Settings | File Templates.
- */
 package models
 
 import (
 	"time"
 	"timeutils"
+	"strconv"
+	"sysutils"
+	"appengine/datastore"
+	"log"
 )
 
 const (
@@ -22,8 +19,8 @@ type TrackingData struct {
 	Mean            float64         `json:"mean"`
 	Median          float64         `json:"median"`
 	Deviation       float64         `json:"deviation"`
-	Min      	   float64         `json:"min"`
-	Max      	   float64         `json:"max"`
+	Min      	    float64         `json:"min"`
+	Max      	    float64         `json:"max"`
 	Distribution    []Coordinate    `json:"distribution"`
 }
 
@@ -43,6 +40,12 @@ type MeterRead struct {
 	LocalTime string    `json:"label" datastore:"localtime,noindex"`
 	TimeValue TimeValue `json:"x" datastore:"timestamp"`
 	Value     int       `json:"y" datastore:"value,noindex"`
+}
+
+// Used to model reads in a short-wide fashion. Loaders/Savers implemented in store.go
+type DayOfReads struct {
+	StartTime TimeValue
+	Reads     []MeterRead
 }
 
 type Injection struct {
@@ -230,3 +233,75 @@ func ExtrapolateYValueFromTime(reads []MeterRead, timeValue TimeValue) (yValue i
 
 	return yValue
 }
+
+func (readSlice MeterReadSlice) Load(channel <-chan datastore.Property) error {
+	var startTime time.Time
+	var endTime time.Time
+
+	log.Printf("Trying to load reads...")
+	reads := []MeterRead(readSlice);
+	for property := range channel {
+		switch property.Name {
+		case "startTime":
+			startTime = property.Value.(time.Time)
+			log.Printf("Parsing block of reads with starttime: %s", startTime)
+		case "endTime":
+			endTime = property.Value.(time.Time)
+			log.Printf("Parsed block of reads with endtime: %s", endTime)
+		default:
+			timeInSeconds, err := strconv.ParseInt(property.Name, 10, 64)
+			if err != nil {
+				sysutils.Propagate(err)
+			}
+
+			readTime := time.Unix(timeInSeconds, 0)
+			value := property.Value.(int)
+			localTime := timeutils.LocalTimeWithDefaultTimezone(readTime)
+			log.Printf("Loading read with info: %s, %d, %d", localTime, readTime, value)
+			read := MeterRead{localTime, TimeValue(readTime.Unix()), value}
+			reads = append(reads, read)
+		}
+
+	}
+
+	return nil
+}
+
+func (readSlice MeterReadSlice) Save(channel chan <- datastore.Property) error {
+	defer close(channel)
+
+	log.Printf("Trying to save reads...")
+	// Nothing to do if the slice has zero elements
+	size := readSlice.Len()
+	if size == 0 {
+		return nil
+	}
+	reads := []MeterRead(readSlice)
+	startTime := time.Unix(int64(reads[0].TimeValue), 0)
+	endTime := time.Unix(int64(reads[size - 1].TimeValue), 0)
+
+	channel <- datastore.Property{
+		Name:  "startTime",
+		Value:  startTime,
+		NoIndex: false,
+	}
+	channel <- datastore.Property{
+		Name:  "endTime",
+		Value:  endTime,
+		NoIndex: false,
+	}
+
+	for i := range reads {
+		//log.Printf("Sending read to channel %s, %d, %d", reads[i].LocalTime, int64(reads[i].TimeValue), int64(reads[i].Value))
+		channel <- datastore.Property {
+			Name: strconv.FormatInt(int64(reads[i].TimeValue), 10),
+			Value: int64(reads[i].Value),
+			NoIndex: true,
+			// TODO : We need the multiple to be true just because of DST change that causes duplicate timestamps. This conflict should be resolved before getting here
+			Multiple: true,
+		}
+	}
+
+	return nil
+}
+

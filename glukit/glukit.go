@@ -15,7 +15,6 @@ import (
 	"appengine/datastore"
 	"models"
 	"drive"
-	"utils"
 	"store"
 	"fetcher"
 	"strings"
@@ -23,6 +22,7 @@ import (
 	"datautils"
 	"bufio"
 	"os"
+	"sysutils"
 	stat "github.com/grd/stat"
 )
 
@@ -98,7 +98,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 
 	// TODO: save the token to the memcache/datastore?!
 	_, err := t.Exchange(code)
-	utils.Propagate(err)
+	sysutils.Propagate(err)
 
 	readData, key, _, _, _, err := store.GetUserData(context, user.Email)
 	if err == datastore.ErrNoSuchEntity {
@@ -106,10 +106,10 @@ func callback(w http.ResponseWriter, request *http.Request) {
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
 		if err != nil {
-			utils.Propagate(err)
+			sysutils.Propagate(err)
 		}
 	} else {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	lastUpdate := time.Unix(0, 0)
@@ -119,7 +119,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 
 	files, err := fetcher.SearchDataFiles(t.Client(), lastUpdate)
 	if err != nil {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	switch {
@@ -167,7 +167,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{"demo@glukit.com", "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
 		if err != nil {
-			utils.Propagate(err)
+			sysutils.Propagate(err)
 		}
 
 		// open input file
@@ -184,7 +184,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 
 		parser.ParseContent(reader, 500, context, key, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 	} else {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	render(w, request, renderVariables)
@@ -222,7 +222,7 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, meterReads, injections, carbIntakes, err := store.GetUserData(context, "demo@glukit.com")
 	if err != nil {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	log.Printf("Got %d reads", len(meterReads))
@@ -245,7 +245,7 @@ func content(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, reads, injections, carbIntakes, err := store.GetUserData(context, user.Email)
 	if err != nil {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	writer.WriteHeader(200)
@@ -289,7 +289,7 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, reads, _, _, err := store.GetUserData(context, user.Email)
 	if err != nil {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	generateTrackingData(writer, request, reads)
@@ -304,7 +304,7 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, reads, _, _, err := store.GetUserData(context, "demo@glukit.com")
 	if (err != nil) {
-		utils.Propagate(err)
+		sysutils.Propagate(err)
 	}
 
 	generateTrackingData(writer, request, reads)
