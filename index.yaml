@@ -15,12 +15,12 @@ indexes:
   properties:
   - name: timestamp
 
-- kind: Injection
+- kind: DayOfReads
   ancestor: yes
   properties:
-  - name: timestamp
+  - name: startTime
 
-- kind: MeterRead
+- kind: Injection
   ancestor: yes
   properties:
   - name: timestamp

@@ -54,6 +54,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 	carbIntakes := make([]models.CarbIntake,0, batchSize)
 	exercises := make([]models.Exercise,0, batchSize)
 
+	var previousRead models.MeterRead
 	for {
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
@@ -71,13 +72,24 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
 				if (read.Value > 0) {
-					meterRead := models.MeterRead{read.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(read.DisplayTime, timeutils.TIMEZONE)), read.Value}
-					reads = append(reads, meterRead)
-					if (len(reads) == batchSize) {
+					meterRead := models.MeterRead{read.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(read.InternalTime)), read.Value}
+					// This should only happen once as we start parsing, we initialize the previous day to the current
+					// and the rest of the logic should gracefully handle this case
+					if (len(reads) == 0) {
+						previousRead = meterRead
+					}
+
+					// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
+					// read read. This assumes that we will never get a gap big enough that two consecutive reads could
+					// have the same day value while being months apart.
+					if meterRead.GetTime().Day() != previousRead.GetTime().Day() || len(reads) >= batchSize {
 						// Send the batch to be handled and restart another one
 						readsBatchHandler(context, parentKey, reads)
-						reads = make([]models.MeterRead,0, batchSize)
+						reads = make([]models.MeterRead, 0, batchSize)
 					}
+
+					reads = append(reads, meterRead)
+					previousRead = meterRead
 				}
 			case "Event":
 				var event Event
@@ -85,7 +97,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 				if (event.EventType == "Carbs") {
 					var carbQuantityInGrams int
 					fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
-					carbIntake := models.CarbIntake{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE)), float32(carbQuantityInGrams), models.UNDEFINED_READ}
+					carbIntake := models.CarbIntake{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.InternalTime)), float32(carbQuantityInGrams), models.UNDEFINED_READ}
 					carbIntakes = append(carbIntakes, carbIntake)
 					if (len(carbIntakes) == batchSize) {
 						// Send the batch to be handled and restart another one
@@ -98,7 +110,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 					if err != nil {
 						sysutils.Propagate(err)
 					}
-					injection := models.Injection{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE)), float32(insulinUnits), models.UNDEFINED_READ}
+					injection := models.Injection{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.InternalTime)), float32(insulinUnits), models.UNDEFINED_READ}
 					injections = append(injections, injection)
 					if (len(injections) == batchSize) {
 						// Send the batch to be handled and restart another one
@@ -109,7 +121,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 					var duration int
 					var intensity string
 					fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
-					exercise := models.Exercise{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.EventTime, timeutils.TIMEZONE)), duration, intensity}
+					exercise := models.Exercise{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.InternalTime)), duration, intensity}
 					exercises = append(exercises, exercise)
 					if (len(exercises) == batchSize) {
 						// Send the batch to be handled and restart another one
@@ -151,7 +163,7 @@ func ConvertAsReadsArray(meterReads *list.List) (reads []models.MeterRead) {
 	reads = make([]models.MeterRead, meterReads.Len())
 	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
 		meter := e.Value.(Meter)
-		reads[i] = models.MeterRead{meter.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(meter.DisplayTime, timeutils.TIMEZONE)), meter.Value}
+		reads[i] = models.MeterRead{meter.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(meter.InternalTime)), meter.Value}
 	}
 
 	return reads

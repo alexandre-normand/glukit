@@ -10,6 +10,9 @@ import (
 	"log"
 	"models"
 	"timeutils"
+	"utils"
+	"datautils"
+	"sort"
 )
 
 func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfile models.GlukitUser) (key *datastore.Key, err error) {
@@ -22,15 +25,9 @@ func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfil
 }
 
 func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (key *datastore.Key, err error) {
-//	elementKeys := make([] *datastore.Key, len(reads))
-//	for i := range reads {
-//		//log.Printf("Prepare store for read (%s, %d, %d)", reads[i].LocalTime, reads[i].TimeValue, reads[i].Value)
-//		elementKeys[i] = datastore.NewKey(context, "MeterRead", "", int64(reads[i].TimeValue), userProfileKey)
-//	}
-
-	elementKey := datastore.NewKey(context, "MeterReadSlice", "", int64(reads[0].TimeValue), userProfileKey)
+	elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
 	log.Printf("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
-	key, error := datastore.Put(context, elementKey, models.MeterReadSlice(reads))
+	key, error := datastore.Put(context, elementKey, &models.DayOfReads{reads})
 	if error != nil {
 		sysutils.Propagate(error)
 	}
@@ -163,23 +160,39 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	}
 	lowerBound := upperBound.Add(time.Duration(-24*time.Hour))
 
-	readQuery := datastore.NewQuery("MeterReadSlice").Ancestor(key).Filter("startTime <", upperBound.Unix()).Order("startTime")
-	var readSlice models.MeterReadSlice
-	// TODO Use iterator instead and apply filtering *again* since some reads in some rows might be outside the filter
-	_, err = readQuery.GetAll(context, &readSlice)
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
-	//log.Printf("Loaded %d reads...", len(reads))
+	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
+	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
+	scanStart := lowerBound.Add(time.Duration(-24*time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24*time.Hour))
 
-	carbQuery := datastore.NewQuery("CarbIntake").Ancestor(key).Filter("timestamp >", lowerBound.Unix()).Filter("timestamp <", upperBound.Unix()).Order("timestamp")
+	log.Printf("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
+
+	readQuery := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >", scanStart.Unix()).Order("startTime")
+	var dayOfReads models.DayOfReads
+
+	iterator := readQuery.Run(context)
+	for _, err := iterator.Next(&dayOfReads); err == nil; _, err = iterator.Next(&dayOfReads) {
+		currentBatchOfReads := dayOfReads.Reads
+		filteredReads := datautils.FilterReads(currentBatchOfReads, lowerBound, upperBound)
+		reads = utils.MergeReadArrays(reads, filteredReads)
+		log.Printf("Loaded %d filtered reads from a batch of %d reads...", len(filteredReads), len(currentBatchOfReads))
+	}
+
+	// Sort again because batches are not returned strictly in order
+	sort.Sort(models.MeterReadSlice(reads))
+
+	if err != datastore.Done {
+		sysutils.Propagate(err)
+	}
+
+	carbQuery := datastore.NewQuery("CarbIntake").Ancestor(key).Filter("timestamp >=", lowerBound.Unix()).Filter("timestamp <=", upperBound.Unix()).Order("timestamp")
 	_, err = carbQuery.GetAll(context, &carbIntakes)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
 	//log.Printf("Loaded %d carbs...", len(carbIntakes))
 
-	injectionQuery := datastore.NewQuery("Injection").Ancestor(key).Filter("timestamp >", lowerBound.Unix()).Filter("timestamp <", upperBound.Unix()).Order("timestamp")
+	injectionQuery := datastore.NewQuery("Injection").Ancestor(key).Filter("timestamp >=", lowerBound.Unix()).Filter("timestamp <=", upperBound.Unix()).Order("timestamp")
 	_, err = injectionQuery.GetAll(context, &injections)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
@@ -193,5 +206,5 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	//	}
 	//	log.Printf("Loaded %d exercises...", len(exercises))
 
-	return userProfile, key, readSlice, injections, carbIntakes, nil
+	return userProfile, key, reads, injections, carbIntakes, nil
 }

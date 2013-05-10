@@ -19,8 +19,8 @@ func ParseGoogleDriveDate(value string) (timeValue time.Time, err error) {
 	return time.Parse(DRIVE_TIMEFORMAT, value)
 }
 
-func GetTimeInSeconds(timeValue string, timezoneString string) (value int64) {
-	if timeValue, err := ParseTime(timeValue, timezoneString); err == nil {
+func GetTimeInSeconds(timeValue string) (value int64) {
+	if timeValue, err := time.Parse(TIMEFORMAT, timeValue + " " + INTERNAL_TIMEZONE); err == nil {
 		return timeValue.Unix()
 	} else {
 		log.Printf("Error parsing string", err)

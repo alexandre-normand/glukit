@@ -42,9 +42,8 @@ type MeterRead struct {
 	Value     int       `json:"y" datastore:"value,noindex"`
 }
 
-// Used to model reads in a short-wide fashion. Loaders/Savers implemented in store.go
+// Used to model reads in a short-wide fashion.
 type DayOfReads struct {
-	StartTime TimeValue
 	Reads     []MeterRead
 }
 
@@ -234,49 +233,51 @@ func ExtrapolateYValueFromTime(reads []MeterRead, timeValue TimeValue) (yValue i
 	return yValue
 }
 
-func (readSlice MeterReadSlice) Load(channel <-chan datastore.Property) error {
+func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
 	var endTime time.Time
 
 	log.Printf("Trying to load reads...")
-	reads := []MeterRead(readSlice);
 	for property := range channel {
-		switch property.Name {
-		case "startTime":
+		switch columnName, columnValue := property.Name, property.Value; {
+		case columnName == "startTime":
 			startTime = property.Value.(time.Time)
 			log.Printf("Parsing block of reads with starttime: %s", startTime)
-		case "endTime":
+		case columnName == "endTime":
 			endTime = property.Value.(time.Time)
 			log.Printf("Parsed block of reads with endtime: %s", endTime)
 		default:
-			timeInSeconds, err := strconv.ParseInt(property.Name, 10, 64)
+			timeInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
 				sysutils.Propagate(err)
 			}
 
 			readTime := time.Unix(timeInSeconds, 0)
-			value := property.Value.(int)
-			localTime := timeutils.LocalTimeWithDefaultTimezone(readTime)
-			log.Printf("Loading read with info: %s, %d, %d", localTime, readTime, value)
-			read := MeterRead{localTime, TimeValue(readTime.Unix()), value}
-			reads = append(reads, read)
-		}
+			// We need to convert value to int64 and cast it as int
+			value := int(columnValue.(int64))
 
+			localTime := timeutils.LocalTimeWithDefaultTimezone(readTime)
+			//log.Printf("Loading read with info: %s, %s, %d", localTime, readTime, value)
+			read := MeterRead{localTime, TimeValue(readTime.Unix()), value}
+			dayOfReads.Reads = append(dayOfReads.Reads, read)
+		}
 	}
 
+	log.Printf("Finished loading batch of %d reads", len(dayOfReads.Reads))
 	return nil
 }
 
-func (readSlice MeterReadSlice) Save(channel chan <- datastore.Property) error {
+func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 	defer close(channel)
 
-	log.Printf("Trying to save reads...")
+	size := len(dayOfReads.Reads)
+	log.Printf("Trying to save %d reads...", size)
+
 	// Nothing to do if the slice has zero elements
-	size := readSlice.Len()
 	if size == 0 {
 		return nil
 	}
-	reads := []MeterRead(readSlice)
+	reads := dayOfReads.Reads
 	startTime := time.Unix(int64(reads[0].TimeValue), 0)
 	endTime := time.Unix(int64(reads[size - 1].TimeValue), 0)
 
@@ -297,8 +298,6 @@ func (readSlice MeterReadSlice) Save(channel chan <- datastore.Property) error {
 			Name: strconv.FormatInt(int64(reads[i].TimeValue), 10),
 			Value: int64(reads[i].Value),
 			NoIndex: true,
-			// TODO : We need the multiple to be true just because of DST change that causes duplicate timestamps. This conflict should be resolved before getting here
-			Multiple: true,
 		}
 	}
 
