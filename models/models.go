@@ -257,7 +257,7 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 			value := int(columnValue.(int64))
 
 			localTime := timeutils.LocalTimeWithDefaultTimezone(readTime)
-			//log.Printf("Loading read with info: %s, %s, %d", localTime, readTime, value)
+			//context.Infof("Loading read with info: %s, %s, %d", localTime, readTime, value)
 			read := MeterRead{localTime, TimeValue(readTime.Unix()), value}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
@@ -284,20 +284,19 @@ func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 	channel <- datastore.Property{
 		Name:  "startTime",
 		Value:  startTime,
-		NoIndex: false,
 	}
 	channel <- datastore.Property{
 		Name:  "endTime",
 		Value:  endTime,
-		NoIndex: false,
 	}
 
 	for i := range reads {
-		//log.Printf("Sending read to channel %s, %d, %d", reads[i].LocalTime, int64(reads[i].TimeValue), int64(reads[i].Value))
+		//context.Infof("Sending read to channel %s, %d, %d", reads[i].LocalTime, int64(reads[i].TimeValue), int64(reads[i].Value))
 		channel <- datastore.Property {
 			Name: strconv.FormatInt(int64(reads[i].TimeValue), 10),
 			Value: int64(reads[i].Value),
 			NoIndex: true,
+			Multiple: true,
 		}
 	}
 

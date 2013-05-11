@@ -7,7 +7,6 @@ import (
 	"appengine/datastore"
 	"time"
 	"sysutils"
-	"log"
 	"models"
 	"timeutils"
 	"utils"
@@ -26,7 +25,7 @@ func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfil
 
 func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (key *datastore.Key, err error) {
 	elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
-	log.Printf("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
+	context.Infof("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
 	key, error := datastore.Put(context, elementKey, &models.DayOfReads{reads})
 	if error != nil {
 		sysutils.Propagate(error)
@@ -40,7 +39,7 @@ func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads 
 
 	lastRead := reads[len(reads) - 1]
 	if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
-		log.Printf("Updating most recent read date to %s", lastRead.GetTime())
+		context.Infof("Updating most recent read date to %s", lastRead.GetTime())
 		userProfile.MostRecentRead = lastRead.GetTime()
 		_, err := StoreUserProfile(context, time.Now(), *userProfile)
 		if err != nil {
@@ -57,7 +56,7 @@ func StoreInjections(context appengine.Context, userProfileKey *datastore.Key, i
 		elementKeys[i] = datastore.NewKey(context, "Injection", "", int64(injections[i].TimeValue), userProfileKey)
 	}
 
-	log.Printf("Emitting a PutMulti with %d keys for all %d injections", len(elementKeys), len(injections))
+	context.Infof("Emitting a PutMulti with %d keys for all %d injections", len(elementKeys), len(injections))
 	key, error := datastore.PutMulti(context, elementKeys, injections)
 	if error != nil {
 		sysutils.Propagate(error)
@@ -72,7 +71,7 @@ func StoreCarbs(context appengine.Context, userProfileKey *datastore.Key, carbs 
 		elementKeys[i] = datastore.NewKey(context, "CarbIntake", "", int64(carbs[i].TimeValue), userProfileKey)
 	}
 
-	log.Printf("Emitting a PutMulti with %d keys for all %d carbs", len(elementKeys), len(carbs))
+	context.Infof("Emitting a PutMulti with %d keys for all %d carbs", len(elementKeys), len(carbs))
 	key, error := datastore.PutMulti(context, elementKeys, carbs)
 	if error != nil {
 		sysutils.Propagate(error)
@@ -87,7 +86,7 @@ func StoreExerciseData(context appengine.Context, userProfileKey *datastore.Key,
 		elementKeys[i] = datastore.NewKey(context, "Exercise", "", int64(exercises[i].TimeValue), userProfileKey)
 	}
 
-	log.Printf("Emitting a PutMulti with %d keys for all %d exercises", len(elementKeys), len(exercises))
+	context.Infof("Emitting a PutMulti with %d keys for all %d exercises", len(elementKeys), len(exercises))
 	key, error := datastore.PutMulti(context, elementKeys, exercises)
 	if error != nil {
 		sysutils.Propagate(error)
@@ -135,7 +134,7 @@ func GetUserKey(context appengine.Context, email string) (key *datastore.Key) {
 
 func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile *models.GlukitUser, err error) {
 	userProfile = new(models.GlukitUser)
-	log.Printf("Fetching user profile for key: %s", key.String())
+	context.Infof("Fetching user profile for key: %s", key.String())
 	error := datastore.Get(context, key, userProfile)
 	if error != nil {
 		return nil, error
@@ -165,7 +164,7 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	scanStart := lowerBound.Add(time.Duration(-24*time.Hour))
 	scanEnd := upperBound.Add(time.Duration(24*time.Hour))
 
-	log.Printf("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
+	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	readQuery := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >", scanStart.Unix()).Order("startTime")
 	var dayOfReads models.DayOfReads
@@ -175,7 +174,7 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 		currentBatchOfReads := dayOfReads.Reads
 		filteredReads := datautils.FilterReads(currentBatchOfReads, lowerBound, upperBound)
 		reads = utils.MergeReadArrays(reads, filteredReads)
-		log.Printf("Loaded %d filtered reads from a batch of %d reads...", len(filteredReads), len(currentBatchOfReads))
+		context.Infof("Loaded %d filtered reads from a batch of %d reads...", len(filteredReads), len(currentBatchOfReads))
 	}
 
 	// Sort again because batches are not returned strictly in order
@@ -190,21 +189,21 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
-	//log.Printf("Loaded %d carbs...", len(carbIntakes))
+	//context.Infof("Loaded %d carbs...", len(carbIntakes))
 
 	injectionQuery := datastore.NewQuery("Injection").Ancestor(key).Filter("timestamp >=", lowerBound.Unix()).Filter("timestamp <=", upperBound.Unix()).Order("timestamp")
 	_, err = injectionQuery.GetAll(context, &injections)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
-	//log.Printf("Loaded %d injections...", len(injections))
+	//context.Infof("Loaded %d injections...", len(injections))
 
 	//	exercisesQuery := datastore.NewQuery("Exercise").Ancestor(key).Filter("timestamp >", lowerBound.Unix()).Filter("timestamp <", upperBound.Unix()).Order("-timestamp")
 	//	_, err = exercisesQuery.GetAll(context, &exercises)
 	//	if err != nil {
 	//		return nil, nil, nil, nil, nil, err
 	//	}
-	//	log.Printf("Loaded %d exercises...", len(exercises))
+	//	context.Infof("Loaded %d exercises...", len(exercises))
 
 	return userProfile, key, reads, injections, carbIntakes, nil
 }

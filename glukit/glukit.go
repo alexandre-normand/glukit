@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"fmt"
 	"time"
-	"log"
 	"encoding/json"
 	"html/template"
 	"goauth2/oauth"
@@ -87,6 +86,8 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
+	context.Debugf("Called back")
+
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
 	t := &oauth.Transport{
@@ -102,7 +103,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 
 	readData, key, _, _, _, err := store.GetUserData(context, user.Email)
 	if err == datastore.ErrNoSuchEntity {
-		log.Printf("No data found for user [%s], creating it", user.Email)
+		context.Infof("No data found for user [%s], creating it", user.Email)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
 		if err != nil {
@@ -112,11 +113,13 @@ func callback(w http.ResponseWriter, request *http.Request) {
 		sysutils.Propagate(err)
 	}
 
+	context.Debugf("Found existing user: %s", user.Email)
 	lastUpdate := time.Unix(0, 0)
 	if readData != nil {
 		lastUpdate = readData.LastUpdated
 	}
 
+	context.Debugf("Key %s, lastUpdate: %s", key, lastUpdate)
 	files, err := fetcher.SearchDataFiles(t.Client(), lastUpdate)
 	if err != nil {
 		sysutils.Propagate(err)
@@ -124,16 +127,16 @@ func callback(w http.ResponseWriter, request *http.Request) {
 
 	switch {
 	case len(files) == 0 && readData == nil:
-		log.Printf("No files found and user [%s] has no previous data stored", user.Email)
+		context.Infof("No files found and user [%s] has no previous data stored", user.Email)
 		http.Redirect(w, request, "/nodata", 303)
 	case len(files) == 0 && readData != nil:
-		log.Printf("No new or updated data found for existing user [%s]", user.Email)
+		context.Infof("No new or updated data found for existing user [%s]", user.Email)
 		http.Redirect(w, request, "/graph", 303)
 	case len(files) > 0:
-		log.Printf("Found new data files for user [%s], downloading and storing...", user.Email)
+		context.Infof("Found new data files for user [%s], downloading and storing...", user.Email)
 		processData(t, files, context, key)
 
-		log.Printf("Storing user data with key: %s", key.String())
+		context.Infof("Storing user data with key: %s", key.String())
 
 		http.Redirect(w, request, "/graph", 303)
 	}
@@ -145,7 +148,7 @@ func processData(t http.RoundTripper, files []*drive.File, context appengine.Con
 		// TODO: Make this stream the content
 		content, err := fetcher.DownloadFile(t, files[i])
 		if err != nil {
-			log.Printf("Error reading file %s, skipping...", files[i].OriginalFilename)
+			context.Infof("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
 			parser.ParseContent(strings.NewReader(content), 500, context, userProfileKey, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 		}
@@ -163,7 +166,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	renderVariables := &RenderVariables{DataPath: "/json.demo"}
 	_, key, _, _, _, err := store.GetUserData(context, "demo@glukit.com")
 	if err == datastore.ErrNoSuchEntity {
-		log.Printf("No data found for demo user [%s], creating it", "demo@glukit.com")
+		context.Infof("No data found for demo user [%s], creating it", "demo@glukit.com")
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{"demo@glukit.com", "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
 		if err != nil {
@@ -225,9 +228,9 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 		sysutils.Propagate(err)
 	}
 
-	log.Printf("Got %d reads", len(meterReads))
+	context.Infof("Got %d reads", len(meterReads))
 	//meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
-	//log.Printf("Got %d reads for the last day", len(meterReads))
+	//context.Infof("Got %d reads for the last day", len(meterReads))
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]DataSeries, 4)

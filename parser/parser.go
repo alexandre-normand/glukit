@@ -3,7 +3,6 @@ package parser
 import (
 	"encoding/xml"
 	"io"
-	"log"
 	"container/list"
 	"appengine/datastore"
 	"appengine"
@@ -156,7 +155,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 		// Send the batch to be handled and restart another one
 		exerciseBatchHandler(context, parentKey, exercises)
 	}
-	log.Printf("Done parsing and storing all data")
+	context.Infof("Done parsing and storing all data")
 }
 
 func ConvertAsReadsArray(meterReads *list.List) (reads []models.MeterRead) {

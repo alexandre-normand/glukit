@@ -4,6 +4,10 @@ runtime: go
 api_version: go1
 
 handlers:
+- url: /favicon.ico
+  static_files: images/Glukit.ico
+  upload: images/Glukit.ico
+
 - url: /js
   static_dir: js
 
