@@ -219,7 +219,6 @@ func nodata(w http.ResponseWriter, request *http.Request) {
 func demoContent(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
@@ -251,7 +250,6 @@ func content(writer http.ResponseWriter, request *http.Request) {
 		sysutils.Propagate(err)
 	}
 
-	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
@@ -267,7 +265,6 @@ func content(writer http.ResponseWriter, request *http.Request) {
 }
 
 func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []models.MeterRead) {
-	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
@@ -301,7 +298,6 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 func demoTracking(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	writer.WriteHeader(200)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 

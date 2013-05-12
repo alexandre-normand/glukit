@@ -296,7 +296,6 @@ func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 			Name: strconv.FormatInt(int64(reads[i].TimeValue), 10),
 			Value: int64(reads[i].Value),
 			NoIndex: true,
-			Multiple: true,
 		}
 	}
 
