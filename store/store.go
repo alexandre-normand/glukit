@@ -9,9 +9,7 @@ import (
 	"sysutils"
 	"models"
 	"timeutils"
-	"utils"
 	"datautils"
-	"sort"
 )
 
 func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfile models.GlukitUser) (key *datastore.Key, err error) {
@@ -172,19 +170,18 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 
 	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
-	readQuery := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >", scanStart.Unix()).Order("startTime")
+	readQuery := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
 	var dayOfReads models.DayOfReads
 
 	iterator := readQuery.Run(context)
+	count := 0
 	for _, err := iterator.Next(&dayOfReads); err == nil; _, err = iterator.Next(&dayOfReads) {
-		currentBatchOfReads := dayOfReads.Reads
-		filteredReads := datautils.FilterReads(currentBatchOfReads, lowerBound, upperBound)
-		reads = utils.MergeReadArrays(reads, filteredReads)
-		context.Infof("Loaded %d filtered reads from a batch of %d reads...", len(filteredReads), len(currentBatchOfReads))
+		batchSize := len(dayOfReads.Reads) - count
+		context.Infof("Loaded batch of %d reads...", batchSize)
+		count = len(dayOfReads.Reads)
 	}
 
-	// Sort again because batches are not returned strictly in order
-	sort.Sort(models.MeterReadSlice(reads))
+	filteredReads := datautils.FilterReads(dayOfReads.Reads, lowerBound, upperBound)
 
 	if err != datastore.Done {
 		sysutils.Propagate(err)
@@ -211,5 +208,5 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	//	}
 	//	context.Infof("Loaded %d exercises...", len(exercises))
 
-	return userProfile, key, reads, injections, carbIntakes, nil
+	return userProfile, key, filteredReads, injections, carbIntakes, nil
 }

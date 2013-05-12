@@ -263,7 +263,7 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 		}
 	}
 
-	log.Printf("Finished loading batch of %d reads", len(dayOfReads.Reads))
+	log.Printf("Loaded total of %d reads", len(dayOfReads.Reads))
 	return nil
 }
 
