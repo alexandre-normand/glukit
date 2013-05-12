@@ -5,6 +5,7 @@ import (
 	"io"
 	"container/list"
 	"appengine/datastore"
+	"appengine/delay"
 	"appengine"
 	"models"
 	"sysutils"
@@ -46,7 +47,7 @@ type Event struct {
 //	return ParseContent(r)
 //}
 
-func ParseContent(reader io.Reader, batchSize int, context appengine.Context, parentKey *datastore.Key, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (*datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) {
+func ParseContent(reader io.Reader, batchSize int, context appengine.Context, parentKey *datastore.Key, storeReadsFunction *delay.Function, carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) {
 	decoder := xml.NewDecoder(reader)
 	reads := make([]models.MeterRead,0, batchSize)
 	injections := make([]models.Injection,0, batchSize)
@@ -83,7 +84,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 					// have the same day value while being months apart.
 					if meterRead.GetTime().Day() != previousRead.GetTime().Day() || len(reads) >= batchSize {
 						// Send the batch to be handled and restart another one
-						readsBatchHandler(context, parentKey, reads)
+						storeReadsFunction.Call(context, parentKey, reads)
 						reads = make([]models.MeterRead, 0, batchSize)
 					}
 
@@ -138,7 +139,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 	// Run the final batch for each
 	if (len(reads) > 0) {
 		// Send the batch to be handled and restart another one
-		readsBatchHandler(context, parentKey, reads)
+		storeReadsFunction.Call(context, parentKey, reads)
 	}
 
 	if (len(injections) > 0) {

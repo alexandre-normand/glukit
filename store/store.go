@@ -24,6 +24,12 @@ func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfil
 }
 
 func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (key *datastore.Key, err error) {
+//	daytime := int64(reads[0].TimeValue)
+//	if daytime == int64(1363330882) {
+//		context.Debugf("Skipping day of reads: %d", daytime)
+//		return key, nil
+//	}
+
 	elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
 	context.Infof("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
 	key, error := datastore.Put(context, elementKey, &models.DayOfReads{reads})

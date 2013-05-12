@@ -22,24 +22,25 @@ import (
 	"bufio"
 	"os"
 	"sysutils"
+	"appengine/delay"
 	stat "github.com/grd/stat"
 )
 
 // Appengine
-//const (
-//	// Created at http://code.google.com/apis/console, these identify
-//	// our app for the OAuth protocol.
-//	CLIENT_ID     = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
-//	CLIENT_SECRET = "IYbOW0Aha34xMqTaPVO-_ar5"
-//)
-
-// Local
 const (
 	// Created at http://code.google.com/apis/console, these identify
 	// our app for the OAuth protocol.
-	CLIENT_ID     = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
-	CLIENT_SECRET = "U3KV6G8sYqxa-qtjoxRnk6tX"
+	CLIENT_ID     = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
+	CLIENT_SECRET = "IYbOW0Aha34xMqTaPVO-_ar5"
 )
+
+// Local
+//const (
+//	// Created at http://code.google.com/apis/console, these identify
+//	// our app for the OAuth protocol.
+//	CLIENT_ID     = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
+//	CLIENT_SECRET = "U3KV6G8sYqxa-qtjoxRnk6tX"
+//)
 
 // config returns the configuration information for OAuth and Drive.
 func config(host string) *oauth.Config {
@@ -66,6 +67,8 @@ type RenderVariables struct {
 var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
 var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
+
+var storeReadsFunction = delay.Func("storeBatch", store.StoreReads)
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
@@ -150,7 +153,7 @@ func processData(t http.RoundTripper, files []*drive.File, context appengine.Con
 		if err != nil {
 			context.Infof("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
-			parser.ParseContent(strings.NewReader(content), 500, context, userProfileKey, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+			parser.ParseContent(strings.NewReader(content), 500, context, userProfileKey, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 		}
 	}
 }
@@ -185,7 +188,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// make a read buffer
 		reader := bufio.NewReader(fi)
 
-		parser.ParseContent(reader, 500, context, key, store.StoreReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+		parser.ParseContent(reader, 500, context, key, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 	} else {
 		sysutils.Propagate(err)
 	}
