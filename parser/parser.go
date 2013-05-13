@@ -54,7 +54,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 	carbIntakes := make([]models.CarbIntake,0, batchSize)
 	exercises := make([]models.Exercise,0, batchSize)
 
-	var previousRead models.MeterRead
+	var lastRead models.MeterRead
 	for {
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
@@ -76,20 +76,20 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 					// This should only happen once as we start parsing, we initialize the previous day to the current
 					// and the rest of the logic should gracefully handle this case
 					if (len(reads) == 0) {
-						previousRead = meterRead
+						lastRead = meterRead
 					}
 
 					// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
 					// read read. This assumes that we will never get a gap big enough that two consecutive reads could
 					// have the same day value while being months apart.
-					if meterRead.GetTime().Day() != previousRead.GetTime().Day() || len(reads) >= batchSize {
+					if meterRead.GetTime().Day() != lastRead.GetTime().Day() || len(reads) >= batchSize {
 						// Send the batch to be handled and restart another one
 						storeReadsFunction.Call(context, parentKey, reads)
 						reads = make([]models.MeterRead, 0, batchSize)
 					}
 
 					reads = append(reads, meterRead)
-					previousRead = meterRead
+					lastRead = meterRead
 				}
 			case "Event":
 				var event Event
@@ -156,6 +156,7 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 		// Send the batch to be handled and restart another one
 		exerciseBatchHandler(context, parentKey, exercises)
 	}
+
 	context.Infof("Done parsing and storing all data")
 }
 

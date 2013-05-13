@@ -22,36 +22,40 @@ func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfil
 }
 
 func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (key *datastore.Key, err error) {
-//	daytime := int64(reads[0].TimeValue)
-//	if daytime == int64(1363330882) {
-//		context.Debugf("Skipping day of reads: %d", daytime)
-//		return key, nil
-//	}
+//	if int64(reads[0].TimeValue) > 1364792882 {
+//		context.Infof("Skipping set of reads: [%s]", reads)
+//	} else {
 
-	elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
-	context.Infof("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
-	key, error := datastore.Put(context, elementKey, &models.DayOfReads{reads})
-	if error != nil {
-		sysutils.Propagate(error)
-	}
-
-	// Get the time of the batch's last read and update the most recent read timestamp if necessary
-	userProfile, err := GetUserProfile(context, userProfileKey)
-	if err != nil {
-		sysutils.Propagate(err)
-	}
-
-	lastRead := reads[len(reads) - 1]
-	if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
-		context.Infof("Updating most recent read date to %s", lastRead.GetTime())
-		userProfile.MostRecentRead = lastRead.GetTime()
-		_, err := StoreUserProfile(context, time.Now(), *userProfile)
-		if err != nil {
-			sysutils.Propagate(err)
+		elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
+		context.Debugf("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
+		context.Debugf("Putting [%s]", reads)
+		key, error := datastore.Put(context, elementKey, &models.DayOfReads{reads})
+		if error != nil {
+			context.Criticalf("Error emitting put with key [%s] for user profile [%s]: %v", elementKey, userProfileKey, error)
+			return nil, err
 		}
-	}
 
-	return key, nil
+		// Get the time of the batch's last read and update the most recent read timestamp if necessary
+		userProfile, err := GetUserProfile(context, userProfileKey)
+		if err != nil {
+			context.Criticalf("Error reading user profile [%s] for its most recent read value: %v", userProfileKey, err)
+			return nil, err
+		}
+
+		lastRead := reads[len(reads) - 1]
+		if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
+			context.Infof("Updating most recent read date to %s", lastRead.GetTime())
+			userProfile.MostRecentRead = lastRead.GetTime()
+			_, err := StoreUserProfile(context, time.Now(), *userProfile)
+			if err != nil {
+				context.Criticalf("Error storing updated user profile [%s] with most recent read value of %s: %v", userProfileKey, userProfile.MostRecentRead, err)
+				return nil, err
+			}
+		}
+
+		return key, nil
+//	}
+//	return nil, nil
 }
 
 func StoreInjections(context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) (key[] *datastore.Key, err error) {
@@ -63,7 +67,8 @@ func StoreInjections(context appengine.Context, userProfileKey *datastore.Key, i
 	context.Infof("Emitting a PutMulti with %d keys for all %d injections", len(elementKeys), len(injections))
 	key, error := datastore.PutMulti(context, elementKeys, injections)
 	if error != nil {
-		sysutils.Propagate(error)
+		context.Criticalf("Error writing %d injections with keys [%s]", len(elementKeys), elementKeys)
+		return nil, error
 	}
 
 	return key, nil
@@ -78,7 +83,8 @@ func StoreCarbs(context appengine.Context, userProfileKey *datastore.Key, carbs 
 	context.Infof("Emitting a PutMulti with %d keys for all %d carbs", len(elementKeys), len(carbs))
 	key, error := datastore.PutMulti(context, elementKeys, carbs)
 	if error != nil {
-		sysutils.Propagate(error)
+		context.Criticalf("Error writing %d carbs with keys [%s]", len(elementKeys), elementKeys)
+		return nil, error
 	}
 
 	return key, nil
@@ -93,7 +99,8 @@ func StoreExerciseData(context appengine.Context, userProfileKey *datastore.Key,
 	context.Infof("Emitting a PutMulti with %d keys for all %d exercises", len(elementKeys), len(exercises))
 	key, error := datastore.PutMulti(context, elementKeys, exercises)
 	if error != nil {
-		sysutils.Propagate(error)
+		context.Criticalf("Error writing %d exercises with keys [%s]", len(elementKeys), elementKeys)
+		return nil, error
 	}
 
 	return key, nil
@@ -192,14 +199,14 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
-	//context.Infof("Loaded %d carbs...", len(carbIntakes))
+	context.Infof("Loaded %d carbs...", len(carbIntakes))
 
 	injectionQuery := datastore.NewQuery("Injection").Ancestor(key).Filter("timestamp >=", lowerBound.Unix()).Filter("timestamp <=", upperBound.Unix()).Order("timestamp")
 	_, err = injectionQuery.GetAll(context, &injections)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
-	//context.Infof("Loaded %d injections...", len(injections))
+	context.Infof("Loaded %d injections...", len(injections))
 
 	//	exercisesQuery := datastore.NewQuery("Exercise").Ancestor(key).Filter("timestamp >", lowerBound.Unix()).Filter("timestamp <", upperBound.Unix()).Order("-timestamp")
 	//	_, err = exercisesQuery.GetAll(context, &exercises)
