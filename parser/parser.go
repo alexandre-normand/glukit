@@ -5,6 +5,7 @@ import (
 	"io"
 	"container/list"
 	"appengine/datastore"
+	"appengine/taskqueue"
 	"appengine/delay"
 	"appengine"
 	"models"
@@ -84,8 +85,12 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 					// have the same day value while being months apart.
 					if meterRead.GetTime().Day() != lastRead.GetTime().Day() || len(reads) >= batchSize {
 						// Send the batch to be handled and restart another one
-						storeReadsFunction.Call(context, parentKey, reads)
-						reads = make([]models.MeterRead, 0, batchSize)
+						task, err := storeReadsFunction.Task(parentKey, reads)
+						if (err != nil) {
+							sysutils.Propagate(err)
+						}
+						taskqueue.Add(context, task, "store")
+						reads = make([]models.MeterRead,0, batchSize)
 					}
 
 					reads = append(reads, meterRead)
@@ -139,7 +144,8 @@ func ParseContent(reader io.Reader, batchSize int, context appengine.Context, pa
 	// Run the final batch for each
 	if (len(reads) > 0) {
 		// Send the batch to be handled and restart another one
-		storeReadsFunction.Call(context, parentKey, reads)
+		task, _ := storeReadsFunction.Task(parentKey, reads)
+		taskqueue.Add(context, task, "store")
 	}
 
 	if (len(injections) > 0) {
