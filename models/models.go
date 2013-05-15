@@ -247,12 +247,12 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 			endTime = property.Value.(time.Time)
 			log.Printf("Parsed block of reads with endtime: %s", endTime)
 		default:
-			timeInSeconds, err := strconv.ParseInt(columnName, 10, 64)
+			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
 				sysutils.Propagate(err)
 			}
 
-			readTime := time.Unix(timeInSeconds, 0)
+			readTime := time.Unix(startTime.Unix() + offsetInSeconds, 0)
 			// We need to convert value to int64 and cast it as int
 			value := int(columnValue.(int64))
 
@@ -278,8 +278,10 @@ func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 		return nil
 	}
 	reads := dayOfReads.Reads
-	startTime := time.Unix(int64(reads[0].TimeValue), 0)
-	endTime := time.Unix(int64(reads[size - 1].TimeValue), 0)
+	startTimestamp := int64(reads[0].TimeValue)
+	startTime := time.Unix(startTimestamp, 0)
+	endTimestamp := int64(reads[size - 1].TimeValue)
+	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -292,8 +294,10 @@ func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 
 	for i := range reads {
 		//context.Infof("Sending read to channel %s, %d, %d", reads[i].LocalTime, int64(reads[i].TimeValue), int64(reads[i].Value))
+		readTimestamp := int64(reads[i].TimeValue)
+		readOffset := readTimestamp - startTimestamp
 		channel <- datastore.Property {
-			Name: strconv.FormatInt(int64(reads[i].TimeValue), 10),
+			Name: strconv.FormatInt(readOffset, 10),
 			Value: int64(reads[i].Value),
 			NoIndex: true,
 		}
