@@ -29,9 +29,9 @@ func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads 
 		elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
 		context.Debugf("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
 		context.Debugf("Putting [%s]", reads)
-		key, error := datastore.Put(context, elementKey, &models.DayOfReads{reads})
-		if error != nil {
-			context.Criticalf("Error emitting put with key [%s] for user profile [%s]: %v", elementKey, userProfileKey, error)
+		key, err = datastore.Put(context, elementKey, &models.DayOfReads{reads})
+		if err != nil {
+			context.Criticalf("Error emitting put with key [%s] for user profile [%s]: %v", elementKey, userProfileKey, err)
 			return nil, err
 		}
 
