@@ -9,6 +9,7 @@
     	<script src="js/jquery-2.0.0.min.js"></script>
 
     	<script src="js/rickshaw.js"></script>
+        <script type="text/javascript" src="/_ah/channel/jsapi"></script>
 
         <style>
         #chart_container {
@@ -190,6 +191,21 @@ var graph = new Rickshaw.Graph.Ajax( {
     distributionGraph.render();
     });
 </script>
-
+  <script>
+      channel = new goog.appengine.Channel('{{.ChannelToken}}');
+      socket = channel.open();
+      socket.onopen = function() {
+        console.log("connected");
+      };
+      socket.onmessage = function() {
+        console.log("onMessage");
+      };
+      socket.onerror = function() {
+        console.log("error");
+      };
+      socket.onclose = function() {
+        console.log("close");
+      };
+    </script>
   </body>
 </html>
