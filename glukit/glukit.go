@@ -12,6 +12,7 @@ import (
 	"appengine/user"
 	"appengine/urlfetch"
 	"appengine/datastore"
+	"appengine/channel"
 	"models"
 	"drive"
 	"store"
@@ -61,7 +62,8 @@ type DataSeries struct {
 }
 
 type RenderVariables struct {
-	DataPath string
+	DataPath     string
+	ChannelToken string
 }
 
 var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
@@ -153,7 +155,7 @@ func processData(t http.RoundTripper, files []*drive.File, context appengine.Con
 		if err != nil {
 			context.Infof("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
-			parser.ParseContent(strings.NewReader(content), 500, context, userProfileKey, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+			parser.ParseContent(context, strings.NewReader(content), 500, userProfileKey, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 		}
 	}
 }
@@ -166,7 +168,6 @@ func updateData(w http.ResponseWriter, r *http.Request) {
 func renderDemo(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	renderVariables := &RenderVariables{DataPath: "/json.demo"}
 	_, key, _, _, _, err := store.GetUserData(context, "demo@glukit.com")
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for demo user [%s], creating it", "demo@glukit.com")
@@ -188,21 +189,33 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// make a read buffer
 		reader := bufio.NewReader(fi)
 
-		parser.ParseContent(reader, 500, context, key, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+		parser.ParseContent(context, reader, 500, key, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 	} else {
 		sysutils.Propagate(err)
 	}
 
-	render(w, request, renderVariables)
+	render("demo@glukit.com", "/json.demo", w, request)
 }
 
-func renderRealUser(w http.ResponseWriter, r *http.Request) {
-	renderVariables := &RenderVariables{DataPath: "/json"}
-	render(w, r, renderVariables)
+func renderRealUser(w http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+	render(user.Email, "/json", w, request)
 }
 
-func render(w http.ResponseWriter, request *http.Request, renderVariables *RenderVariables) {
+func render(email string, datapath string, w http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	token, err := channel.Create(context, email)
+	if err != nil {
+		context.Criticalf("Error creating channel for user [%s]", email)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	renderVariables := &RenderVariables{DataPath: datapath, ChannelToken: token}
+
 	if err := graphTemplate.Execute(w, renderVariables); err != nil {
+		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -231,8 +244,6 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	context.Infof("Got %d reads", len(meterReads))
-	//meterReads, injections, carbIntakes = datautils.GetLastDayOfData(meterReads, injections, carbIntakes)
-	//context.Infof("Got %d reads for the last day", len(meterReads))
 
 	enc := json.NewEncoder(writer)
 	individuals := make([]DataSeries, 4)
