@@ -17,7 +17,6 @@ import (
 	"drive"
 	"store"
 	"fetcher"
-	"strings"
 	"sort"
 	"datautils"
 	"bufio"
@@ -151,11 +150,12 @@ func callback(w http.ResponseWriter, request *http.Request) {
 func processData(t http.RoundTripper, files []*drive.File, context appengine.Context, userProfileKey *datastore.Key) {
 	for i := range files {
 		// TODO: Make this stream the content
-		content, err := fetcher.DownloadFile(t, files[i])
+		reader, err := fetcher.GetFileReader(t, files[i])
 		if err != nil {
 			context.Infof("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
-			parser.ParseContent(context, strings.NewReader(content), 500, userProfileKey, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+			parser.ParseContent(context, reader, 500, userProfileKey, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+			reader.Close()
 		}
 	}
 }

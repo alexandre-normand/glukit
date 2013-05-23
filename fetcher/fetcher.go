@@ -6,9 +6,9 @@ import (
 	"log"
 	"drive"
 	"strings"
-	"io/ioutil"
 	"time"
 	"timeutils"
+	"io"
 )
 
 func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.File, err error) {
@@ -37,30 +37,25 @@ func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.F
 	return files, nil
 }
 
-func DownloadFile(client http.RoundTripper, file *drive.File) (string, error) {
+// Caller should call Close() when done
+func GetFileReader(client http.RoundTripper, file *drive.File) (reader io.ReadCloser, err error) {
 	// t parameter should use an oauth.Transport
 	downloadUrl := file.DownloadUrl
 	if downloadUrl == "" {
 		// If there is no downloadUrl, there is no body
 		log.Printf("An error occurred: File is not downloadable")
-		return "", nil
+		return nil, nil
 	}
 	req, err := http.NewRequest("GET", downloadUrl, nil)
 	if err != nil {
 		fmt.Printf("An error occurred: %v\n", err)
-		return "", err
+		return nil, err
 	}
 	resp, err := client.RoundTrip(req)
-	// Make sure we close the Body later
-	defer resp.Body.Close()
 	if err != nil {
 		fmt.Printf("An error occurred: %v\n", err)
-		return "", err
+		return nil, err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("An error occurred: %v\n", err)
-		return "", err
-	}
-	return string(body), nil
+
+	return resp.Body, nil
 }
