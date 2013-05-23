@@ -29,25 +29,6 @@ type Event struct {
 	Description  string `xml:"Decription,attr"`
 }
 
-// <Event InternalTime="2013-04-02 03:56:19" DisplayTime="2013-04-01 20:55:46" EventTime="2013-04-01 20:55:00"
-//               EventType="Carbs" Decription="Carbs 8 grams"/>
-
-//func Parse(filepath string) (reads []models.MeterRead, carbIntakes []models.CarbIntake, exercises []models.Exercise, injections []models.Injection) {
-//	// open input file
-//	fi, err := os.Open(filepath)
-//	if err != nil { panic(err) }
-//	// close fi on exit and check for its returned error
-//	defer func() {
-//		if fi.Close() != nil {
-//			panic(err)
-//		}
-//	}()
-//	// make a read buffer
-//	r := bufio.NewReader(fi)
-//
-//	return ParseContent(r)
-//}
-
 func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, storeReadsFunction *delay.Function, carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) {
 	decoder := xml.NewDecoder(reader)
 	reads := make([]models.MeterRead,0, batchSize)
@@ -60,8 +41,10 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
 		if t == nil {
+			context.Debugf("finished reading file")
 			break
 		}
+
 		// Inspect the type of the token just read.
 		switch se := t.(type) {
 		case xml.StartElement:
