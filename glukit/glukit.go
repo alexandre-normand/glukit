@@ -69,7 +69,7 @@ var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
 var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
-var storeReadsFunction = delay.Func("storeBatch", store.StoreReads)
+var processFile = delay.Func("processFile", processData)
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
@@ -154,7 +154,8 @@ func processData(t http.RoundTripper, files []*drive.File, context appengine.Con
 		if err != nil {
 			context.Infof("Error reading file %s, skipping...", files[i].OriginalFilename)
 		} else {
-			parser.ParseContent(context, reader, 500, userProfileKey, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+			lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+			store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: files[i].Id, Md5Checksum: files[i].Md5Checksum, LastDataProcessed: lastReadTime})
 			reader.Close()
 		}
 	}
@@ -189,7 +190,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// make a read buffer
 		reader := bufio.NewReader(fi)
 
-		parser.ParseContent(context, reader, 500, key, storeReadsFunction, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+		parser.ParseContent(context, reader, 500, key, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 	} else {
 		sysutils.Propagate(err)
 	}

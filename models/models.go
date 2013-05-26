@@ -69,6 +69,12 @@ type Exercise struct {
 	Intensity         string      `json:"intensity" datastore:"intensity,noindex"`
 }
 
+type FileImportLog struct {
+	Id                string
+	Md5Checksum       string
+	LastDataProcessed time.Time
+}
+
 type GlukitUser struct {
 	Email              string
 	FirstName          string

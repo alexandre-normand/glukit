@@ -21,41 +21,71 @@ func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfil
 	return key, nil
 }
 
+func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []models.DayOfReads) (keys []*datastore.Key, err error) {
+	context.Infof("Called StoreDaysOfReads")
+	elementKeys := make([] *datastore.Key, len(daysOfReads))
+	for i := range daysOfReads {
+		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", int64(daysOfReads[i].Reads[0].TimeValue), userProfileKey)
+	}
+
+	context.Infof("Emitting a PutMulti with %d keys for all %d days of reads", len(elementKeys), len(daysOfReads))
+	keys, error := datastore.PutMulti(context, elementKeys, daysOfReads)
+	if error != nil {
+		context.Criticalf("Error writing %d days of reads with keys [%s]", len(elementKeys), elementKeys)
+		return nil, error
+	}
+
+	// Get the time of the batch's last read and update the most recent read timestamp if necessary
+	userProfile, err := GetUserProfile(context, userProfileKey)
+	if err != nil {
+		context.Criticalf("Error reading user profile [%s] for its most recent read value: %v", userProfileKey, err)
+		return nil, err
+	}
+
+	lastDayOfRead := daysOfReads[len(daysOfReads) - 1]
+	lastRead := lastDayOfRead.Reads[len(lastDayOfRead.Reads) - 1]
+	if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
+		context.Infof("Updating most recent read date to %s", lastRead.GetTime())
+		userProfile.MostRecentRead = lastRead.GetTime()
+		_, err := StoreUserProfile(context, time.Now(), *userProfile)
+		if err != nil {
+			context.Criticalf("Error storing updated user profile [%s] with most recent read value of %s: %v", userProfileKey, userProfile.MostRecentRead, err)
+			return nil, err
+		}
+	}
+
+	return elementKeys, nil
+}
+
 func StoreReads(context appengine.Context, userProfileKey *datastore.Key, reads []models.MeterRead) (key *datastore.Key, err error) {
-//	if int64(reads[0].TimeValue) > 1364792882 {
-//		context.Infof("Skipping set of reads: [%s]", reads)
-//	} else {
+	elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
+	context.Debugf("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
+	context.Debugf("Putting [%s]", reads)
+	key, err = datastore.Put(context, elementKey, &models.DayOfReads{reads})
+	if err != nil {
+		context.Criticalf("Error emitting put with key [%s] for user profile [%s]: %v", elementKey, userProfileKey, err)
+		return nil, err
+	}
 
-		elementKey := datastore.NewKey(context, "DayOfReads", "", int64(reads[0].TimeValue), userProfileKey)
-		context.Debugf("Emitting a Put with %s key with all %d reads", elementKey, len(reads))
-		context.Debugf("Putting [%s]", reads)
-		key, err = datastore.Put(context, elementKey, &models.DayOfReads{reads})
+	// Get the time of the batch's last read and update the most recent read timestamp if necessary
+	userProfile, err := GetUserProfile(context, userProfileKey)
+	if err != nil {
+		context.Criticalf("Error reading user profile [%s] for its most recent read value: %v", userProfileKey, err)
+		return nil, err
+	}
+
+	lastRead := reads[len(reads) - 1]
+	if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
+		context.Infof("Updating most recent read date to %s", lastRead.GetTime())
+		userProfile.MostRecentRead = lastRead.GetTime()
+		_, err := StoreUserProfile(context, time.Now(), *userProfile)
 		if err != nil {
-			context.Criticalf("Error emitting put with key [%s] for user profile [%s]: %v", elementKey, userProfileKey, err)
+			context.Criticalf("Error storing updated user profile [%s] with most recent read value of %s: %v", userProfileKey, userProfile.MostRecentRead, err)
 			return nil, err
 		}
+	}
 
-		// Get the time of the batch's last read and update the most recent read timestamp if necessary
-		userProfile, err := GetUserProfile(context, userProfileKey)
-		if err != nil {
-			context.Criticalf("Error reading user profile [%s] for its most recent read value: %v", userProfileKey, err)
-			return nil, err
-		}
-
-		lastRead := reads[len(reads) - 1]
-		if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
-			context.Infof("Updating most recent read date to %s", lastRead.GetTime())
-			userProfile.MostRecentRead = lastRead.GetTime()
-			_, err := StoreUserProfile(context, time.Now(), *userProfile)
-			if err != nil {
-				context.Criticalf("Error storing updated user profile [%s] with most recent read value of %s: %v", userProfileKey, userProfile.MostRecentRead, err)
-				return nil, err
-			}
-		}
-
-		return key, nil
-//	}
-//	return nil, nil
+	return key, nil
 }
 
 func StoreInjections(context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) (key[] *datastore.Key, err error) {
@@ -105,6 +135,20 @@ func StoreExerciseData(context appengine.Context, userProfileKey *datastore.Key,
 
 	return key, nil
 }
+
+func LogFileImport(context appengine.Context, userProfileKey *datastore.Key, fileImport models.FileImportLog) (key *datastore.Key, err error) {
+	key = datastore.NewKey(context, "FileImportLog", fileImport.Id, 0, userProfileKey)
+
+	context.Infof("Emitting a Put for file import log with key [%s] for file id [%s]", key, fileImport.Id)
+	key, err = datastore.Put(context, key, &fileImport)
+	if err != nil {
+		context.Criticalf("Error storing file import log with key [%s] for file id [%s]: %v", key, fileImport.Id, err)
+		return nil, err
+	}
+
+	return key, nil
+}
+
 
 func FetchReadsBlob(context appengine.Context, blobKey appengine.BlobKey) (reads []models.MeterRead, err error) {
 	reader := blobstore.NewReader(context, blobKey)
