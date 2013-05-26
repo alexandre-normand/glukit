@@ -25,7 +25,7 @@ func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.F
 			for i := range filelist.Items {
 				file := filelist.Items[i]
 				if strings.HasSuffix(file.OriginalFilename, ".xml") {
-					log.Printf("Found match: %s\n", file)
+					log.Printf("Found match with id [%s] and original filename [%s]\n", file.Id, file.OriginalFilename)
 					files = append(files, file)
 				} else {
 					log.Printf("Skipping search result item: %s\n", file)
