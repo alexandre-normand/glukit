@@ -13,6 +13,7 @@ import (
 	"appengine/urlfetch"
 	"appengine/datastore"
 	"appengine/channel"
+	"appengine/taskqueue"
 	"models"
 	"drive"
 	"store"
@@ -69,7 +70,7 @@ var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
 var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
-var processFile = delay.Func("processFile", processData)
+var processFile = delay.Func("processSingleFile", processSingleFile)
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
@@ -102,7 +103,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	}
 
 	// TODO: save the token to the memcache/datastore?!
-	_, err := t.Exchange(code)
+	token, err := t.Exchange(code)
 	sysutils.Propagate(err)
 
 	readData, key, _, _, _, err := store.GetUserData(context, user.Email)
@@ -138,7 +139,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, "/graph", 303)
 	case len(files) > 0:
 		context.Infof("Found new data files for user [%s], downloading and storing...", user.Email)
-		processData(t, files, context, key)
+		processData(token, files, context, key)
 
 		context.Infof("Storing user data with key: %s", key.String())
 
@@ -147,21 +148,50 @@ func callback(w http.ResponseWriter, request *http.Request) {
 
 }
 
-func processData(t http.RoundTripper, files []*drive.File, context appengine.Context, userProfileKey *datastore.Key) {
+func getHost() (host string) {
+	if (appengine.IsDevAppServer()) {
+		host = "localhost:8080"
+	} else {
+		host = "glukit.appspot.com"
+	}
+
+	return host
+}
+
+func processData(token *oauth.Token, files []*drive.File, context appengine.Context, userProfileKey *datastore.Key) {
+	// TODO : Look at recent file import log for that file and skip to the new data. It would be nice to be able to
+	// use the Http Range header but that's unlikely to be possible since new event/read data is spreadout in the
+	// file
 	for i := range files {
-		// TODO: Make this stream the content
-		reader, err := fetcher.GetFileReader(t, files[i])
+		task, err := processFile.Task(token, files[i], userProfileKey)
 		if err != nil {
-			context.Infof("Error reading file %s, skipping...", files[i].OriginalFilename)
-		} else {
-			lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
-			store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: files[i].Id, Md5Checksum: files[i].Md5Checksum, LastDataProcessed: lastReadTime})
-			reader.Close()
+			sysutils.Propagate(err)
 		}
+		taskqueue.Add(context, task, "store")
+	}
+}
+
+func processSingleFile(context appengine.Context, token *oauth.Token, file *drive.File, userProfileKey *datastore.Key) {
+	t := &oauth.Transport{
+		Config: config(getHost()),
+		Transport: &urlfetch.Transport{
+			Context: context,
+		},
+		Token: token,
+	}
+
+	reader, err := fetcher.GetFileReader(t, file)
+	if err != nil {
+		context.Infof("Error reading file %s, skipping...", file.OriginalFilename)
+	} else {
+		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+		store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum, LastDataProcessed: lastReadTime})
+		reader.Close()
 	}
 }
 
 func updateData(w http.ResponseWriter, r *http.Request) {
+	// TODO: use https://developers.google.com/appengine/docs/go/reference#AccessToken instead?
 	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
 	http.Redirect(w, r, url, http.StatusFound)
 }
