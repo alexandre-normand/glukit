@@ -71,6 +71,7 @@ var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"
 var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
 var processFile = delay.Func("processSingleFile", processSingleFile)
+var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
@@ -196,6 +197,24 @@ func updateData(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
+func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.Key) {
+
+	// open input file
+	fi, err := os.Open("data.xml")
+	if err != nil { panic(err) }
+	// close fi on exit and check for its returned error
+	defer func() {
+		if fi.Close() != nil {
+			panic(err)
+		}
+	}()
+	// make a read buffer
+	reader := bufio.NewReader(fi)
+
+	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+	store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum", LastDataProcessed: lastReadTime})
+}
+
 func renderDemo(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
@@ -208,19 +227,11 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 			sysutils.Propagate(err)
 		}
 
-		// open input file
-		fi, err := os.Open("data.xml")
-		if err != nil { panic(err) }
-		// close fi on exit and check for its returned error
-		defer func() {
-			if fi.Close() != nil {
-				panic(err)
-			}
-		}()
-		// make a read buffer
-		reader := bufio.NewReader(fi)
-
-		parser.ParseContent(context, reader, 500, key, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+		task, err := processDemoFile.Task(key)
+		if err != nil {
+			sysutils.Propagate(err)
+		}
+		taskqueue.Add(context, task, "store")
 	} else {
 		sysutils.Propagate(err)
 	}
