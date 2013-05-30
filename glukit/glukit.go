@@ -34,7 +34,7 @@ import (
 //	CLIENT_ID     = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
 //	CLIENT_SECRET = "IYbOW0Aha34xMqTaPVO-_ar5"
 //	DEMO_EMAIL    = "demo@glukit.com"
-
+//
 //)
 
 // Local
@@ -95,8 +95,6 @@ func init() {
 func callback(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
-
-	context.Debugf("Called back")
 
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
