@@ -31,7 +31,7 @@ type Event struct {
 func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.DayOfReads) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) (lastReadTime time.Time) {
 	decoder := xml.NewDecoder(reader)
 	reads := make([]models.MeterRead,0, batchSize)
-	daysOfReads := make([]models.DayOfReads,0, 1)
+	daysOfReads := make([]models.DayOfReads,0, batchSize)
 	injections := make([]models.Injection,0, batchSize)
 	carbIntakes := make([]models.CarbIntake,0, batchSize)
 	exercises := make([]models.Exercise,0, batchSize)
@@ -70,11 +70,11 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						// Create a day of reads and append it to the batch
 						daysOfReads = append(daysOfReads, models.DayOfReads{reads})
 
-						//if (len(daysOfReads) == batchSize) {
+						if (len(daysOfReads) == batchSize) {
 							// Send the batch to be handled and restart another one
 						    readsBatchHandler(context, parentKey, daysOfReads)
-							daysOfReads = make([]models.DayOfReads,0, 1)
-						//}
+							daysOfReads = make([]models.DayOfReads,0, batchSize)
+						}
 
 						reads = make([]models.MeterRead,0, batchSize)
 					}
