@@ -83,6 +83,9 @@
 
 <script>
     function showDataBrowser() {
+    var chartNode = document.getElementById("chart");
+    chartNode.innerHTML = '';
+
     var graph = new Rickshaw.Graph.Ajax( {
     	element: document.getElementById("chart"),
     	width: 1200,
@@ -176,6 +179,10 @@
             'class': 'tracking_table',
             html: items.join('')
           }).appendTo('#trackerData');
+
+        // Clear anything first
+        var trackerDistribution = document.getElementById("trackerDistribution");
+        trackerDistribution.innerHTML = '';
 
         var distributionGraph = new Rickshaw.Graph( {
             element: document.getElementById("trackerDistribution"),
