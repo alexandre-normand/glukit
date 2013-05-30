@@ -30,6 +30,11 @@ func BuildHistogram(reads []models.MeterRead) (data []models.Coordinate) {
 }
 
 func FilterReads(data []models.MeterRead, lowerBound, upperBound time.Time) (filteredData []models.MeterRead) {
+	// Nothing to sort, return immediately
+	if (len(data) == 0) {
+		return data
+	}
+
 	arraySize := len(data)
 	startOfDayIndex := -1
 	endOfDayIndex := -1
@@ -50,4 +55,5 @@ func FilterReads(data []models.MeterRead, lowerBound, upperBound time.Time) (fil
 	}
 
 	return data[startOfDayIndex:endOfDayIndex + 1]
+
 }
