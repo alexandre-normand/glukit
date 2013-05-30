@@ -80,125 +80,133 @@
   </div>
 
 
+
 <script>
-var graph = new Rickshaw.Graph.Ajax( {
-	element: document.getElementById("chart"),
-	width: 1200,
-	height: 600,
-	renderer: 'multi',
-    max: 300,
-    min: 0,
-	dataURL: '{{.DataPath}}',
-	series: [
-        {
-            name: 'You.Injection',
-            color: '#4D94FF',
-            width: 2,
-            renderer: 'scatterplot'
-        }, {
-            name: 'You.Carbohydrates',
-            color: '#E65C5C',
-            width: 2,
-            renderer: 'scatterplot'
-        }, {
-			name: 'You',
-            color: 'steelblue',
-            width: 2,
-            renderer: 'line'
-		},
-         // Ugly workaround because scatterplot for injections and carbs are not placed correctly unless the reads line
-         // has a scatterplot too..and we don't want to show it so we set the color to none
-           {
-            name: 'You',
-            color: 'none',
-            opacity: '0',
-            width: 2,
-            renderer: 'scatterplot'
-        }, {
-			name: 'Perfection',
-		    color: '#33AD33',
-		    width: 2,
-            renderer: 'line'
-		}
-		 ],
-	onComplete: function(transport) {
-	    var x_axis = new Rickshaw.Graph.Axis.Time({
-	          graph: transport.graph,
-	        });
-	    x_axis.graph.update();
+    function showDataBrowser() {
+    var graph = new Rickshaw.Graph.Ajax( {
+    	element: document.getElementById("chart"),
+    	width: 1200,
+    	height: 600,
+    	renderer: 'multi',
+        max: 300,
+        min: 0,
+    	dataURL: '{{.DataPath}}',
+    	series: [
+            {
+                name: 'You.Injection',
+                color: '#4D94FF',
+                width: 2,
+                renderer: 'scatterplot'
+            }, {
+                name: 'You.Carbohydrates',
+                color: '#E65C5C',
+                width: 2,
+                renderer: 'scatterplot'
+            }, {
+    			name: 'You',
+                color: 'steelblue',
+                width: 2,
+                renderer: 'line'
+    		},
+             // Ugly workaround because scatterplot for injections and carbs are not placed correctly unless the reads line
+             // has a scatterplot too..and we don't want to show it so we set the color to none
+               {
+                name: 'You',
+                color: 'none',
+                opacity: '0',
+                width: 2,
+                renderer: 'scatterplot'
+            }, {
+    			name: 'Perfection',
+    		    color: '#33AD33',
+    		    width: 2,
+                renderer: 'line'
+    		}
+    		 ],
+    	onComplete: function(transport) {
+    	    var x_axis = new Rickshaw.Graph.Axis.Time({
+    	          graph: transport.graph,
+    	        });
+    	    x_axis.graph.update();
 
-	    var y_axis = new Rickshaw.Graph.Axis.Y( {
-		            graph: transport.graph,
-		            orientation: 'left',
-		            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-		            element: document.getElementById('y_axis'),
-		} );
-        y_axis.graph.update();
+    	    var y_axis = new Rickshaw.Graph.Axis.Y( {
+    		            graph: transport.graph,
+    		            orientation: 'left',
+    		            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+    		            element: document.getElementById('y_axis'),
+    		} );
+            y_axis.graph.update();
 
-        var hoverDetail = new Rickshaw.Graph.HoverDetail( {
-                graph: transport.graph,
-                formatter: function(series, x, y, formattedX, formattedY, d) {
-                        var date = '<span class="date">' + new Date(x * 1000).toTimeString() + '</span>';
-                        var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
-                        var content = null;
-                        if (series.name.indexOf('.') > 0) {
-                            content = swatch + series.name.substring(series.name.indexOf('.')+1) + ": " + parseFloat(d.value.r) + '<br>' + date;
-                        } else {
-                            content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
-                        }
-                        return content;
+            var hoverDetail = new Rickshaw.Graph.HoverDetail( {
+                    graph: transport.graph,
+                    formatter: function(series, x, y, formattedX, formattedY, d) {
+                            var date = '<span class="date">' + new Date(x * 1000).toTimeString() + '</span>';
+                            var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
+                            var content = null;
+                            if (series.name.indexOf('.') > 0) {
+                                content = swatch + series.name.substring(series.name.indexOf('.')+1) + ": " + parseFloat(d.value.r) + '<br>' + date;
+                            } else {
+                                content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
+                            }
+                            return content;
+                        },
+                    xFormatter: function(x) {
+                        return new Date(x * 1000).toTimeString();
                     },
-                xFormatter: function(x) {
-                    return new Date(x * 1000).toTimeString();
-                },
-            } );
-	  }
-} );
+                } );
+    	  }
+    } );
+    }
+    function showTrackingData()
+    {
+        var distribution = null;
+        $.getJSON('{{.DataPath}}.tracking', function(data) {
+          var items = [];
 
-</script>
+          $.each(data, function(key, val) {
+            if (key != 'distribution') {
+                items.push('<tr><td>' + key + ': ' + Math.round(val*100)/100 + '</td></tr>');
+            } else {
+                distribution = val
+            }
+          });
 
-<script>
-    var distribution = null;
-    $.getJSON('{{.DataPath}}.tracking', function(data) {
-      var items = [];
+          $("#trackerData > table").remove();
+          $('<table/>', {
+            'class': 'tracking_table',
+            html: items.join('')
+          }).appendTo('#trackerData');
 
-      $.each(data, function(key, val) {
-        if (key != 'distribution') {
-            items.push('<tr><td>' + key + ': ' + Math.round(val*100)/100 + '</td></tr>');
-        } else {
-            distribution = val
-        }
-      });
+        var distributionGraph = new Rickshaw.Graph( {
+            element: document.getElementById("trackerDistribution"),
+            width: 150,
+            height: 160,
+            renderer: 'multi',
+            stroke: true,
+            series: [{
+                color: 'steelblue',
+                data: distribution,
+                renderer: 'bar'
+            }]
+        });
 
-      $('<table/>', {
-        'class': 'tracking_table',
-        html: items.join('')
-      }).appendTo('#trackerData');
+        distributionGraph.render();
+        });
+    }
 
-    var distributionGraph = new Rickshaw.Graph( {
-        element: document.getElementById("trackerDistribution"),
-        width: 150,
-        height: 160,
-        renderer: 'multi',
-        stroke: true,
-        series: [{
-            color: 'steelblue',
-            data: distribution,
-            renderer: 'bar'
-        }]
-    });
-
-    distributionGraph.render();
-    });
 </script>
   <script>
       channel = new goog.appengine.Channel('{{.ChannelToken}}');
       socket = channel.open();
       socket.onopen = function() {
         console.log("connected");
+        showDataBrowser();
+        showTrackingData();
       };
-      socket.onmessage = function() {
-        console.log("onMessage");
+      socket.onmessage = function(message) {
+        console.log("onMessage: " + message.data);
+        showDataBrowser();
+        showTrackingData();
       };
       socket.onerror = function() {
         console.log("error");
