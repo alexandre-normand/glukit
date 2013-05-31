@@ -243,7 +243,6 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
 	var endTime time.Time
 
-	log.Printf("Trying to load reads...")
 	for property := range channel {
 		switch columnName, columnValue := property.Name, property.Value; {
 		case columnName == "startTime":
@@ -277,7 +276,6 @@ func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfReads.Reads)
-	log.Printf("Trying to save %d reads...", size)
 
 	// Nothing to do if the slice has zero elements
 	if size == 0 {
