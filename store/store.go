@@ -149,6 +149,19 @@ func LogFileImport(context appengine.Context, userProfileKey *datastore.Key, fil
 	return key, nil
 }
 
+func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, fileId string) (fileImport *models.FileImportLog, err error) {
+	key := datastore.NewKey(context, "FileImportLog", fileId, 0, userProfileKey)
+
+	context.Infof("Reading file import log for file id [%s]", fileId)
+	fileImport = new(models.FileImportLog)
+	error := datastore.Get(context, key, fileImport)
+	if error != nil {
+		return nil, error
+	}
+
+	return fileImport, nil
+}
+
 
 func FetchReadsBlob(context appengine.Context, blobKey appengine.BlobKey) (reads []models.MeterRead, err error) {
 	reader := blobstore.NewReader(context, blobKey)

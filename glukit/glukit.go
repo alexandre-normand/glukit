@@ -22,6 +22,7 @@ import (
 	"datautils"
 	"bufio"
 	"os"
+	"timeutils"
 	"sysutils"
 	"appengine/delay"
 	stat "github.com/grd/stat"
@@ -187,7 +188,18 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 	if err != nil {
 		context.Infof("Error reading file %s, skipping...", file.OriginalFilename)
 	} else {
-		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+		// Default to beginning of time
+		startTime := time.Unix(0, 0)
+		if lastFileImportLog, err := store.GetFileImportLog(context, userProfileKey, file.Id); err == nil {
+			startTime = lastFileImportLog.LastDataProcessed
+			context.Infof("Reloading data from file [%s]-[%s] starting at date [%s]...", file.Id, file.OriginalFilename, startTime.Format(timeutils.TIMEFORMAT))
+		} else if err == datastore.ErrNoSuchEntity {
+			context.Debugf("First import of file [%s]-[%s]...", file.Id, file.OriginalFilename)
+		} else if err != nil {
+			sysutils.Propagate(err)
+		}
+
+		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 		store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum, LastDataProcessed: lastReadTime})
 		reader.Close()
 	}
@@ -214,7 +226,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, time.Unix(0, 0), store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
 	store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum", LastDataProcessed: lastReadTime})
 	channel.Send(context, DEMO_EMAIL, "Refresh")
 }

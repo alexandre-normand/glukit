@@ -28,7 +28,7 @@ type Event struct {
 	Description  string `xml:"Decription,attr"`
 }
 
-func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.DayOfReads) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) (lastReadTime time.Time) {
+func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.DayOfReads) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) (lastReadTime time.Time) {
 	decoder := xml.NewDecoder(reader)
 	reads := make([]models.MeterRead,0, batchSize)
 	daysOfReads := make([]models.DayOfReads,0, batchSize)
@@ -57,67 +57,79 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				decoder.DecodeElement(&read, &se)
 				if (read.Value > 0) {
 					meterRead := models.MeterRead{read.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(read.InternalTime)), read.Value}
-					// This should only happen once as we start parsing, we initialize the previous day to the current
-					// and the rest of the logic should gracefully handle this case
-					if (len(reads) == 0) {
-						lastRead = meterRead
-					}
 
-					// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
-					// read read. This assumes that we will never get a gap big enough that two consecutive reads could
-					// have the same day value while being months apart.
-					if meterRead.GetTime().Day() != lastRead.GetTime().Day() {
-						// Create a day of reads and append it to the batch
-						daysOfReads = append(daysOfReads, models.DayOfReads{reads})
-
-						if (len(daysOfReads) == batchSize) {
-							// Send the batch to be handled and restart another one
-						    readsBatchHandler(context, parentKey, daysOfReads)
-							daysOfReads = make([]models.DayOfReads,0, batchSize)
+					// Skipp all reads that are not after the last import's last read time
+					if (!meterRead.GetTime().After(startTime)) {
+						context.Debugf("Skipping already imported read dated [%s]", meterRead.GetTime().Format(timeutils.TIMEFORMAT))
+					} else {
+						// This should only happen once as we start parsing, we initialize the previous day to the current
+						// and the rest of the logic should gracefully handle this case
+						if (len(reads) == 0) {
+							lastRead = meterRead
 						}
 
-						reads = make([]models.MeterRead,0, batchSize)
+						// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
+						// read read. This assumes that we will never get a gap big enough that two consecutive reads could
+						// have the same day value while being months apart.
+						if meterRead.GetTime().Day() != lastRead.GetTime().Day() {
+							// Create a day of reads and append it to the batch
+							daysOfReads = append(daysOfReads, models.DayOfReads{reads})
+
+							if (len(daysOfReads) == batchSize) {
+								// Send the batch to be handled and restart another one
+								readsBatchHandler(context, parentKey, daysOfReads)
+								daysOfReads = make([]models.DayOfReads,0, batchSize)
+							}
+
+							reads = make([]models.MeterRead,0, batchSize)
+						}
+
+						reads = append(reads, meterRead)
 					}
 
-					reads = append(reads, meterRead)
 					lastRead = meterRead
 				}
 			case "Event":
 				var event Event
 				decoder.DecodeElement(&event, &se)
-				if (event.EventType == "Carbs") {
-					var carbQuantityInGrams int
-					fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
-					carbIntake := models.CarbIntake{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.InternalTime)), float32(carbQuantityInGrams), models.UNDEFINED_READ}
-					carbIntakes = append(carbIntakes, carbIntake)
-					if (len(carbIntakes) == batchSize) {
-						// Send the batch to be handled and restart another one
-						carbsBatchHandler(context, parentKey, carbIntakes)
-						carbIntakes = make([]models.CarbIntake,0, batchSize)
-					}
-				} else if (event.EventType == "Insulin") {
-					var insulinUnits float32
-					_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
-					if err != nil {
-						sysutils.Propagate(err)
-					}
-					injection := models.Injection{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.InternalTime)), float32(insulinUnits), models.UNDEFINED_READ}
-					injections = append(injections, injection)
-					if (len(injections) == batchSize) {
-						// Send the batch to be handled and restart another one
-						injectionBatchHandler(context, parentKey, injections)
-						injections = make([]models.Injection,0, batchSize)
-					}
-				} else if (strings.HasPrefix(event.EventType, "Exercise")) {
-					var duration int
-					var intensity string
-					fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
-					exercise := models.Exercise{event.EventTime, models.TimeValue(timeutils.GetTimeInSeconds(event.InternalTime)), duration, intensity}
-					exercises = append(exercises, exercise)
-					if (len(exercises) == batchSize) {
-						// Send the batch to be handled and restart another one
-						exerciseBatchHandler(context, parentKey, exercises)
-						exercises = make([]models.Exercise,0, batchSize)
+				internalEventTime := timeutils.GetTimeInSeconds(event.InternalTime)
+
+				// Skip everything that's before the last import's read time
+				if (internalEventTime > startTime.Unix()) {
+					if (event.EventType == "Carbs") {
+						var carbQuantityInGrams int
+						fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
+						carbIntake := models.CarbIntake{event.EventTime, models.TimeValue(internalEventTime), float32(carbQuantityInGrams), models.UNDEFINED_READ}
+						carbIntakes = append(carbIntakes, carbIntake)
+						if (len(carbIntakes) == batchSize) {
+							// Send the batch to be handled and restart another one
+							carbsBatchHandler(context, parentKey, carbIntakes)
+							carbIntakes = make([]models.CarbIntake,0, batchSize)
+						}
+					} else if (event.EventType == "Insulin") {
+						var insulinUnits float32
+						_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
+						if err != nil {
+							sysutils.Propagate(err)
+						}
+						injection := models.Injection{event.EventTime, models.TimeValue(internalEventTime), float32(insulinUnits), models.UNDEFINED_READ}
+						injections = append(injections, injection)
+						if (len(injections) == batchSize) {
+							// Send the batch to be handled and restart another one
+							injectionBatchHandler(context, parentKey, injections)
+							injections = make([]models.Injection,0, batchSize)
+						}
+					} else if (strings.HasPrefix(event.EventType, "Exercise")) {
+						var duration int
+						var intensity string
+						fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
+						exercise := models.Exercise{event.EventTime, models.TimeValue(internalEventTime), duration, intensity}
+						exercises = append(exercises, exercise)
+						if (len(exercises) == batchSize) {
+							// Send the batch to be handled and restart another one
+							exerciseBatchHandler(context, parentKey, exercises)
+							exercises = make([]models.Exercise,0, batchSize)
+						}
 					}
 				}
 
