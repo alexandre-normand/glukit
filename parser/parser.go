@@ -28,15 +28,21 @@ type Event struct {
 	Description  string `xml:"Decription,attr"`
 }
 
-func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.DayOfReads) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.CarbIntake) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, injections []models.Injection) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) (lastReadTime time.Time) {
+func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.DayOfReads) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []models.DayOfCarbs) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []models.DayOfInjections) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) (lastReadTime time.Time) {
 	decoder := xml.NewDecoder(reader)
-	reads := make([]models.MeterRead,0, batchSize)
+	reads := make([]models.GlucoseRead, 0)
 	daysOfReads := make([]models.DayOfReads,0, batchSize)
-	injections := make([]models.Injection,0, batchSize)
-	carbIntakes := make([]models.CarbIntake,0, batchSize)
+	injections := make([]models.Injection, 0)
+	daysOfInjections := make([]models.DayOfInjections,0, batchSize)
+	var lastInjection models.Injection
+
+	carbs := make([]models.Carb, 0)
+	daysOfCarbs := make([]models.DayOfCarbs,0, batchSize)
+	var lastCarb models.Carb
+
 	exercises := make([]models.Exercise,0, batchSize)
 
-	var lastRead models.MeterRead
+	var lastRead models.GlucoseRead
 	for {
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
@@ -56,22 +62,22 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
 				if (read.Value > 0) {
-					meterRead := models.MeterRead{read.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(read.InternalTime)), read.Value}
+					glucoseRead := models.GlucoseRead{read.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(read.InternalTime)), read.Value}
 
-					// Skipp all reads that are not after the last import's last read time
-					if (!meterRead.GetTime().After(startTime)) {
-						context.Debugf("Skipping already imported read dated [%s]", meterRead.GetTime().Format(timeutils.TIMEFORMAT))
+					// Skip all reads that are not after the last import's last read time
+					if (!glucoseRead.GetTime().After(startTime)) {
+						context.Debugf("Skipping already imported read dated [%s]", glucoseRead.GetTime().Format(timeutils.TIMEFORMAT))
 					} else {
 						// This should only happen once as we start parsing, we initialize the previous day to the current
 						// and the rest of the logic should gracefully handle this case
 						if (len(reads) == 0) {
-							lastRead = meterRead
+							lastRead = glucoseRead
 						}
 
 						// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
 						// read read. This assumes that we will never get a gap big enough that two consecutive reads could
 						// have the same day value while being months apart.
-						if meterRead.GetTime().Day() != lastRead.GetTime().Day() {
+						if glucoseRead.GetTime().Day() != lastRead.GetTime().Day() {
 							// Create a day of reads and append it to the batch
 							daysOfReads = append(daysOfReads, models.DayOfReads{reads})
 
@@ -81,13 +87,13 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 								daysOfReads = make([]models.DayOfReads,0, batchSize)
 							}
 
-							reads = make([]models.MeterRead,0, batchSize)
+							reads = make([]models.GlucoseRead,0, batchSize)
 						}
 
-						reads = append(reads, meterRead)
+						reads = append(reads, glucoseRead)
 					}
 
-					lastRead = meterRead
+					lastRead = glucoseRead
 				}
 			case "Event":
 				var event Event
@@ -99,13 +105,37 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 					if (event.EventType == "Carbs") {
 						var carbQuantityInGrams int
 						fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
-						carbIntake := models.CarbIntake{event.EventTime, models.TimeValue(internalEventTime), float32(carbQuantityInGrams), models.UNDEFINED_READ}
-						carbIntakes = append(carbIntakes, carbIntake)
-						if (len(carbIntakes) == batchSize) {
-							// Send the batch to be handled and restart another one
-							carbsBatchHandler(context, parentKey, carbIntakes)
-							carbIntakes = make([]models.CarbIntake,0, batchSize)
+						carb := models.Carb{event.EventTime, models.TimeValue(internalEventTime), float32(carbQuantityInGrams), models.UNDEFINED_READ}
+
+						if (!carb.GetTime().After(startTime)) {
+							context.Debugf("Skipping already imported carb dated [%s]", carb.GetTime().Format(timeutils.TIMEFORMAT))
+						} else {
+							// This should only happen once as we start parsing, we initialize the previous day to the current
+							// and the rest of the logic should gracefully handle this case
+							if (len(carbs) == 0) {
+								lastCarb = carb
+							}
+
+							// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
+							// read read. This assumes that we will never get a gap big enough that two consecutive reads could
+							// have the same day value while being months apart.
+							if carb.GetTime().Day() != lastCarb.GetTime().Day() {
+								// Create a day of reads and append it to the batch
+								daysOfCarbs = append(daysOfCarbs, models.DayOfCarbs{carbs})
+
+								if (len(daysOfCarbs) == batchSize) {
+									// Send the batch to be handled and restart another one
+									carbsBatchHandler(context, parentKey, daysOfCarbs)
+									daysOfCarbs = make([]models.DayOfCarbs,0, batchSize)
+								}
+
+								carbs = make([]models.Carb, 0)
+							}
+
+							carbs = append(carbs, carb)
 						}
+
+						lastCarb = carb
 					} else if (event.EventType == "Insulin") {
 						var insulinUnits float32
 						_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
@@ -113,12 +143,35 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 							sysutils.Propagate(err)
 						}
 						injection := models.Injection{event.EventTime, models.TimeValue(internalEventTime), float32(insulinUnits), models.UNDEFINED_READ}
-						injections = append(injections, injection)
-						if (len(injections) == batchSize) {
-							// Send the batch to be handled and restart another one
-							injectionBatchHandler(context, parentKey, injections)
-							injections = make([]models.Injection,0, batchSize)
+						if (!injection.GetTime().After(startTime)) {
+							context.Debugf("Skipping already imported injection dated [%s]", injection.GetTime().Format(timeutils.TIMEFORMAT))
+						} else {
+							// This should only happen once as we start parsing, we initialize the previous day to the current
+							// and the rest of the logic should gracefully handle this case
+							if (len(injections) == 0) {
+								lastInjection = injection
+							}
+
+							// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
+							// read read. This assumes that we will never get a gap big enough that two consecutive reads could
+							// have the same day value while being months apart.
+							if injection.GetTime().Day() != lastInjection.GetTime().Day() {
+								// Create a day of reads and append it to the batch
+								daysOfInjections = append(daysOfInjections, models.DayOfInjections{injections})
+
+								if (len(daysOfInjections) == batchSize) {
+									// Send the batch to be handled and restart another one
+									injectionBatchHandler(context, parentKey, daysOfInjections)
+									daysOfInjections = make([]models.DayOfInjections,0, batchSize)
+								}
+
+								injections = make([]models.Injection, 0)
+							}
+
+							injections = append(injections, injection)
 						}
+
+						lastInjection = injection
 					} else if (strings.HasPrefix(event.EventType, "Exercise")) {
 						var duration int
 						var intensity string
@@ -147,13 +200,17 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	}
 
 	if (len(injections) > 0) {
-		// Send the batch to be handled and restart another one
-		injectionBatchHandler(context, parentKey, injections)
+		// Store the last batch 
+		daysOfInjections = append(daysOfInjections, models.DayOfInjections{injections})
+		context.Infof("Flushing %d days of injections", len(daysOfInjections))
+		injectionBatchHandler(context, parentKey, daysOfInjections)
 	}
 
-	if (len(carbIntakes) > 0) {
-		// Send the batch to be handled and restart another one
-		carbsBatchHandler(context, parentKey, carbIntakes)
+	if (len(carbs) > 0) {
+		// Store the last batch 
+		daysOfCarbs = append(daysOfCarbs, models.DayOfCarbs{carbs})
+		context.Infof("Flushing %d days of carbs", len(daysOfCarbs))
+		carbsBatchHandler(context, parentKey, daysOfCarbs)
 	}
 
 	if (len(exercises) > 0) {
@@ -165,11 +222,11 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	return lastRead.GetTime()
 }
 
-func ConvertAsReadsArray(meterReads *list.List) (reads []models.MeterRead) {
-	reads = make([]models.MeterRead, meterReads.Len())
-	for e, i := meterReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
+func ConvertAsReadsArray(glucoseReads *list.List) (reads []models.GlucoseRead) {
+	reads = make([]models.GlucoseRead, glucoseReads.Len())
+	for e, i := glucoseReads.Front(), 0; e != nil; e, i = e.Next(), i + 1 {
 		meter := e.Value.(Meter)
-		reads[i] = models.MeterRead{meter.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(meter.InternalTime)), meter.Value}
+		reads[i] = models.GlucoseRead{meter.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(meter.InternalTime)), meter.Value}
 	}
 
 	return reads

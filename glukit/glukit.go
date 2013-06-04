@@ -110,7 +110,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	token, err := t.Exchange(code)
 	sysutils.Propagate(err)
 
-	readData, key, _, _, _, err := store.GetUserData(context, user.Email)
+	readData, key, _, _, err := store.GetUserData(context, user.Email)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for user [%s], creating it", user.Email)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
@@ -184,7 +184,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 		Token: token,
 	}
 
-	reader, err := fetcher.GetFileReader(t, file)
+	reader, err := fetcher.GetFileReader(context, t, file)
 	if err != nil {
 		context.Infof("Error reading file %s, skipping...", file.OriginalFilename)
 	} else {
@@ -199,7 +199,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			sysutils.Propagate(err)
 		}
 
-		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreExerciseData)
 		store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum, LastDataProcessed: lastReadTime})
 		reader.Close()
 	}
@@ -226,7 +226,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, time.Unix(0, 0), store.StoreDaysOfReads, store.StoreCarbs, store.StoreInjections, store.StoreExerciseData)
+	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, time.Unix(0, 0), store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreExerciseData)
 	store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum", LastDataProcessed: lastReadTime})
 	channel.Send(context, DEMO_EMAIL, "Refresh")
 }
@@ -234,7 +234,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 func renderDemo(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	_, key, _, _, _, err := store.GetUserData(context, DEMO_EMAIL)
+	_, key, _, _, err := store.GetUserData(context, DEMO_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
@@ -298,29 +298,42 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	_, _, meterReads, injections, carbIntakes, err := store.GetUserData(context, DEMO_EMAIL)
+	_, _, lowerBound, upperBound, err := store.GetUserData(context, DEMO_EMAIL)
 	if err != nil {
 		sysutils.Propagate(err)
 	}
 
-	context.Infof("Got %d reads", len(meterReads))
-	writeUserJsonData(writer, meterReads, injections, carbIntakes)
+	glucoseReads, err := store.GetUserReads(context, DEMO_EMAIL, lowerBound, upperBound)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+	injections, err := store.GetUserInjections(context, DEMO_EMAIL, lowerBound, upperBound)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+	carbs, err := store.GetUserCarbs(context, DEMO_EMAIL, lowerBound, upperBound)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+
+	context.Infof("Got %d reads", len(glucoseReads))
+	writeUserJsonData(writer, glucoseReads, injections, carbs)
 }
 
-func writeUserJsonData(writer http.ResponseWriter, reads []models.MeterRead, injections []models.Injection, carbIntakes []models.CarbIntake) {
+func writeUserJsonData(writer http.ResponseWriter, reads []models.GlucoseRead, injections []models.Injection, carbs []models.Carb) {
 	enc := json.NewEncoder(writer)
 	individuals := make([]DataSeries, 4)
 
 	if (len(reads) == 0) {
-		individuals[0] = DataSeries{"You", emptyDataPointSlice, "MeterReads"}
+		individuals[0] = DataSeries{"You", emptyDataPointSlice, "GlucoseReads"}
 		individuals[1] = DataSeries{"You.Injection", emptyDataPointSlice, "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "CarbIntakes"}
+		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "Carbs"}
 		individuals[3] = DataSeries{"Perfection", emptyDataPointSlice, "ComparisonReads"}
 	} else {
-		individuals[0] = DataSeries{"You", models.MeterReadSlice(reads).ToDataPointSlice(), "MeterReads"}
+		individuals[0] = DataSeries{"You", models.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
 		individuals[1] = DataSeries{"You.Injection", models.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", models.CarbIntakeSlice(carbIntakes).ToDataPointSlice(reads), "CarbIntakes"}
-		individuals[3] = DataSeries{"Perfection", models.MeterReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
+		individuals[2] = DataSeries{"You.Carbohydrates", models.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"}
+		individuals[3] = DataSeries{"Perfection", models.GlucoseReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
 	}
 
 	enc.Encode(individuals)
@@ -330,7 +343,20 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, _, reads, injections, carbIntakes, err := store.GetUserData(context, user.Email)
+	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+
+	reads, err := store.GetUserReads(context, user.Email, lowerBound, upperBound)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+	injections, err := store.GetUserInjections(context, user.Email, lowerBound, upperBound)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+	carbs, err := store.GetUserCarbs(context, user.Email, lowerBound, upperBound)
 	if err != nil {
 		sysutils.Propagate(err)
 	}
@@ -338,10 +364,10 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	writeUserJsonData(writer, reads, injections, carbIntakes)
+	writeUserJsonData(writer, reads, injections, carbs)
 }
 
-func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []models.MeterRead) {
+func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []models.GlucoseRead) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
@@ -366,7 +392,12 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, _, reads, _, _, err := store.GetUserData(context, user.Email)
+	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+
+	reads, err := store.GetUserReads(context, user.Email, lowerBound, upperBound)
 	if err != nil {
 		sysutils.Propagate(err)
 	}
@@ -380,8 +411,13 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	_, _, reads, _, _, err := store.GetUserData(context, DEMO_EMAIL)
-	if (err != nil) {
+	_, _, lowerBound, upperBound, err := store.GetUserData(context, DEMO_EMAIL)
+	if err != nil {
+		sysutils.Propagate(err)
+	}
+
+	reads, err := store.GetUserReads(context, DEMO_EMAIL, lowerBound, upperBound)
+	if err != nil {
 		sysutils.Propagate(err)
 	}
 
@@ -389,10 +425,10 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 }
 
 
-func buildPerfectBaseline(meterReads []models.MeterRead) (reads []models.MeterRead) {
-	reads = make([]models.MeterRead, len(meterReads))
-	for i := range meterReads {
-		reads[i] = models.MeterRead{meterReads[i].LocalTime, meterReads[i].TimeValue, 83}
+func buildPerfectBaseline(glucoseReads []models.GlucoseRead) (reads []models.GlucoseRead) {
+	reads = make([]models.GlucoseRead, len(glucoseReads))
+	for i := range glucoseReads {
+		reads[i] = models.GlucoseRead{glucoseReads[i].LocalTime, glucoseReads[i].TimeValue, 83}
 	}
 
 	return reads

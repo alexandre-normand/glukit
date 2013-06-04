@@ -16,12 +16,12 @@ const (
 type TimeValue int64
 
 type TrackingData struct {
-	Mean            float64         `json:"mean"`
-	Median          float64         `json:"median"`
-	Deviation       float64         `json:"deviation"`
+	Mean             float64         `json:"mean"`
+	Median           float64         `json:"median"`
+	Deviation        float64         `json:"deviation"`
 	Min      	    float64         `json:"min"`
 	Max      	    float64         `json:"max"`
-	Distribution    []Coordinate    `json:"distribution"`
+	Distribution     []Coordinate    `json:"distribution"`
 }
 
 type Coordinate struct {
@@ -36,7 +36,7 @@ type DataPoint struct {
 	Value     float32   `json:"r"`
 }
 
-type MeterRead struct {
+type GlucoseRead struct {
 	LocalTime string    `json:"label" datastore:"localtime,noindex"`
 	TimeValue TimeValue `json:"x" datastore:"timestamp"`
 	Value     int       `json:"y" datastore:"value,noindex"`
@@ -44,7 +44,19 @@ type MeterRead struct {
 
 // Used to model reads in a short-wide fashion.
 type DayOfReads struct {
-	Reads     []MeterRead
+	Reads          []GlucoseRead
+}
+
+type DayOfInjections struct {
+	Injections     []Injection
+}
+
+type DayOfCarbs struct {
+	Carbs          []Carb
+}
+
+type DayOfExercises struct {
+	Exercises      []Exercise
 }
 
 type Injection struct {
@@ -54,7 +66,7 @@ type Injection struct {
 	ReferenceReadValue int          `json:"y" datastore:"referenceReadValue,noindex"`
 }
 
-type CarbIntake struct {
+type Carb struct {
 	LocalTime          string     `json:"label" datastore:"localtime,noindex"`
 	TimeValue          TimeValue  `json:"x" datastore:"timestamp"`
 	Grams              float32    `json:"carbs" datastore:"grams,noindex"`
@@ -90,7 +102,7 @@ type PointData interface {
 	GetTime() time.Time
 }
 
-func (read MeterRead) GetTime() (timeValue time.Time) {
+func (read GlucoseRead) GetTime() (timeValue time.Time) {
 	value, _ := timeutils.ParseTime(read.LocalTime, timeutils.TIMEZONE)
 	return value
 }
@@ -100,8 +112,8 @@ func (exercise Exercise) GetTime() (timeValue time.Time) {
 	return value
 }
 
-func (carbIntake CarbIntake) GetTime() (timeValue time.Time) {
-	value, _ := timeutils.ParseTime(carbIntake.LocalTime, timeutils.TIMEZONE)
+func (carb Carb) GetTime() (timeValue time.Time) {
+	value, _ := timeutils.ParseTime(carb.LocalTime, timeutils.TIMEZONE)
 	return value
 }
 
@@ -110,29 +122,29 @@ func (injection Injection) GetTime() (timeValue time.Time) {
 	return value
 }
 
-type MeterReadSlice []MeterRead
-type ReadStatsSlice []MeterRead
+type GlucoseReadSlice []GlucoseRead
+type ReadStatsSlice []GlucoseRead
 type InjectionSlice []Injection
-type CarbIntakeSlice []CarbIntake
+type CarbSlice []Carb
 type CoordinateSlice []Coordinate
 
-func (slice MeterReadSlice) Len() int {
+func (slice GlucoseReadSlice) Len() int {
 	return len(slice)
 }
 
-func (slice MeterReadSlice) Get(i int) float64 {
+func (slice GlucoseReadSlice) Get(i int) float64 {
 	return float64(slice[i].Value)
 }
 
-func (slice MeterReadSlice) Less(i, j int) bool {
+func (slice GlucoseReadSlice) Less(i, j int) bool {
 	return slice[i].TimeValue < slice[j].TimeValue
 }
 
-func (slice MeterReadSlice) Swap(i, j int) {
+func (slice GlucoseReadSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (slice MeterReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
+func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue, slice[i].Value, float32(slice[i].Value)}
@@ -169,7 +181,7 @@ func (slice InjectionSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (slice InjectionSlice) ToDataPointSlice(matchingReads []MeterRead) (dataPoints []DataPoint) {
+func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue, ExtrapolateYValueFromTime(matchingReads, slice[i].TimeValue), slice[i].Units}
@@ -179,19 +191,19 @@ func (slice InjectionSlice) ToDataPointSlice(matchingReads []MeterRead) (dataPoi
 	return dataPoints
 }
 
-func (slice CarbIntakeSlice) Len() int {
+func (slice CarbSlice) Len() int {
 	return len(slice)
 }
 
-func (slice CarbIntakeSlice) Less(i, j int) bool {
+func (slice CarbSlice) Less(i, j int) bool {
 	return slice[i].TimeValue < slice[j].TimeValue
 }
 
-func (slice CarbIntakeSlice) Swap(i, j int) {
+func (slice CarbSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (slice CarbIntakeSlice) ToDataPointSlice(matchingReads []MeterRead) (dataPoints []DataPoint) {
+func (slice CarbSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue, ExtrapolateYValueFromTime(matchingReads, slice[i].TimeValue), slice[i].Grams}
@@ -217,7 +229,7 @@ func (slice CoordinateSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func ExtrapolateYValueFromTime(reads []MeterRead, timeValue TimeValue) (yValue int) {
+func ExtrapolateYValueFromTime(reads []GlucoseRead, timeValue TimeValue) (yValue int) {
 	lowerIndex := -1
 	upperIndex := -1
 	for i := range reads {
@@ -263,7 +275,7 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 
 			localTime := timeutils.LocalTimeWithDefaultTimezone(readTime)
 			//context.Infof("Loading read with info: %s, %s, %d", localTime, readTime, value)
-			read := MeterRead{localTime, TimeValue(readTime.Unix()), value}
+			read := GlucoseRead{localTime, TimeValue(readTime.Unix()), value}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -303,6 +315,148 @@ func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 		channel <- datastore.Property {
 			Name: strconv.FormatInt(readOffset, 10),
 			Value: int64(reads[i].Value),
+			NoIndex: true,
+		}
+	}
+
+	return nil
+}
+
+func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) error {
+	var startTime time.Time
+	var endTime time.Time
+
+	for property := range channel {
+		switch columnName, columnValue := property.Name, property.Value; {
+		case columnName == "startTime":
+			startTime = property.Value.(time.Time)
+			log.Printf("Parsing block of injections with starttime: %s", startTime)
+		case columnName == "endTime":
+			endTime = property.Value.(time.Time)
+			log.Printf("Parsed block of injections with endtime: %s", endTime)
+		default:
+			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
+			if err != nil {
+				sysutils.Propagate(err)
+			}
+
+			timestamp := time.Unix(startTime.Unix() + offsetInSeconds, 0)
+			// We need to convert value to float64 and we downcast to float32 (it's safe since we only up-casted it for
+			// the store
+			value := float32(columnValue.(float64))
+
+			localTime := timeutils.LocalTimeWithDefaultTimezone(timestamp)
+			injection := Injection{localTime, TimeValue(timestamp.Unix()), value, UNDEFINED_READ}
+			dayOfInjections.Injections = append(dayOfInjections.Injections, injection)
+		}
+	}
+
+	log.Printf("Loaded total of %d injections", len(dayOfInjections.Injections))
+	return nil
+}
+
+func (dayOfInjections *DayOfInjections) Save(channel chan <- datastore.Property) error {
+	defer close(channel)
+
+	size := len(dayOfInjections.Injections)
+
+	// Nothing to do if the slice has zero elements
+	if size == 0 {
+		return nil
+	}
+	injections := dayOfInjections.Injections
+	startTimestamp := int64(injections[0].TimeValue)
+	startTime := time.Unix(startTimestamp, 0)
+	endTimestamp := int64(injections[size - 1].TimeValue)
+	endTime := time.Unix(endTimestamp, 0)
+
+	channel <- datastore.Property{
+		Name:  "startTime",
+		Value:  startTime,
+	}
+	channel <- datastore.Property{
+		Name:  "endTime",
+		Value:  endTime,
+	}
+
+	for i := range injections {
+		timestamp := int64(injections[i].TimeValue)
+		offset := timestamp - startTimestamp
+		// The datastore only supports float64 so we up-cast it to float64
+		channel <- datastore.Property {
+			Name: strconv.FormatInt(offset, 10),
+			Value: float64(injections[i].Units),
+			NoIndex: true,
+		}
+	}
+
+	return nil
+}
+
+func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
+	var startTime time.Time
+	var endTime time.Time
+
+	for property := range channel {
+		switch columnName, columnValue := property.Name, property.Value; {
+		case columnName == "startTime":
+			startTime = property.Value.(time.Time)
+			log.Printf("Parsing block of carbs with starttime: %s", startTime)
+		case columnName == "endTime":
+			endTime = property.Value.(time.Time)
+			log.Printf("Parsed block of carbs with endtime: %s", endTime)
+		default:
+			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
+			if err != nil {
+				sysutils.Propagate(err)
+			}
+
+			timestamp := time.Unix(startTime.Unix() + offsetInSeconds, 0)
+			// We need to convert value to float64 and we downcast to float32 (it's safe since we only up-casted it for
+			// the store
+			value := float32(columnValue.(float64))
+
+			localTime := timeutils.LocalTimeWithDefaultTimezone(timestamp)
+			carb := Carb{localTime, TimeValue(timestamp.Unix()), value, UNDEFINED_READ}
+			dayOfCarbs.Carbs = append(dayOfCarbs.Carbs, carb)
+		}
+	}
+
+	log.Printf("Loaded total of %d carbs", len(dayOfCarbs.Carbs))
+	return nil
+}
+
+func (dayOfCarbs *DayOfCarbs) Save(channel chan <- datastore.Property) error {
+	defer close(channel)
+
+	size := len(dayOfCarbs.Carbs)
+
+	// Nothing to do if the slice has zero elements
+	if size == 0 {
+		return nil
+	}
+	carbs := dayOfCarbs.Carbs
+	startTimestamp := int64(carbs[0].TimeValue)
+	startTime := time.Unix(startTimestamp, 0)
+	endTimestamp := int64(carbs[size - 1].TimeValue)
+	endTime := time.Unix(endTimestamp, 0)
+
+	channel <- datastore.Property{
+		Name:  "startTime",
+		Value:  startTime,
+	}
+	channel <- datastore.Property{
+		Name:  "endTime",
+		Value:  endTime,
+	}
+
+	for i := range carbs {
+		timestamp := int64(carbs[i].TimeValue)
+		offset := timestamp - startTimestamp
+		// The datastore only supports float64 so we up-cast it to float64
+		channel <- datastore.Property {
+			Name: strconv.FormatInt(offset, 10),
+			Value: float64(carbs[i].Grams),
 			NoIndex: true,
 		}
 	}

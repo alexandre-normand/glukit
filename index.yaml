@@ -15,6 +15,16 @@ indexes:
   properties:
   - name: timestamp
 
+- kind: DayOfCarbs
+  ancestor: yes
+  properties:
+  - name: startTime
+
+- kind: DayOfInjections
+  ancestor: yes
+  properties:
+  - name: startTime
+
 - kind: DayOfReads
   ancestor: yes
   properties:

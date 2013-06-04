@@ -9,6 +9,7 @@ import (
 	"time"
 	"timeutils"
 	"io"
+	"appengine"
 )
 
 func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.File, err error) {
@@ -38,22 +39,22 @@ func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.F
 }
 
 // Caller should call Close() when done
-func GetFileReader(client http.RoundTripper, file *drive.File) (reader io.ReadCloser, err error) {
+func GetFileReader(context appengine.Context, client http.RoundTripper, file *drive.File) (reader io.ReadCloser, err error) {
 	// t parameter should use an oauth.Transport
 	downloadUrl := file.DownloadUrl
 	if downloadUrl == "" {
 		// If there is no downloadUrl, there is no body
-		log.Printf("An error occurred: File is not downloadable")
+		context.Errorf("An error occurred: File is not downloadable")
 		return nil, nil
 	}
 	req, err := http.NewRequest("GET", downloadUrl, nil)
 	if err != nil {
-		fmt.Printf("An error occurred: %v\n", err)
+		context.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 	resp, err := client.RoundTrip(req)
 	if err != nil {
-		fmt.Printf("An error occurred: %v\n", err)
+		context.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 
