@@ -4,15 +4,15 @@ import (
 	"models"
 )
 
-func MergeReadArrays(first, second []models.MeterRead) []models.MeterRead {
-   newslice := make([]models.MeterRead, len(first) + len(second))
+func MergeReadArrays(first, second []models.GlucoseRead) []models.GlucoseRead {
+   newslice := make([]models.GlucoseRead, len(first) + len(second))
    copy(newslice, first)
    copy(newslice[len(first):], second)
    return newslice
 }
 
-func MergeCarbIntakeArrays(first, second []models.CarbIntake) []models.CarbIntake {
-   newslice := make([]models.CarbIntake, len(first) + len(second))
+func MergeCarbArrays(first, second []models.Carb) []models.Carb {
+   newslice := make([]models.Carb, len(first) + len(second))
    copy(newslice, first)
    copy(newslice[len(first):], second)
    return newslice
