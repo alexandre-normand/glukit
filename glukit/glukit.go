@@ -28,29 +28,16 @@ import (
 	stat "github.com/grd/stat"
 )
 
-// Appengine
-//const (
-//	// Created at http://code.google.com/apis/console, these identify
-//	// our app for the OAuth protocol.
-//	CLIENT_ID     = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
-//	CLIENT_SECRET = "IYbOW0Aha34xMqTaPVO-_ar5"
-//	DEMO_EMAIL    = "demo@glukit.com"
-//)
-
-// Local
 const (
-	// Created at http://code.google.com/apis/console, these identify
-	// our app for the OAuth protocol.
-	CLIENT_ID     = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
-	CLIENT_SECRET = "U3KV6G8sYqxa-qtjoxRnk6tX"
 	DEMO_EMAIL    = "demo@glukit.com"
 )
 
 // config returns the configuration information for OAuth and Drive.
-func config(host string) *oauth.Config {
+func config() *oauth.Config {
+	host, clientId, clientSecret := getEnvSettings()
 	return &oauth.Config{
-		ClientId:     CLIENT_ID,
-		ClientSecret: CLIENT_SECRET,
+		ClientId:     clientId,
+		ClientSecret: clientSecret,
 		Scope:        "https://www.googleapis.com/auth/userinfo.profile " + drive.DriveReadonlyScope,
 		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
 		TokenURL:     "https://accounts.google.com/o/oauth2/token",
@@ -99,7 +86,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
 	t := &oauth.Transport{
-		Config: config(request.Host),
+		Config: config(),
 		Transport: &urlfetch.Transport{
 			Context: appengine.NewContext(request),
 		},
@@ -151,14 +138,19 @@ func callback(w http.ResponseWriter, request *http.Request) {
 
 }
 
-func getHost() (host string) {
+func getEnvSettings() (host, clientId, clientSecret string) {
 	if (appengine.IsDevAppServer()) {
 		host = "localhost:8080"
+		clientId = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
+		clientSecret = "U3KV6G8sYqxa-qtjoxRnk6tX"
+
 	} else {
 		host = "glukit.appspot.com"
+		clientId = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
+		clientSecret = "IYbOW0Aha34xMqTaPVO-_ar5"
 	}
 
-	return host
+	return host, clientId, clientSecret
 }
 
 func processData(token *oauth.Token, files []*drive.File, context appengine.Context, userEmail string, userProfileKey *datastore.Key) {
@@ -176,7 +168,7 @@ func processData(token *oauth.Token, files []*drive.File, context appengine.Cont
 
 func processSingleFile(context appengine.Context, token *oauth.Token, file *drive.File, userEmail string, userProfileKey *datastore.Key) {
 	t := &oauth.Transport{
-		Config: config(getHost()),
+		Config: config(),
 		Transport: &urlfetch.Transport{
 			Context: context,
 		},
@@ -207,7 +199,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 
 func updateData(w http.ResponseWriter, r *http.Request) {
 	// TODO: use https://developers.google.com/appengine/docs/go/reference#AccessToken instead?
-	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
+	url := config().AuthCodeURL(r.URL.RawQuery)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
