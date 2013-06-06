@@ -35,7 +35,6 @@ import (
 //	CLIENT_ID     = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
 //	CLIENT_SECRET = "IYbOW0Aha34xMqTaPVO-_ar5"
 //	DEMO_EMAIL    = "demo@glukit.com"
-//
 //)
 
 // Local
@@ -199,7 +198,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			sysutils.Propagate(err)
 		}
 
-		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreExerciseData)
+		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 		store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum, LastDataProcessed: lastReadTime})
 		reader.Close()
 	}
@@ -226,7 +225,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, time.Unix(0, 0), store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreExerciseData)
+	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, time.Unix(0, 0), store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 	store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum", LastDataProcessed: lastReadTime})
 	channel.Send(context, DEMO_EMAIL, "Refresh")
 }
