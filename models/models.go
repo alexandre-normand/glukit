@@ -7,10 +7,12 @@ import (
 	"sysutils"
 	"appengine/datastore"
 	"log"
+	"fmt"
 )
 
 const (
 	UNDEFINED_READ = -1;
+	EXERCISE_VALUE_FORMAT = "%d,%s"
 )
 
 type TimeValue int64
@@ -126,6 +128,7 @@ type GlucoseReadSlice []GlucoseRead
 type ReadStatsSlice []GlucoseRead
 type InjectionSlice []Injection
 type CarbSlice []Carb
+type ExerciseSlice []Exercise
 type CoordinateSlice []Coordinate
 
 func (slice GlucoseReadSlice) Len() int {
@@ -207,6 +210,28 @@ func (slice CarbSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue, ExtrapolateYValueFromTime(matchingReads, slice[i].TimeValue), slice[i].Grams}
+		dataPoints[i] = dataPoint
+	}
+
+	return dataPoints
+}
+
+func (slice ExerciseSlice) Len() int {
+	return len(slice)
+}
+
+func (slice ExerciseSlice) Less(i, j int) bool {
+	return slice[i].TimeValue < slice[j].TimeValue
+}
+
+func (slice ExerciseSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice ExerciseSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
+	dataPoints = make([]DataPoint, len(slice))
+	for i := range slice {
+		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue, ExtrapolateYValueFromTime(matchingReads, slice[i].TimeValue), float32(slice[i].DurationInMinutes)}
 		dataPoints[i] = dataPoint
 	}
 
@@ -464,3 +489,75 @@ func (dayOfCarbs *DayOfCarbs) Save(channel chan <- datastore.Property) error {
 	return nil
 }
 
+func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) error {
+	var startTime time.Time
+	var endTime time.Time
+
+	for property := range channel {
+		switch columnName, columnValue := property.Name, property.Value; {
+		case columnName == "startTime":
+			startTime = property.Value.(time.Time)
+			log.Printf("Parsing block of exercises with starttime: %s", startTime)
+		case columnName == "endTime":
+			endTime = property.Value.(time.Time)
+			log.Printf("Parsed block of exercises with endtime: %s", endTime)
+		default:
+			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
+			if err != nil {
+				sysutils.Propagate(err)
+			}
+
+			timestamp := time.Unix(startTime.Unix() + offsetInSeconds, 0)
+			// We split the value string to extract the two components from it
+			value := columnValue.(string)
+			var duration int
+			var intensity string
+			fmt.Sscanf(value, EXERCISE_VALUE_FORMAT, &duration, &intensity)
+
+			localTime := timeutils.LocalTimeWithDefaultTimezone(timestamp)
+			exercise := Exercise{localTime, TimeValue(timestamp.Unix()), duration, intensity}
+			dayOfExercises.Exercises = append(dayOfExercises.Exercises, exercise)
+		}
+	}
+
+	log.Printf("Loaded total of %d exercises", len(dayOfExercises.Exercises))
+	return nil
+}
+
+func (dayOfExercises *DayOfExercises) Save(channel chan <- datastore.Property) error {
+	defer close(channel)
+
+	size := len(dayOfExercises.Exercises)
+
+	// Nothing to do if the slice has zero elements
+	if size == 0 {
+		return nil
+	}
+	exercises := dayOfExercises.Exercises
+	startTimestamp := int64(exercises[0].TimeValue)
+	startTime := time.Unix(startTimestamp, 0)
+	endTimestamp := int64(exercises[size - 1].TimeValue)
+	endTime := time.Unix(endTimestamp, 0)
+
+	channel <- datastore.Property{
+		Name:  "startTime",
+		Value:  startTime,
+	}
+	channel <- datastore.Property{
+		Name:  "endTime",
+		Value:  endTime,
+	}
+
+	for i := range exercises {
+		timestamp := int64(exercises[i].TimeValue)
+		offset := timestamp - startTimestamp
+		// We need to store two values so we use a string and format each value inside of a single cell value
+		channel <- datastore.Property {
+			Name: strconv.FormatInt(offset, 10),
+			Value: fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercises[i].DurationInMinutes, exercises[i].Intensity),
+			NoIndex: true,
+		}
+	}
+
+	return nil
+}

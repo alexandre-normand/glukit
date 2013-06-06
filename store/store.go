@@ -90,20 +90,21 @@ func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, 
 	return elementKeys, nil
 }
 
-func StoreExerciseData(context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) (key[] *datastore.Key, err error) {
-	elementKeys := make([] *datastore.Key, len(exercises))
-	for i := range exercises {
-		elementKeys[i] = datastore.NewKey(context, "Exercise", "", int64(exercises[i].TimeValue), userProfileKey)
+func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []models.DayOfExercises) (keys []*datastore.Key, err error) {
+	context.Infof("Called StoreDaysOfExercises")
+	elementKeys := make([] *datastore.Key, len(daysOfExercises))
+	for i := range daysOfExercises {
+		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", int64(daysOfExercises[i].Exercises[0].TimeValue), userProfileKey)
 	}
 
-	context.Infof("Emitting a PutMulti with %d keys for all %d exercises", len(elementKeys), len(exercises))
-	key, error := datastore.PutMulti(context, elementKeys, exercises)
+	context.Infof("Emitting a PutMulti with %d keys for all %d days of exercises", len(elementKeys), len(daysOfExercises))
+	keys, error := datastore.PutMulti(context, elementKeys, daysOfExercises)
 	if error != nil {
-		context.Criticalf("Error writing %d exercises with keys [%s]", len(elementKeys), elementKeys)
+		context.Criticalf("Error writing %d days of exercises with keys [%s]: %v", len(elementKeys), elementKeys, error)
 		return nil, error
 	}
 
-	return key, nil
+	return elementKeys, nil
 }
 
 func LogFileImport(context appengine.Context, userProfileKey *datastore.Key, fileImport models.FileImportLog) (key *datastore.Key, err error) {
@@ -253,4 +254,35 @@ func GetUserCarbs(context appengine.Context, email string, lowerBound time.Time,
 	}
 	
 	return filteredCarbs, nil
+}
+
+// Retrieves exercise values for the specified lower and upper bounds for the user identified by the email address
+func GetUserExercises(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (exercises []models.Exercise, err error) {
+	key := GetUserKey(context, email)
+
+	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
+	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
+	scanStart := lowerBound.Add(time.Duration(-24*time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24*time.Hour))
+	
+	context.Infof("Scanning for exercises between %s and %s to get exercises between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
+
+	query := datastore.NewQuery("DayOfExercises").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
+	var daysOfExercises models.DayOfExercises
+
+	iterator := query.Run(context)
+	count := 0
+	for _, err := iterator.Next(&daysOfExercises); err == nil; _, err = iterator.Next(&daysOfExercises) {
+		batchSize := len(daysOfExercises.Exercises) - count
+		context.Debugf("Loaded batch of %d exercises...", batchSize)
+		count = len(daysOfExercises.Exercises)
+	}
+
+	filteredExercises := datautils.FilterExercises(daysOfExercises.Exercises, lowerBound, upperBound)
+
+	if err != datastore.Done {
+		sysutils.Propagate(err)
+	}
+	
+	return filteredExercises, nil
 }

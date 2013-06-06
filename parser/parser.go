@@ -28,10 +28,12 @@ type Event struct {
 	Description  string `xml:"Decription,attr"`
 }
 
-func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.DayOfReads) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []models.DayOfCarbs) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []models.DayOfInjections) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, exercises []models.Exercise) ([] *datastore.Key, error)) (lastReadTime time.Time) {
+func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, carbs []models.DayOfReads) ([] *datastore.Key, error), carbsBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []models.DayOfCarbs) ([] *datastore.Key, error), injectionBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []models.DayOfInjections) ([] *datastore.Key, error), exerciseBatchHandler func (context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []models.DayOfExercises) ([] *datastore.Key, error)) (lastReadTime time.Time) {
 	decoder := xml.NewDecoder(reader)
+	
 	reads := make([]models.GlucoseRead, 0)
 	daysOfReads := make([]models.DayOfReads,0, batchSize)
+	
 	injections := make([]models.Injection, 0)
 	daysOfInjections := make([]models.DayOfInjections,0, batchSize)
 	var lastInjection models.Injection
@@ -40,7 +42,9 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	daysOfCarbs := make([]models.DayOfCarbs,0, batchSize)
 	var lastCarb models.Carb
 
-	exercises := make([]models.Exercise,0, batchSize)
+	exercises := make([]models.Exercise, 0)
+	daysOfExercises := make([]models.DayOfExercises,0, batchSize)
+	var lastExercise models.Exercise
 
 	var lastRead models.GlucoseRead
 	for {
@@ -117,7 +121,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 							}
 
 							// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
-							// read read. This assumes that we will never get a gap big enough that two consecutive reads could
+							// read carb. This assumes that we will never get a gap big enough that two consecutive carbs could
 							// have the same day value while being months apart.
 							if carb.GetTime().Day() != lastCarb.GetTime().Day() {
 								// Create a day of reads and append it to the batch
@@ -153,7 +157,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 							}
 
 							// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
-							// read read. This assumes that we will never get a gap big enough that two consecutive reads could
+							// read injection. This assumes that we will never get a gap big enough that two consecutive injections could
 							// have the same day value while being months apart.
 							if injection.GetTime().Day() != lastInjection.GetTime().Day() {
 								// Create a day of reads and append it to the batch
@@ -177,17 +181,41 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						var intensity string
 						fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
 						exercise := models.Exercise{event.EventTime, models.TimeValue(internalEventTime), duration, intensity}
-						exercises = append(exercises, exercise)
-						if (len(exercises) == batchSize) {
-							// Send the batch to be handled and restart another one
-							exerciseBatchHandler(context, parentKey, exercises)
-							exercises = make([]models.Exercise,0, batchSize)
+
+						if (!exercise.GetTime().After(startTime)) {
+							context.Debugf("Skipping already imported exercise dated [%s]", exercise.GetTime().Format(timeutils.TIMEFORMAT))
+						} else {
+							// This should only happen once as we start parsing, we initialize the previous day to the current
+							// and the rest of the logic should gracefully handle this case
+							if (len(exercises) == 0) {
+								lastExercise = exercise
+							}
+
+							// We're crossing a day boundery, we cut a batch store it and start a new one with the most recently
+							// read exercise. This assumes that we will never get a gap big enough that two consecutive exercises could
+							// have the same day value while being months apart.
+							if exercise.GetTime().Day() != lastExercise.GetTime().Day() {
+								// Create a day of reads and append it to the batch
+								daysOfExercises = append(daysOfExercises, models.DayOfExercises{exercises})
+
+								if (len(daysOfExercises) == batchSize) {
+									// Send the batch to be handled and restart another one
+									exerciseBatchHandler(context, parentKey, daysOfExercises)
+									daysOfExercises = make([]models.DayOfExercises,0, batchSize)
+								}
+
+								exercises = make([]models.Exercise, 0)
+							}
+
+							exercises = append(exercises, exercise)
 						}
+
+						lastExercise = exercise
 					}
 				}
 
 			case "Meter":
-				// TODO: Read the meter calibrations?
+				// TODO: Read the meter calibrations? No need for it yet but we could
 			}
 		}
 	}
@@ -214,8 +242,10 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	}
 
 	if (len(exercises) > 0) {
-		// Send the batch to be handled and restart another one
-		exerciseBatchHandler(context, parentKey, exercises)
+		// Store the last batch of exercises
+		daysOfExercises = append(daysOfExercises, models.DayOfExercises{exercises})
+		context.Infof("Flushing %d days of exercises", len(daysOfExercises))
+		exerciseBatchHandler(context, parentKey, daysOfExercises)
 	}
 
 	context.Infof("Done parsing and storing all data")
