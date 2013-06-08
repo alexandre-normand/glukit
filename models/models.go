@@ -8,12 +8,16 @@ import (
 	"appengine/datastore"
 	"log"
 	"fmt"
+	"goauth2/oauth"
 )
 
 const (
 	UNDEFINED_READ = -1;
 	EXERCISE_VALUE_FORMAT = "%d,%s"
 )
+
+// "Dynamic" constants, those should never be updated
+var UNDEFINED_SCORE = GlukitScore{-1, time.Unix(0, 0)}
 
 type TimeValue int64
 
@@ -90,14 +94,21 @@ type FileImportLog struct {
 }
 
 type GlukitUser struct {
-	Email              string
-	FirstName          string
-	LastName           string
-	DateOfBirth        time.Time
-	DiabetesType       string
-	Timezone           string
-	LastUpdated        time.Time
-	MostRecentRead     time.Time
+	Email              string        `datastore:"email"`
+	FirstName          string        `datastore:"firstName"`
+	LastName           string        `datastore:"lastName"`
+	DateOfBirth        time.Time     `datastore:"birthdate"`
+	DiabetesType       string        `datastore:"diabetesType"`
+	Timezone           string        `datastore:"timezoneId"`
+	LastUpdated        time.Time     `datastore:"lastUpdated"`
+	MostRecentRead     time.Time     `datastore:"mostRecentRead"`
+	Token              oauth.Token   `datastore:"token"`
+	Score              GlukitScore   `datastore:"score"`
+}
+
+type GlukitScore struct {
+	Value              int64         `datastore:"value"`
+	UpdatedAt          time.Time     `datastore:"updatedAt"`
 }
 
 type PointData interface {

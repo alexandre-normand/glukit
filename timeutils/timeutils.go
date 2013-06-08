@@ -14,6 +14,7 @@ const (
 )
 
 var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
+var BEGINNING_OF_TIME    = time.Unix(0, 0)
 
 func ParseGoogleDriveDate(value string) (timeValue time.Time, err error) {
 	return time.Parse(DRIVE_TIMEFORMAT, value)
