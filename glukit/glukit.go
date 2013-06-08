@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	DEMO_EMAIL    = "demo@glukit.com"
+	DEMO_EMAIL = "demo@glukit.com"
 )
 
 // config returns the configuration information for OAuth and Drive.
@@ -83,35 +83,52 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	// Exchange code for an access token at OAuth provider.
-	code := request.FormValue("code")
-	t := &oauth.Transport{
-		Config: config(),
-		Transport: &urlfetch.Transport{
-			Context: appengine.NewContext(request),
-		},
-	}
-
-	// TODO: save the token to the memcache/datastore?!
-	token, err := t.Exchange(code)
-	sysutils.Propagate(err)
-
-	readData, key, _, _, err := store.GetUserData(context, user.Email)
+	t := new(oauth.Transport)
+	var oauthToken oauth.Token
+	glukitUser, key, _, _, err := store.GetUserData(context, user.Email)
 	if err == datastore.ErrNoSuchEntity {
+		oauthToken, t = getOauthToken(request)
+
 		context.Infof("No data found for user [%s], creating it", user.Email)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
+		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now(), timeutils.BEGINNING_OF_TIME, oauthToken, models.UNDEFINED_SCORE})
 		if err != nil {
 			sysutils.Propagate(err)
 		}
-	} else {
+	} else if err != nil {
 		sysutils.Propagate(err)
+	} else {
+		oauthToken = glukitUser.Token
+
+		context.Debugf("Initializing transport from token [%s]", oauthToken)
+		t = &oauth.Transport{
+			Config: config(),
+			Transport: &urlfetch.Transport{
+				Context: context,
+			},
+			Token: &oauthToken,
+		}
+
+		if !oauthToken.Expired() {
+			context.Debugf("Token [%s] still valid, reusing it...", oauthToken)
+		} else {
+			context.Infof("Token expired on [%s], getting a new one...", oauthToken.Expiry)
+			oauthToken, t = getOauthToken(request)
+
+			context.Debugf("Storing new token [%s] in datastore...", oauthToken)
+			glukitUser.LastUpdated = time.Now()
+			glukitUser.Token = oauthToken
+			key, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
+			if err != nil {
+				sysutils.Propagate(err)
+			}
+		}
 	}
 
 	context.Debugf("Found existing user: %s", user.Email)
-	lastUpdate := time.Unix(0, 0)
-	if readData != nil {
-		lastUpdate = readData.LastUpdated
+	lastUpdate := timeutils.BEGINNING_OF_TIME
+	if glukitUser != nil {
+		lastUpdate = glukitUser.LastUpdated
 	}
 
 	context.Debugf("Key %s, lastUpdate: %s", key, lastUpdate)
@@ -121,21 +138,37 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	}
 
 	switch {
-	case len(files) == 0 && readData == nil:
+	case len(files) == 0 && glukitUser == nil:
 		context.Infof("No files found and user [%s] has no previous data stored", user.Email)
 		http.Redirect(w, request, "/nodata", 303)
-	case len(files) == 0 && readData != nil:
+	case len(files) == 0 && glukitUser != nil:
 		context.Infof("No new or updated data found for existing user [%s]", user.Email)
 		http.Redirect(w, request, "/graph", 303)
 	case len(files) > 0:
 		context.Infof("Found new data files for user [%s], downloading and storing...", user.Email)
-		processData(token, files, context, user.Email, key)
+		processData(&oauthToken, files, context, user.Email, key)
 
 		context.Infof("Storing user data with key: %s", key.String())
 
 		http.Redirect(w, request, "/graph", 303)
 	}
 
+}
+
+func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oauth.Transport) {
+	// Exchange code for an access token at OAuth provider.
+	code := request.FormValue("code")
+	t := &oauth.Transport{
+		Config: config(),
+		Transport: &urlfetch.Transport{
+			Context: appengine.NewContext(request),
+		},
+	}
+
+	token, err := t.Exchange(code)
+	sysutils.Propagate(err)
+
+	return *token, t
 }
 
 func getEnvSettings() (host, clientId, clientSecret string) {
@@ -180,7 +213,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 		context.Infof("Error reading file %s, skipping...", file.OriginalFilename)
 	} else {
 		// Default to beginning of time
-		startTime := time.Unix(0, 0)
+		startTime := timeutils.BEGINNING_OF_TIME
 		if lastFileImportLog, err := store.GetFileImportLog(context, userProfileKey, file.Id); err == nil {
 			startTime = lastFileImportLog.LastDataProcessed
 			context.Infof("Reloading data from file [%s]-[%s] starting at date [%s]...", file.Id, file.OriginalFilename, startTime.Format(timeutils.TIMEFORMAT))
@@ -217,7 +250,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, time.Unix(0, 0), store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, timeutils.BEGINNING_OF_TIME, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 	store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum", LastDataProcessed: lastReadTime})
 	channel.Send(context, DEMO_EMAIL, "Refresh")
 }
@@ -228,8 +261,9 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	_, key, _, _, err := store.GetUserData(context, DEMO_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
+		dummyToken := oauth.Token{"", "", timeutils.BEGINNING_OF_TIME}
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(), time.Unix(0, 0)})
+		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(), timeutils.BEGINNING_OF_TIME, dummyToken, models.UNDEFINED_SCORE})
 		if err != nil {
 			sysutils.Propagate(err)
 		}
