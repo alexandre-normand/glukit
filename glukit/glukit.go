@@ -113,10 +113,11 @@ func callback(w http.ResponseWriter, request *http.Request) {
 		if !oauthToken.Expired() {
 			context.Debugf("Token [%s] still valid, reusing it...", oauthToken)
 		} else {
-			context.Infof("Token expired on [%s], getting a new one...", oauthToken.Expiry)
-			oauthToken, t = getOauthToken(request)
+			context.Infof("Token expired on [%s], refreshing...", oauthToken.Expiry)
+			err := t.Refresh()
+			sysutils.Propagate(err)
 
-			context.Debugf("Storing new token [%s] in datastore...", oauthToken)
+			context.Debugf("Storing new refreshed token [%s] in datastore...", oauthToken)
 			glukitUser.LastUpdated = time.Now()
 			glukitUser.Token = oauthToken
 			key, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
@@ -236,7 +237,7 @@ func updateData(writer http.ResponseWriter, request *http.Request) {
 	user := user.Current(context)
 
 	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
-	if err != nil || glukitUser.Token.Expired() {
+	if err != nil {
 		context.Infof("Redirecting [%s], glukitUser [%v] for authorization", user.Email, glukitUser)
 		url := config().AuthCodeURL(request.URL.RawQuery)
 		http.Redirect(writer, request, url, http.StatusFound)
