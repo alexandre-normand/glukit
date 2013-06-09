@@ -41,6 +41,7 @@ func config() *oauth.Config {
 		Scope:        "https://www.googleapis.com/auth/userinfo.profile " + drive.DriveReadonlyScope,
 		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
 		TokenURL:     "https://accounts.google.com/o/oauth2/token",
+		AccessType:   "offline",
 		RedirectURL:  fmt.Sprintf("http://%s/oauth2callback", host),
 	}
 }
@@ -230,10 +231,19 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 	channel.Send(context, userEmail, "Refresh")
 }
 
-func updateData(w http.ResponseWriter, r *http.Request) {
-	// TODO: use https://developers.google.com/appengine/docs/go/reference#AccessToken instead?
-	url := config().AuthCodeURL(r.URL.RawQuery)
-	http.Redirect(w, r, url, http.StatusFound)
+func updateData(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
+	if err != nil || glukitUser.Token.Expired() {
+		context.Infof("Redirecting [%s], glukitUser [%v] for authorization", user.Email, glukitUser)
+		url := config().AuthCodeURL(request.URL.RawQuery)
+		http.Redirect(writer, request, url, http.StatusFound)
+	} else {
+		context.Infof("User [%s] already exists, skipping authorization step...", user.Email)
+		callback(writer, request)
+	}
 }
 
 func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.Key) {
