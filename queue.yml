@@ -1,3 +1,6 @@
 queue:
 - name: store
   rate: 35/s
+
+- name: refresh
+  rate: 10/s

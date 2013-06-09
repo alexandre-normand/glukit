@@ -63,6 +63,12 @@ var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
 var processFile = delay.Func("processSingleFile", processSingleFile)
 var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
+var refreshUserData = delay.Func("refreshUserData", func(context appengine.Context, userEmail string) {
+		context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that ",
+				"shows up because the function calls itself. This implementation defines the same signature as the ",
+				"real one which we define in init() to override this implementation!")
+	})
+
 var emptyDataPointSlice []models.DataPoint
 
 func init() {
@@ -76,23 +82,25 @@ func init() {
 
 	http.HandleFunc("/", landing)
 	http.HandleFunc("/nodata", nodata)
-	http.HandleFunc("/realuser", updateData)
+	http.HandleFunc("/realuser", handleRealUser)
 	http.HandleFunc("/oauth2callback", callback)
+
+	refreshUserData = delay.Func("refreshUserData", updateUserData)
 }
 
-func callback(w http.ResponseWriter, request *http.Request) {
+func callback(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
 	t := new(oauth.Transport)
 	var oauthToken oauth.Token
-	glukitUser, key, _, _, err := store.GetUserData(context, user.Email)
+	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
 	if err == datastore.ErrNoSuchEntity {
 		oauthToken, t = getOauthToken(request)
 
 		context.Infof("No data found for user [%s], creating it", user.Email)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", time.Now(), timeutils.BEGINNING_OF_TIME, oauthToken, models.UNDEFINED_SCORE})
+		_, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", timeutils.BEGINNING_OF_TIME, timeutils.BEGINNING_OF_TIME, oauthToken, models.UNDEFINED_SCORE})
 		if err != nil {
 			sysutils.Propagate(err)
 		}
@@ -120,7 +128,7 @@ func callback(w http.ResponseWriter, request *http.Request) {
 			context.Debugf("Storing new refreshed token [%s] in datastore...", oauthToken)
 			glukitUser.LastUpdated = time.Now()
 			glukitUser.Token = oauthToken
-			key, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
+			_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
 			if err != nil {
 				sysutils.Propagate(err)
 			}
@@ -128,33 +136,73 @@ func callback(w http.ResponseWriter, request *http.Request) {
 	}
 
 	context.Debugf("Found existing user: %s", user.Email)
-	lastUpdate := timeutils.BEGINNING_OF_TIME
-	if glukitUser != nil {
-		lastUpdate = glukitUser.LastUpdated
-	}
 
-	context.Debugf("Key %s, lastUpdate: %s", key, lastUpdate)
-	files, err := fetcher.SearchDataFiles(t.Client(), lastUpdate)
+	task, err := refreshUserData.Task(user.Email)
 	if err != nil {
-		sysutils.Propagate(err)
+		context.Criticalf("Couldn't schedule execution of the data refresh for user [%s]: %v", user.Email, err)
+	}
+	taskqueue.Add(context, task, "refresh")
+
+	context.Infof("Kicked off data update for user [%s]...", user.Email)
+
+	// Render the graph view, it might take some time to show something but it will as soon as a file import
+	// completes
+	renderRealUser(writer, request)
+}
+
+// Async task that searches on Google Drive for dexcom files. It handles some high watermark of the last import
+// to avoid downloading already imported files (unless they've been updated). It also schedules itself to run again
+// the next day unless the token is invalid.
+func updateUserData(context appengine.Context, userEmail string) {
+	glukitUser, key, _, _, err := store.GetUserData(context, userEmail)
+	if err != nil {
+		context.Errorf("We're trying to run an update data task for user [%s] that doesn't exist. Got error: %v", userEmail, err)
+		return;
 	}
 
-	switch {
-	case len(files) == 0 && glukitUser == nil:
-		context.Infof("No files found and user [%s] has no previous data stored", user.Email)
-		http.Redirect(w, request, "/nodata", 303)
-	case len(files) == 0 && glukitUser != nil:
-		context.Infof("No new or updated data found for existing user [%s]", user.Email)
-		http.Redirect(w, request, "/graph", 303)
-	case len(files) > 0:
-		context.Infof("Found new data files for user [%s], downloading and storing...", user.Email)
-		processData(&oauthToken, files, context, user.Email, key)
-
-		context.Infof("Storing user data with key: %s", key.String())
-
-		http.Redirect(w, request, "/graph", 303)
+	transport := &oauth.Transport{
+		Config: config(),
+		Transport: &urlfetch.Transport{
+			Context: context,
+		},
+		Token: &glukitUser.Token,
 	}
 
+	// If the token is expired, try to get a fresh one by doing a refresh (which should use the refresh_token
+	if glukitUser.Token.Expired() {
+		err := transport.Refresh()
+		if err != nil {
+			context.Errorf("Error updating token for user [%s], let's hope he comes back soon so we can get a fresh token: %v", userEmail, err)
+			return;
+		}
+
+		// Update the user with the new token
+		context.Infof("Token refreshed, updating user [%s] with token [%v]", userEmail, glukitUser.Token)
+		store.StoreUserProfile(context, time.Now(), *glukitUser)
+	}
+
+	nextUpdate := time.Now().AddDate(0, 0, 1)
+	files, err := fetcher.SearchDataFiles(transport.Client(), glukitUser.LastUpdated)
+	if err != nil {
+		context.Warningf("Error while searching for files on google drive for user [%s]: %v", userEmail, err)
+	} else {
+		switch {
+		case len(files) == 0:
+			context.Infof("No new or updated data found for existing user [%s]", userEmail)
+		case len(files) > 0:
+			context.Infof("Found new data files for user [%s], downloading and storing...", userEmail)
+			processData(&glukitUser.Token, files, context, userEmail, key)
+		}
+	}
+
+	task, err := refreshUserData.Task(userEmail)
+	if err != nil {
+		context.Criticalf("Couldn't schedule the next execution of the data refresh for user [%s]. This breaks background updating of user data!: %v", userEmail, err)
+	}
+	task.ETA = nextUpdate
+	taskqueue.Add(context, task, "refresh")
+
+	context.Infof("Scheduled next data update for user [%s] at [%s]", userEmail, nextUpdate.Format(timeutils.TIMEFORMAT))
 }
 
 func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oauth.Transport) {
@@ -232,7 +280,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 	channel.Send(context, userEmail, "Refresh")
 }
 
-func updateData(writer http.ResponseWriter, request *http.Request) {
+func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
