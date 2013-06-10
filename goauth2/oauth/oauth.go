@@ -45,6 +45,7 @@ import (
 	"net/url"
 	"os"
 	"time"
+	"appengine"
 )
 
 type OAuthError struct {
@@ -188,7 +189,7 @@ func (c *Config) AuthCodeURL(state string) string {
 }
 
 // Exchange takes a code and gets access Token from the remote server.
-func (t *Transport) Exchange(code string) (*Token, error) {
+func (t *Transport) Exchange(context appengine.Context, code string) (*Token, error) {
 	if t.Config == nil {
 		return nil, OAuthError{"Exchange", "no Config supplied"}
 	}
@@ -197,12 +198,14 @@ func (t *Transport) Exchange(code string) (*Token, error) {
 	// passed to `updateToken` to preserve existing refresh token.
 	tok := t.Token
 	if tok == nil && t.TokenCache != nil {
+		context.Infof("Already had a token, refreshing instead with token [%v]", tok)
 		tok, _ = t.TokenCache.Token()
 	}
 	if tok == nil {
+		context.Infof("Creating brand new token...")
 		tok = new(Token)
 	}
-	err := t.updateToken(tok, url.Values{
+	err := t.updateToken(context, tok, url.Values{
 		"grant_type":   {"authorization_code"},
 		"redirect_uri": {t.redirectURL()},
 		"scope":        {t.Scope},
@@ -243,7 +246,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// Refresh the Token if it has expired.
 	if t.Expired() {
-		if err := t.Refresh(); err != nil {
+		if err := t.Refresh(nil); err != nil {
 			return nil, err
 		}
 	}
@@ -273,14 +276,14 @@ func cloneRequest(r *http.Request) *http.Request {
 }
 
 // Refresh renews the Transport's AccessToken using its RefreshToken.
-func (t *Transport) Refresh() error {
+func (t *Transport) Refresh(context appengine.Context) error {
 	if t.Config == nil {
 		return OAuthError{"Refresh", "no Config supplied"}
 	} else if t.Token == nil {
 		return OAuthError{"Refresh", "no existing Token"}
 	}
 
-	err := t.updateToken(t.Token, url.Values{
+	err := t.updateToken(context, t.Token, url.Values{
 		"grant_type":    {"refresh_token"},
 		"refresh_token": {t.RefreshToken},
 	})
@@ -293,9 +296,12 @@ func (t *Transport) Refresh() error {
 	return nil
 }
 
-func (t *Transport) updateToken(tok *Token, v url.Values) error {
+func (t *Transport) updateToken(context appengine.Context, tok *Token, v url.Values) error {
 	v.Set("client_id", t.ClientId)
 	v.Set("client_secret", t.ClientSecret)
+	if context != nil {
+		context.Infof("Posting form to url [%s]: [%v]", t.TokenURL, v)
+	}
 	r, err := (&http.Client{Transport: t.transport()}).PostForm(t.TokenURL, v)
 	if err != nil {
 		return err

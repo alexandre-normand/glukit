@@ -102,7 +102,9 @@ type GlukitUser struct {
 	Timezone           string        `datastore:"timezoneId"`
 	LastUpdated        time.Time     `datastore:"lastUpdated"`
 	MostRecentRead     time.Time     `datastore:"mostRecentRead"`
-	Token              oauth.Token   `datastore:"token"`
+	Token              oauth.Token   `datastore:"token",noindex`
+	// This should always remain there, if we lose it, we have to force to get a brand-new one
+	RefreshToken       string        `datastore:"refreshToken",noindex`
 	Score              GlukitScore   `datastore:"score"`
 }
 

@@ -35,7 +35,7 @@ const (
 // config returns the configuration information for OAuth and Drive.
 func config() *oauth.Config {
 	host, clientId, clientSecret := getEnvSettings()
-	return &oauth.Config{
+	config := oauth.Config{
 		ClientId:     clientId,
 		ClientSecret: clientSecret,
 		Scope:        "https://www.googleapis.com/auth/userinfo.profile " + drive.DriveReadonlyScope,
@@ -44,6 +44,8 @@ func config() *oauth.Config {
 		AccessType:   "offline",
 		RedirectURL:  fmt.Sprintf("http://%s/oauth2callback", host),
 	}
+
+	return &config
 }
 
 type DataSeries struct {
@@ -65,8 +67,8 @@ var processFile = delay.Func("processSingleFile", processSingleFile)
 var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
 var refreshUserData = delay.Func("refreshUserData", func(context appengine.Context, userEmail string) {
 		context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that ",
-				"shows up because the function calls itself. This implementation defines the same signature as the ",
-				"real one which we define in init() to override this implementation!")
+			"shows up because the function calls itself. This implementation defines the same signature as the ",
+			"real one which we define in init() to override this implementation!")
 	})
 
 var emptyDataPointSlice []models.DataPoint
@@ -92,15 +94,16 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	t := new(oauth.Transport)
+	transport := new(oauth.Transport)
 	var oauthToken oauth.Token
 	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
 	if err == datastore.ErrNoSuchEntity {
-		oauthToken, t = getOauthToken(request)
+		oauthToken, transport = getOauthToken(request)
 
 		context.Infof("No data found for user [%s], creating it", user.Email)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		_, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", timeutils.BEGINNING_OF_TIME, timeutils.BEGINNING_OF_TIME, oauthToken, models.UNDEFINED_SCORE})
+		// We store the refresh token separately from the rest. This token is long-lived, meaning that if we have a glukit user with no refresh token, we need to force getting a new one (which is to be avoided)
+		_, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", timeutils.BEGINNING_OF_TIME, timeutils.BEGINNING_OF_TIME, oauthToken, oauthToken.RefreshToken, models.UNDEFINED_SCORE})
 		if err != nil {
 			sysutils.Propagate(err)
 		}
@@ -110,7 +113,7 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 		oauthToken = glukitUser.Token
 
 		context.Debugf("Initializing transport from token [%s]", oauthToken)
-		t = &oauth.Transport{
+		transport = &oauth.Transport{
 			Config: config(),
 			Transport: &urlfetch.Transport{
 				Context: context,
@@ -121,17 +124,29 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 		if !oauthToken.Expired() {
 			context.Debugf("Token [%s] still valid, reusing it...", oauthToken)
 		} else {
-			context.Infof("Token expired on [%s], refreshing...", oauthToken.Expiry)
-			err := t.Refresh()
-			sysutils.Propagate(err)
+			context.Infof("Token [%v] expired on [%s], refreshing with refresh token [%s]...", oauthToken, oauthToken.Expiry, glukitUser.RefreshToken)
 
-			context.Debugf("Storing new refreshed token [%s] in datastore...", oauthToken)
-			glukitUser.LastUpdated = time.Now()
-			glukitUser.Token = oauthToken
-			_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
-			if err != nil {
+			// We lost the refresh token, we need to force approval and get a new one
+			if len(glukitUser.RefreshToken) == 0 {
+				context.Criticalf("We lost the refresh token for user [%s], getting a new one with the force approval.")
+				oauthToken, transport = getOauthToken(request)
+				glukitUser.RefreshToken = oauthToken.RefreshToken
+				store.StoreUserProfile(context, time.Now(), *glukitUser)
+			} else {
+				transport.Token.RefreshToken = glukitUser.RefreshToken
+
+				err := transport.Refresh(context)
 				sysutils.Propagate(err)
+
+				context.Debugf("Storing new refreshed token [%s] in datastore...", oauthToken)
+				glukitUser.LastUpdated = time.Now()
+				glukitUser.Token = oauthToken
+				_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
+				if err != nil {
+					sysutils.Propagate(err)
+				}
 			}
+
 		}
 	}
 
@@ -139,7 +154,7 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 
 	task, err := refreshUserData.Task(user.Email)
 	if err != nil {
-		context.Criticalf("Couldn't schedule execution of the data refresh for user [%s]: %v", user.Email, err)
+		context.Criticalf("Could not schedule execution of the data refresh for user [%s]: %v", user.Email, err)
 	}
 	taskqueue.Add(context, task, "refresh")
 
@@ -170,7 +185,8 @@ func updateUserData(context appengine.Context, userEmail string) {
 
 	// If the token is expired, try to get a fresh one by doing a refresh (which should use the refresh_token
 	if glukitUser.Token.Expired() {
-		err := transport.Refresh()
+		transport.Token.RefreshToken = glukitUser.RefreshToken
+		err := transport.Refresh(context)
 		if err != nil {
 			context.Errorf("Error updating token for user [%s], let's hope he comes back soon so we can get a fresh token: %v", userEmail, err)
 			return;
@@ -206,18 +222,24 @@ func updateUserData(context appengine.Context, userEmail string) {
 }
 
 func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oauth.Transport) {
+	context := appengine.NewContext(request)
+
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
+	configuration := config()
+	context.Debugf("Getting token with configuration [%v]...", configuration)
+
 	t := &oauth.Transport{
-		Config: config(),
+		Config: configuration,
 		Transport: &urlfetch.Transport{
 			Context: appengine.NewContext(request),
 		},
 	}
 
-	token, err := t.Exchange(code)
+	token, err := t.Exchange(context, code)
 	sysutils.Propagate(err)
 
+	context.Infof("Got brand new oauth token [%v] with refresh token [%s]", token, token.RefreshToken)
 	return *token, t
 }
 
@@ -285,12 +307,19 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 	user := user.Current(context)
 
 	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
-	if err != nil {
+	if err != nil || len(glukitUser.RefreshToken) == 0 {
 		context.Infof("Redirecting [%s], glukitUser [%v] for authorization", user.Email, glukitUser)
-		url := config().AuthCodeURL(request.URL.RawQuery)
+
+		configuration := config()
+		if len(glukitUser.RefreshToken) == 0 {
+			context.Debugf("We lost the refresh token, let's set the ApprovalPrompt to force to get a new one...")
+			configuration.ApprovalPrompt = "force"
+		}
+
+		url := configuration.AuthCodeURL(request.URL.RawQuery)
 		http.Redirect(writer, request, url, http.StatusFound)
 	} else {
-		context.Infof("User [%s] already exists, skipping authorization step...", user.Email)
+		context.Infof("User [%s] already exists with a valid refresh token [%s], skipping authorization step...", glukitUser.RefreshToken, user.Email)
 		callback(writer, request)
 	}
 }
@@ -322,7 +351,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
 		dummyToken := oauth.Token{"", "", timeutils.BEGINNING_OF_TIME}
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(), timeutils.BEGINNING_OF_TIME, dummyToken, models.UNDEFINED_SCORE})
+		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(), timeutils.BEGINNING_OF_TIME, dummyToken, "", models.UNDEFINED_SCORE})
 		if err != nil {
 			sysutils.Propagate(err)
 		}
