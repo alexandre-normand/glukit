@@ -69,9 +69,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 					glucoseRead := models.GlucoseRead{read.DisplayTime, models.TimeValue(timeutils.GetTimeInSeconds(read.InternalTime)), read.Value}
 
 					// Skip all reads that are not after the last import's last read time
-					if (!glucoseRead.GetTime().After(startTime)) {
-						context.Debugf("Skipping already imported read dated [%s]", glucoseRead.GetTime().Format(timeutils.TIMEFORMAT))
-					} else {
+					if glucoseRead.GetTime().After(startTime) {
 						// This should only happen once as we start parsing, we initialize the previous day to the current
 						// and the rest of the logic should gracefully handle this case
 						if (len(reads) == 0) {

@@ -65,7 +65,7 @@ var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 
 var processFile = delay.Func("processSingleFile", processSingleFile)
 var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
-var refreshUserData = delay.Func("refreshUserData", func(context appengine.Context, userEmail string) {
+var refreshUserData = delay.Func("refreshUserData", func(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
 		context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that ",
 			"shows up because the function calls itself. This implementation defines the same signature as the ",
 			"real one which we define in init() to override this implementation!")
@@ -97,6 +97,7 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 	transport := new(oauth.Transport)
 	var oauthToken oauth.Token
 	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
+	scheduleAutoRefresh := false
 	if err == datastore.ErrNoSuchEntity {
 		oauthToken, transport = getOauthToken(request)
 
@@ -107,6 +108,9 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 		if err != nil {
 			sysutils.Propagate(err)
 		}
+		// We only schedule the auto refresh on first access since all subsequent runs of scheduled tasks will also
+		// reschedule themselve a new run
+		scheduleAutoRefresh = true
 	} else if err != nil {
 		sysutils.Propagate(err)
 	} else {
@@ -121,14 +125,18 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 			Token: &oauthToken,
 		}
 
-		if !oauthToken.Expired() {
+		if !oauthToken.Expired() && len(glukitUser.RefreshToken) > 0 {
 			context.Debugf("Token [%s] still valid, reusing it...", oauthToken)
 		} else {
-			context.Infof("Token [%v] expired on [%s], refreshing with refresh token [%s]...", oauthToken, oauthToken.Expiry, glukitUser.RefreshToken)
+			if oauthToken.Expired() {
+				context.Infof("Token [%v] expired on [%s], refreshing with refresh token [%s]...", oauthToken, oauthToken.Expiry, glukitUser.RefreshToken)
+			} else if len(glukitUser.RefreshToken) == 0 {
+				context.Warningf("No refresh token stored, getting a new one and saving it...")
+			}
 
 			// We lost the refresh token, we need to force approval and get a new one
 			if len(glukitUser.RefreshToken) == 0 {
-				context.Criticalf("We lost the refresh token for user [%s], getting a new one with the force approval.")
+				context.Criticalf("We lost the refresh token for user [%s], getting a new one with the force approval.", user.Email)
 				oauthToken, transport = getOauthToken(request)
 				glukitUser.RefreshToken = oauthToken.RefreshToken
 				store.StoreUserProfile(context, time.Now(), *glukitUser)
@@ -150,14 +158,11 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	context.Debugf("Found existing user: %s", user.Email)
-
-	task, err := refreshUserData.Task(user.Email)
+	task, err := refreshUserData.Task(user.Email, scheduleAutoRefresh)
 	if err != nil {
 		context.Criticalf("Could not schedule execution of the data refresh for user [%s]: %v", user.Email, err)
 	}
 	taskqueue.Add(context, task, "refresh")
-
 	context.Infof("Kicked off data update for user [%s]...", user.Email)
 
 	// Render the graph view, it might take some time to show something but it will as soon as a file import
@@ -168,7 +173,7 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 // Async task that searches on Google Drive for dexcom files. It handles some high watermark of the last import
 // to avoid downloading already imported files (unless they've been updated). It also schedules itself to run again
 // the next day unless the token is invalid.
-func updateUserData(context appengine.Context, userEmail string) {
+func updateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
 	glukitUser, key, _, _, err := store.GetUserData(context, userEmail)
 	if err != nil {
 		context.Errorf("We're trying to run an update data task for user [%s] that doesn't exist. Got error: %v", userEmail, err)
@@ -211,14 +216,18 @@ func updateUserData(context appengine.Context, userEmail string) {
 		}
 	}
 
-	task, err := refreshUserData.Task(userEmail)
-	if err != nil {
-		context.Criticalf("Couldn't schedule the next execution of the data refresh for user [%s]. This breaks background updating of user data!: %v", userEmail, err)
-	}
-	task.ETA = nextUpdate
-	taskqueue.Add(context, task, "refresh")
+	if autoScheduleNextRun {
+		task, err := refreshUserData.Task(userEmail, autoScheduleNextRun)
+		if err != nil {
+			context.Criticalf("Couldn't schedule the next execution of the data refresh for user [%s]. This breaks background updating of user data!: %v", userEmail, err)
+		}
+		task.ETA = nextUpdate
+		taskqueue.Add(context, task, "refresh")
 
-	context.Infof("Scheduled next data update for user [%s] at [%s]", userEmail, nextUpdate.Format(timeutils.TIMEFORMAT))
+		context.Infof("Scheduled next data update for user [%s] at [%s]", userEmail, nextUpdate.Format(timeutils.TIMEFORMAT))
+	} else {
+		context.Infof("Not scheduling a the next refresh as requested by autoScheduleNextRun [%t]", autoScheduleNextRun)
+	}
 }
 
 func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oauth.Transport) {
@@ -311,10 +320,8 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 		context.Infof("Redirecting [%s], glukitUser [%v] for authorization", user.Email, glukitUser)
 
 		configuration := config()
-		if len(glukitUser.RefreshToken) == 0 {
-			context.Debugf("We lost the refresh token, let's set the ApprovalPrompt to force to get a new one...")
-			configuration.ApprovalPrompt = "force"
-		}
+		context.Debugf("We don't current have a refresh token (either lost or it's the first access). Let's set the ApprovalPrompt to force to get a new one...")
+		configuration.ApprovalPrompt = "force"
 
 		url := configuration.AuthCodeURL(request.URL.RawQuery)
 		http.Redirect(writer, request, url, http.StatusFound)
