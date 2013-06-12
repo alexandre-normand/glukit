@@ -14,10 +14,11 @@ import (
 const (
 	UNDEFINED_READ = -1;
 	EXERCISE_VALUE_FORMAT = "%d,%s"
+	UNDEFINED_SCORE_VALUE = int64(-1)
 )
 
 // "Dynamic" constants, those should never be updated
-var UNDEFINED_SCORE = GlukitScore{-1, time.Unix(0, 0)}
+var UNDEFINED_SCORE = GlukitScore{UNDEFINED_SCORE_VALUE, timeutils.BEGINNING_OF_TIME, timeutils.BEGINNING_OF_TIME}
 
 type TimeValue int64
 
@@ -25,8 +26,8 @@ type TrackingData struct {
 	Mean             float64         `json:"mean"`
 	Median           float64         `json:"median"`
 	Deviation        float64         `json:"deviation"`
-	Min      	    float64         `json:"min"`
-	Max      	    float64         `json:"max"`
+	Min      	     float64         `json:"min"`
+	Max      	     float64         `json:"max"`
 	Distribution     []Coordinate    `json:"distribution"`
 }
 
@@ -110,6 +111,7 @@ type GlukitUser struct {
 
 type GlukitScore struct {
 	Value              int64         `datastore:"value"`
+	UpperBound         time.Time     `datastore:"upperBound"`
 	UpdatedAt          time.Time     `datastore:"updatedAt"`
 }
 

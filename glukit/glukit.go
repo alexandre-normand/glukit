@@ -25,6 +25,7 @@ import (
 	"timeutils"
 	"sysutils"
 	"appengine/delay"
+	"engine"
 	stat "github.com/grd/stat"
 )
 
@@ -174,7 +175,7 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 // to avoid downloading already imported files (unless they've been updated). It also schedules itself to run again
 // the next day unless the token is invalid.
 func updateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
-	glukitUser, key, _, _, err := store.GetUserData(context, userEmail)
+	glukitUser, userProfileKey, _, _, err := store.GetUserData(context, userEmail)
 	if err != nil {
 		context.Errorf("We're trying to run an update data task for user [%s] that doesn't exist. Got error: %v", userEmail, err)
 		return;
@@ -212,7 +213,7 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 			context.Infof("No new or updated data found for existing user [%s]", userEmail)
 		case len(files) > 0:
 			context.Infof("Found new data files for user [%s], downloading and storing...", userEmail)
-			processData(&glukitUser.Token, files, context, userEmail, key)
+			processData(&glukitUser.Token, files, context, userEmail, userProfileKey)
 		}
 	}
 
@@ -307,6 +308,26 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 		store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum, LastDataProcessed: lastReadTime})
 		reader.Close()
+
+		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
+			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", userEmail, err)
+		} else if glukitUser.Score.UpperBound.Before(lastReadTime) {
+			// Calculate Glukit Score here from the last 2 weeks of data
+			glukitScore, err := engine.CalculateGlukitScore(context, glukitUser)
+			if err != nil {
+				context.Warningf("Error calculating a new GlukitScore for [%s], this needs attention: [%v]", userEmail, err)
+			} else {
+				// Store the updated GlukitScore
+				context.Infof("New GlukitScore calculated for user [%s]: [%d]", userEmail, glukitScore.Value)
+				glukitUser.Score = *glukitScore
+				if _, err := store.StoreUserProfile(context, time.Now(), *glukitUser); err != nil {
+					context.Errorf("Error persisting glukit score [%v] for user [%s]: %v", glukitScore, userEmail, err)
+				}
+			}
+		} else {
+			context.Debugf("Skipping recalculation of GlukitScore because the last calculation was with a more recent read [%s] than the most recent read from this last batch [%s]",
+				glukitUser.Score.UpperBound.Format(timeutils.TIMEFORMAT), lastReadTime.Format(timeutils.TIMEFORMAT))
+		}
 	}
 	channel.Send(context, userEmail, "Refresh")
 }
