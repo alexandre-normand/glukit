@@ -5,7 +5,6 @@ import (
 	"log"
 )
 
-
 const (
 	TIMEFORMAT        = "2006-01-02 15:04:05 MST"
 	DRIVE_TIMEFORMAT  = "2006-01-02T15:04:05.000Z"
@@ -14,7 +13,7 @@ const (
 )
 
 var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
-var BEGINNING_OF_TIME    = time.Unix(0, 0)
+var BEGINNING_OF_TIME = time.Unix(0, 0)
 
 func ParseGoogleDriveDate(value string) (timeValue time.Time, err error) {
 	return time.Parse(DRIVE_TIMEFORMAT, value)
@@ -36,6 +35,18 @@ func ParseTime(timeValue string, timezoneString string) (value time.Time, err er
 	}
 
 	return value, err;
+}
+
+func GetEndOfDayBoundaryBefore(timeValue time.Time) (latestEndOfDayBoundary time.Time) {
+	if (timeValue.Hour() < 6) {
+		// Rewind by one more day
+		previousDay := timeValue.Add(time.Duration(-24*time.Hour))
+		latestEndOfDayBoundary = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
+	} else {
+		latestEndOfDayBoundary = time.Date(timeValue.Year(), timeValue.Month(), timeValue.Day(), 6, 0, 0, 0, TIMEZONE_LOCATION)
+	}
+
+	return latestEndOfDayBoundary
 }
 
 func LocalTimeWithDefaultTimezone(timevalue time.Time) (localTime string) {

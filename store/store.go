@@ -150,13 +150,7 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
 	}
 
-	if (userProfile.MostRecentRead.Hour() < 6) {
-		// Rewind by one more day
-		previousDay := userProfile.MostRecentRead.Add(time.Duration(-24*time.Hour))
-		upperBound = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, timeutils.TIMEZONE_LOCATION)
-	} else {
-		upperBound = time.Date(userProfile.MostRecentRead.Year(), userProfile.MostRecentRead.Month(), userProfile.MostRecentRead.Day(), 6, 0, 0, 0, timeutils.TIMEZONE_LOCATION)
-	}
+	upperBound = timeutils.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
 	lowerBound = upperBound.Add(time.Duration(-24*time.Hour))
 
 	return userProfile, key, lowerBound, upperBound, nil
