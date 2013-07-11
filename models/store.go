@@ -1,11 +1,11 @@
 package models
 
 import (
+	"appengine/datastore"
+	"fmt"
+	"log"
 	"strconv"
 	"sysutils"
-	"appengine/datastore"
-	"log"
-	"fmt"
 	"time"
 	"timeutils"
 )
@@ -28,7 +28,7 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 				sysutils.Propagate(err)
 			}
 
-			readTime := time.Unix(startTime.Unix() + offsetInSeconds, 0)
+			readTime := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We need to convert value to int64 and cast it as int
 			value := int(columnValue.(int64))
 
@@ -43,7 +43,7 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 	return nil
 }
 
-func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
+func (dayOfReads *DayOfReads) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfReads.Reads)
@@ -55,25 +55,25 @@ func (dayOfReads *DayOfReads) Save(channel chan <- datastore.Property) error {
 	reads := dayOfReads.Reads
 	startTimestamp := int64(reads[0].TimeValue)
 	startTime := time.Unix(startTimestamp, 0)
-	endTimestamp := int64(reads[size - 1].TimeValue)
+	endTimestamp := int64(reads[size-1].TimeValue)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
 		Name:  "startTime",
-		Value:  startTime,
+		Value: startTime,
 	}
 	channel <- datastore.Property{
 		Name:  "endTime",
-		Value:  endTime,
+		Value: endTime,
 	}
 
 	for i := range reads {
 		//context.Infof("Sending read to channel %s, %d, %d", reads[i].LocalTime, int64(reads[i].TimeValue), int64(reads[i].Value))
 		readTimestamp := int64(reads[i].TimeValue)
 		readOffset := readTimestamp - startTimestamp
-		channel <- datastore.Property {
-			Name: strconv.FormatInt(readOffset, 10),
-			Value: int64(reads[i].Value),
+		channel <- datastore.Property{
+			Name:    strconv.FormatInt(readOffset, 10),
+			Value:   int64(reads[i].Value),
 			NoIndex: true,
 		}
 	}
@@ -99,7 +99,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 				sysutils.Propagate(err)
 			}
 
-			timestamp := time.Unix(startTime.Unix() + offsetInSeconds, 0)
+			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We need to convert value to float64 and we downcast to float32 (it's safe since we only up-casted it for
 			// the store
 			value := float32(columnValue.(float64))
@@ -114,7 +114,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 	return nil
 }
 
-func (dayOfInjections *DayOfInjections) Save(channel chan <- datastore.Property) error {
+func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfInjections.Injections)
@@ -126,25 +126,25 @@ func (dayOfInjections *DayOfInjections) Save(channel chan <- datastore.Property)
 	injections := dayOfInjections.Injections
 	startTimestamp := int64(injections[0].TimeValue)
 	startTime := time.Unix(startTimestamp, 0)
-	endTimestamp := int64(injections[size - 1].TimeValue)
+	endTimestamp := int64(injections[size-1].TimeValue)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
 		Name:  "startTime",
-		Value:  startTime,
+		Value: startTime,
 	}
 	channel <- datastore.Property{
 		Name:  "endTime",
-		Value:  endTime,
+		Value: endTime,
 	}
 
 	for i := range injections {
 		timestamp := int64(injections[i].TimeValue)
 		offset := timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
-		channel <- datastore.Property {
-			Name: strconv.FormatInt(offset, 10),
-			Value: float64(injections[i].Units),
+		channel <- datastore.Property{
+			Name:    strconv.FormatInt(offset, 10),
+			Value:   float64(injections[i].Units),
 			NoIndex: true,
 		}
 	}
@@ -170,7 +170,7 @@ func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
 				sysutils.Propagate(err)
 			}
 
-			timestamp := time.Unix(startTime.Unix() + offsetInSeconds, 0)
+			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We need to convert value to float64 and we downcast to float32 (it's safe since we only up-casted it for
 			// the store
 			value := float32(columnValue.(float64))
@@ -185,7 +185,7 @@ func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
 	return nil
 }
 
-func (dayOfCarbs *DayOfCarbs) Save(channel chan <- datastore.Property) error {
+func (dayOfCarbs *DayOfCarbs) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfCarbs.Carbs)
@@ -197,25 +197,25 @@ func (dayOfCarbs *DayOfCarbs) Save(channel chan <- datastore.Property) error {
 	carbs := dayOfCarbs.Carbs
 	startTimestamp := int64(carbs[0].TimeValue)
 	startTime := time.Unix(startTimestamp, 0)
-	endTimestamp := int64(carbs[size - 1].TimeValue)
+	endTimestamp := int64(carbs[size-1].TimeValue)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
 		Name:  "startTime",
-		Value:  startTime,
+		Value: startTime,
 	}
 	channel <- datastore.Property{
 		Name:  "endTime",
-		Value:  endTime,
+		Value: endTime,
 	}
 
 	for i := range carbs {
 		timestamp := int64(carbs[i].TimeValue)
 		offset := timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
-		channel <- datastore.Property {
-			Name: strconv.FormatInt(offset, 10),
-			Value: float64(carbs[i].Grams),
+		channel <- datastore.Property{
+			Name:    strconv.FormatInt(offset, 10),
+			Value:   float64(carbs[i].Grams),
 			NoIndex: true,
 		}
 	}
@@ -241,7 +241,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 				sysutils.Propagate(err)
 			}
 
-			timestamp := time.Unix(startTime.Unix() + offsetInSeconds, 0)
+			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We split the value string to extract the two components from it
 			value := columnValue.(string)
 			var duration int
@@ -258,7 +258,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 	return nil
 }
 
-func (dayOfExercises *DayOfExercises) Save(channel chan <- datastore.Property) error {
+func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfExercises.Exercises)
@@ -270,25 +270,25 @@ func (dayOfExercises *DayOfExercises) Save(channel chan <- datastore.Property) e
 	exercises := dayOfExercises.Exercises
 	startTimestamp := int64(exercises[0].TimeValue)
 	startTime := time.Unix(startTimestamp, 0)
-	endTimestamp := int64(exercises[size - 1].TimeValue)
+	endTimestamp := int64(exercises[size-1].TimeValue)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
 		Name:  "startTime",
-		Value:  startTime,
+		Value: startTime,
 	}
 	channel <- datastore.Property{
 		Name:  "endTime",
-		Value:  endTime,
+		Value: endTime,
 	}
 
 	for i := range exercises {
 		timestamp := int64(exercises[i].TimeValue)
 		offset := timestamp - startTimestamp
 		// We need to store two values so we use a string and format each value inside of a single cell value
-		channel <- datastore.Property {
-			Name: strconv.FormatInt(offset, 10),
-			Value: fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercises[i].DurationInMinutes, exercises[i].Intensity),
+		channel <- datastore.Property{
+			Name:    strconv.FormatInt(offset, 10),
+			Value:   fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercises[i].DurationInMinutes, exercises[i].Intensity),
 			NoIndex: true,
 		}
 	}

@@ -1,15 +1,15 @@
 package fetcher
 
 import (
-	"net/http"
-	"fmt"
-	"log"
+	"appengine"
 	"drive"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"strings"
 	"time"
 	"timeutils"
-	"io"
-	"appengine"
 )
 
 func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.File, err error) {

@@ -1,32 +1,32 @@
 package glukit
 
 import (
-	"parser"
-	"net/http"
-	"fmt"
-	"time"
-	"encoding/json"
-	"html/template"
-	"goauth2/oauth"
 	"appengine"
-	"appengine/user"
-	"appengine/urlfetch"
-	"appengine/datastore"
 	"appengine/channel"
-	"appengine/taskqueue"
-	"models"
-	"drive"
-	"store"
-	"fetcher"
-	"sort"
-	"datautils"
-	"bufio"
-	"os"
-	"timeutils"
-	"sysutils"
+	"appengine/datastore"
 	"appengine/delay"
+	"appengine/taskqueue"
+	"appengine/urlfetch"
+	"appengine/user"
+	"bufio"
+	"datautils"
+	"drive"
+	"encoding/json"
 	"engine"
+	"fetcher"
+	"fmt"
 	stat "github.com/grd/stat"
+	"goauth2/oauth"
+	"html/template"
+	"models"
+	"net/http"
+	"os"
+	"parser"
+	"sort"
+	"store"
+	"sysutils"
+	"time"
+	"timeutils"
 )
 
 const (
@@ -50,9 +50,9 @@ func config() *oauth.Config {
 }
 
 type DataSeries struct {
-	Name        string              `json:"name"`
-	Data        []models.DataPoint  `json:"data"`
-	Type        string              `json:"type"`
+	Name string             `json:"name"`
+	Data []models.DataPoint `json:"data"`
+	Type string             `json:"type"`
 }
 
 type RenderVariables struct {
@@ -67,10 +67,10 @@ var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
 var processFile = delay.Func("processSingleFile", processSingleFile)
 var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
 var refreshUserData = delay.Func("refreshUserData", func(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
-		context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that ",
-			"shows up because the function calls itself. This implementation defines the same signature as the ",
-			"real one which we define in init() to override this implementation!")
-	})
+	context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that ",
+		"shows up because the function calls itself. This implementation defines the same signature as the ",
+		"real one which we define in init() to override this implementation!")
+})
 
 var emptyDataPointSlice []models.DataPoint
 
@@ -178,7 +178,7 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 	glukitUser, userProfileKey, _, _, err := store.GetUserData(context, userEmail)
 	if err != nil {
 		context.Errorf("We're trying to run an update data task for user [%s] that doesn't exist. Got error: %v", userEmail, err)
-		return;
+		return
 	}
 
 	transport := &oauth.Transport{
@@ -195,7 +195,7 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 		err := transport.Refresh(context)
 		if err != nil {
 			context.Errorf("Error updating token for user [%s], let's hope he comes back soon so we can get a fresh token: %v", userEmail, err)
-			return;
+			return
 		}
 
 		// Update the user with the new token
@@ -254,7 +254,7 @@ func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oa
 }
 
 func getEnvSettings() (host, clientId, clientSecret string) {
-	if (appengine.IsDevAppServer()) {
+	if appengine.IsDevAppServer() {
 		host = "localhost:8080"
 		clientId = "***REMOVED***"
 		clientSecret = "***REMOVED***"
@@ -356,7 +356,9 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 
 	// open input file
 	fi, err := os.Open("data.xml")
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	// close fi on exit and check for its returned error
 	defer func() {
 		if fi.Close() != nil {
@@ -465,7 +467,7 @@ func writeUserJsonData(writer http.ResponseWriter, reads []models.GlucoseRead, i
 	enc := json.NewEncoder(writer)
 	individuals := make([]DataSeries, 4)
 
-	if (len(reads) == 0) {
+	if len(reads) == 0 {
 		individuals[0] = DataSeries{"You", emptyDataPointSlice, "GlucoseReads"}
 		individuals[1] = DataSeries{"You.Injection", emptyDataPointSlice, "Injections"}
 		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "Carbs"}
@@ -513,7 +515,7 @@ func generateTrackingData(writer http.ResponseWriter, request *http.Request, rea
 	value.Add("Content-type", "application/json")
 
 	var trackingData models.TrackingData
-	if (len(reads) > 0) {
+	if len(reads) > 0 {
 		sort.Sort(models.ReadStatsSlice(reads))
 		trackingData.Mean = stat.Mean(models.ReadStatsSlice(reads))
 		trackingData.Deviation = stat.AbsdevMean(models.ReadStatsSlice(reads), 83)
@@ -564,7 +566,6 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 
 	generateTrackingData(writer, request, reads)
 }
-
 
 func buildPerfectBaseline(glucoseReads []models.GlucoseRead) (reads []models.GlucoseRead) {
 	reads = make([]models.GlucoseRead, len(glucoseReads))

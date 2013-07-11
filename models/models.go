@@ -1,6 +1,6 @@
 /*
 Package models provides model types
- */
+*/
 package models
 
 import (
@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	UNDEFINED_READ = -1;
+	UNDEFINED_READ        = -1
 	EXERCISE_VALUE_FORMAT = "%d,%s"
 	UNDEFINED_SCORE_VALUE = int64(-1)
 )
@@ -20,17 +20,17 @@ var UNDEFINED_SCORE = GlukitScore{UNDEFINED_SCORE_VALUE, timeutils.BEGINNING_OF_
 type TimeValue int64
 
 type TrackingData struct {
-	Mean             float64         `json:"mean"`
-	Median           float64         `json:"median"`
-	Deviation        float64         `json:"deviation"`
-	Min      	     float64         `json:"min"`
-	Max      	     float64         `json:"max"`
-	Distribution     []Coordinate    `json:"distribution"`
+	Mean         float64      `json:"mean"`
+	Median       float64      `json:"median"`
+	Deviation    float64      `json:"deviation"`
+	Min          float64      `json:"min"`
+	Max          float64      `json:"max"`
+	Distribution []Coordinate `json:"distribution"`
 }
 
 type Coordinate struct {
-	X    int   `json:"x"`
-	Y    int   `json:"y"`
+	X int `json:"x"`
+	Y int `json:"y"`
 }
 
 type DataPoint struct {
@@ -53,7 +53,6 @@ type PointData interface {
 type ReadStatsSlice []GlucoseRead
 type CoordinateSlice []Coordinate
 
-
 func (slice ReadStatsSlice) Len() int {
 	return len(slice)
 }
@@ -69,7 +68,6 @@ func (slice ReadStatsSlice) Less(i, j int) bool {
 func (slice ReadStatsSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
-
 
 func (slice CoordinateSlice) Len() int {
 	return len(slice)

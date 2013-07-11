@@ -38,6 +38,7 @@
 package oauth
 
 import (
+	"appengine"
 	"encoding/json"
 	"io/ioutil"
 	"mime"
@@ -45,7 +46,6 @@ import (
 	"net/url"
 	"os"
 	"time"
-	"appengine"
 )
 
 type OAuthError struct {

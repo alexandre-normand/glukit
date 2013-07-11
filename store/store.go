@@ -3,12 +3,12 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
-	"time"
-	"sysutils"
-	"models"
-	"timeutils"
 	"datautils"
 	"math"
+	"models"
+	"sysutils"
+	"time"
+	"timeutils"
 )
 
 func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfile models.GlukitUser) (key *datastore.Key, err error) {
@@ -21,7 +21,7 @@ func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfil
 }
 
 func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []models.DayOfReads) (keys []*datastore.Key, err error) {
-	elementKeys := make([] *datastore.Key, len(daysOfReads))
+	elementKeys := make([]*datastore.Key, len(daysOfReads))
 	for i := range daysOfReads {
 		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", int64(daysOfReads[i].Reads[0].TimeValue), userProfileKey)
 	}
@@ -40,8 +40,8 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 		return nil, err
 	}
 
-	lastDayOfRead := daysOfReads[len(daysOfReads) - 1]
-	lastRead := lastDayOfRead.Reads[len(lastDayOfRead.Reads) - 1]
+	lastDayOfRead := daysOfReads[len(daysOfReads)-1]
+	lastRead := lastDayOfRead.Reads[len(lastDayOfRead.Reads)-1]
 	if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
 		context.Infof("Updating most recent read date to %s", lastRead.GetTime())
 		userProfile.MostRecentRead = lastRead.GetTime()
@@ -56,7 +56,7 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 }
 
 func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []models.DayOfInjections) (keys []*datastore.Key, err error) {
-	elementKeys := make([] *datastore.Key, len(daysOfInjections))
+	elementKeys := make([]*datastore.Key, len(daysOfInjections))
 	for i := range daysOfInjections {
 		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", int64(daysOfInjections[i].Injections[0].TimeValue), userProfileKey)
 	}
@@ -72,7 +72,7 @@ func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.
 }
 
 func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []models.DayOfCarbs) (keys []*datastore.Key, err error) {
-	elementKeys := make([] *datastore.Key, len(daysOfCarbs))
+	elementKeys := make([]*datastore.Key, len(daysOfCarbs))
 	for i := range daysOfCarbs {
 		elementKeys[i] = datastore.NewKey(context, "DayOfCarbs", "", int64(daysOfCarbs[i].Carbs[0].TimeValue), userProfileKey)
 	}
@@ -88,7 +88,7 @@ func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, 
 }
 
 func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []models.DayOfExercises) (keys []*datastore.Key, err error) {
-	elementKeys := make([] *datastore.Key, len(daysOfExercises))
+	elementKeys := make([]*datastore.Key, len(daysOfExercises))
 	for i := range daysOfExercises {
 		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", int64(daysOfExercises[i].Exercises[0].TimeValue), userProfileKey)
 	}
@@ -151,7 +151,7 @@ func GetUserData(context appengine.Context, email string) (userProfile *models.G
 	}
 
 	upperBound = timeutils.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
-	lowerBound = upperBound.Add(time.Duration(-24*time.Hour))
+	lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
 
 	return userProfile, key, lowerBound, upperBound, nil
 }
@@ -161,9 +161,9 @@ func GetUserReads(context appengine.Context, email string, lowerBound time.Time,
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
 	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
-	scanStart := lowerBound.Add(time.Duration(-24*time.Hour))
-	scanEnd := upperBound.Add(time.Duration(24*time.Hour))
-	
+	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
+
 	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
@@ -182,7 +182,7 @@ func GetUserReads(context appengine.Context, email string, lowerBound time.Time,
 	if err != datastore.Done {
 		sysutils.Propagate(err)
 	}
-	
+
 	return filteredReads, nil
 }
 
@@ -191,9 +191,9 @@ func GetUserInjections(context appengine.Context, email string, lowerBound time.
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
 	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
-	scanStart := lowerBound.Add(time.Duration(-24*time.Hour))
-	scanEnd := upperBound.Add(time.Duration(24*time.Hour))
-	
+	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
+
 	context.Infof("Scanning for injections between %s and %s to get injections between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfInjections").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
@@ -212,7 +212,7 @@ func GetUserInjections(context appengine.Context, email string, lowerBound time.
 	if err != datastore.Done {
 		sysutils.Propagate(err)
 	}
-	
+
 	return filteredInjections, nil
 }
 
@@ -221,9 +221,9 @@ func GetUserCarbs(context appengine.Context, email string, lowerBound time.Time,
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
 	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
-	scanStart := lowerBound.Add(time.Duration(-24*time.Hour))
-	scanEnd := upperBound.Add(time.Duration(24*time.Hour))
-	
+	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
+
 	context.Infof("Scanning for carbs between %s and %s to get carbs between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfCarbs").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
@@ -242,7 +242,7 @@ func GetUserCarbs(context appengine.Context, email string, lowerBound time.Time,
 	if err != datastore.Done {
 		sysutils.Propagate(err)
 	}
-	
+
 	return filteredCarbs, nil
 }
 
@@ -252,9 +252,9 @@ func GetUserExercises(context appengine.Context, email string, lowerBound time.T
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
 	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
-	scanStart := lowerBound.Add(time.Duration(-24*time.Hour))
-	scanEnd := upperBound.Add(time.Duration(24*time.Hour))
-	
+	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
+
 	context.Infof("Scanning for exercises between %s and %s to get exercises between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfExercises").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
@@ -273,6 +273,6 @@ func GetUserExercises(context appengine.Context, email string, lowerBound time.T
 	if err != datastore.Done {
 		sysutils.Propagate(err)
 	}
-	
+
 	return filteredExercises, nil
 }

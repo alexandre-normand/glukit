@@ -1,17 +1,17 @@
 package models
 
 import (
-	"timeutils"
 	"time"
+	"timeutils"
 )
 
 // Represents an exercise event
 type Exercise struct {
-	LocalTime         string      `json:"label" datastore:"localtime,noindex"`
-	TimeValue         TimeValue   `json:"unixtime" datastore:"timestamp"`
-	DurationInMinutes int         `json:"duration" datastore:"duration,noindex"`
+	LocalTime         string    `json:"label" datastore:"localtime,noindex"`
+	TimeValue         TimeValue `json:"unixtime" datastore:"timestamp"`
+	DurationInMinutes int       `json:"duration" datastore:"duration,noindex"`
 	// One of: light, medium, heavy
-	Intensity         string      `json:"intensity" datastore:"intensity,noindex"`
+	Intensity string `json:"intensity" datastore:"intensity,noindex"`
 }
 
 // Gets the time of the exercise
@@ -22,7 +22,7 @@ func (exercise Exercise) GetTime() (timeValue time.Time) {
 
 // This holds an array of exercise events for a whole day
 type DayOfExercises struct {
-	Exercises      []Exercise
+	Exercises []Exercise
 }
 
 type ExerciseSlice []Exercise
