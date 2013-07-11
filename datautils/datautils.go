@@ -2,12 +2,12 @@ package datautils
 
 import (
 	"models"
-	"time"
 	"sort"
+	"time"
 )
 
 func BuildHistogram(reads []models.GlucoseRead) (data []models.Coordinate) {
-	distribution := make(map[int] int)
+	distribution := make(map[int]int)
 
 	for i := range reads {
 		currentReadValue := reads[i].Value
@@ -20,8 +20,8 @@ func BuildHistogram(reads []models.GlucoseRead) (data []models.Coordinate) {
 	}
 
 	data = make([]models.Coordinate, len(distribution))
-    j := 0
-	for key, value := range distribution  {
+	j := 0
+	for key, value := range distribution {
 		data[j] = models.Coordinate{key, value}
 		j = j + 1
 	}
@@ -31,7 +31,7 @@ func BuildHistogram(reads []models.GlucoseRead) (data []models.Coordinate) {
 
 func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (filteredData []models.GlucoseRead) {
 	// Nothing to sort, return immediately
-	if (len(data) == 0) {
+	if len(data) == 0 {
 		return data
 	}
 
@@ -54,13 +54,13 @@ func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (f
 		}
 	}
 
-	return data[startOfDayIndex:endOfDayIndex + 1]
+	return data[startOfDayIndex : endOfDayIndex+1]
 
 }
 
 func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time) (filteredData []models.Injection) {
 	// Nothing to sort, return immediately
-	if (len(data) == 0) {
+	if len(data) == 0 {
 		return data
 	}
 
@@ -83,12 +83,12 @@ func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time)
 		}
 	}
 
-	return data[startOfDayIndex:endOfDayIndex + 1]
+	return data[startOfDayIndex : endOfDayIndex+1]
 }
 
 func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filteredData []models.Carb) {
 	// Nothing to sort, return immediately
-	if (len(data) == 0) {
+	if len(data) == 0 {
 		return data
 	}
 
@@ -111,12 +111,12 @@ func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filtered
 		}
 	}
 
-	return data[startOfDayIndex:endOfDayIndex + 1]
+	return data[startOfDayIndex : endOfDayIndex+1]
 }
 
 func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (filteredData []models.Exercise) {
 	// Nothing to sort, return immediately
-	if (len(data) == 0) {
+	if len(data) == 0 {
 		return data
 	}
 
@@ -139,5 +139,5 @@ func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (
 		}
 	}
 
-	return data[startOfDayIndex:endOfDayIndex + 1]
+	return data[startOfDayIndex : endOfDayIndex+1]
 }

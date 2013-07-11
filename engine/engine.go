@@ -1,18 +1,18 @@
 package engine
 
 import (
+	"appengine"
 	"models"
 	"store"
-	"timeutils"
-	"appengine"
 	"time"
+	"timeutils"
 )
 
 const (
 	LOW_MULTIPLIER  = 1
 	HIGH_MULTIPLIER = 2
 	// Two full weeks of reads
-	READS_REQUIREMENT = 288*14
+	READS_REQUIREMENT = 288 * 14
 )
 
 func CalculateGlukitScore(context appengine.Context, glukitUser *models.GlukitUser) (glukitScore *models.GlukitScore, err error) {
@@ -36,13 +36,13 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *models.GlukitUs
 		}
 	}
 
-	if (score == models.UNDEFINED_SCORE_VALUE) {
+	if score == models.UNDEFINED_SCORE_VALUE {
 		glukitScore = &models.UNDEFINED_SCORE
 	} else {
 		glukitScore = &models.GlukitScore{
-			Value: score,
+			Value:      score,
 			UpperBound: upperBound,
-			UpdatedAt: time.Now()}
+			UpdatedAt:  time.Now()}
 	}
 
 	return glukitScore, nil
@@ -54,9 +54,9 @@ func CalculateIndividualReadScoreWeight(context appengine.Context, read models.G
 	weightedScoreContribution = 0
 
 	if read.Value > 83 {
-		weightedScoreContribution = (read.Value - 83)*HIGH_MULTIPLIER
+		weightedScoreContribution = (read.Value - 83) * HIGH_MULTIPLIER
 	} else if read.Value < 83 {
-		weightedScoreContribution = -(read.Value - 83)*LOW_MULTIPLIER
+		weightedScoreContribution = -(read.Value - 83) * LOW_MULTIPLIER
 	}
 	//context.Debugf("Calculated individual score of [%d] with read value [%d]", weightedScoreContribution, read.Value)
 	return weightedScoreContribution

@@ -15,7 +15,7 @@ type GlucoseRead struct {
 
 // This holds an array of reads for a whole day
 type DayOfReads struct {
-	Reads          []GlucoseRead
+	Reads []GlucoseRead
 }
 
 // GetTime gets the time of a GlucoseRead value
@@ -51,5 +51,3 @@ func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	}
 	return dataPoints
 }
-
-

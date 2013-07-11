@@ -7,15 +7,15 @@ import (
 
 // Represents a carbohydrate intake
 type Carb struct {
-	LocalTime          string     `json:"label" datastore:"localtime,noindex"`
-	TimeValue          TimeValue  `json:"x" datastore:"timestamp"`
-	Grams              float32    `json:"carbs" datastore:"grams,noindex"`
-	ReferenceReadValue int        `json:"y" datastore:"referenceReadValue,noindex"`
+	LocalTime          string    `json:"label" datastore:"localtime,noindex"`
+	TimeValue          TimeValue `json:"x" datastore:"timestamp"`
+	Grams              float32   `json:"carbs" datastore:"grams,noindex"`
+	ReferenceReadValue int       `json:"y" datastore:"referenceReadValue,noindex"`
 }
 
 // This holds an array of injections for a whole day
 type DayOfCarbs struct {
-	Carbs          []Carb
+	Carbs []Carb
 }
 
 // GetTime gets the time of a GlucoseRead value
@@ -49,5 +49,3 @@ func (slice CarbSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints
 
 	return dataPoints
 }
-
-

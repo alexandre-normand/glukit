@@ -7,15 +7,15 @@ import (
 
 // Injection represents an insulin injection
 type Injection struct {
-	LocalTime          string       `json:"label" datastore:"localtime,noindex"`
-	TimeValue          TimeValue    `json:"x" datastore:"timestamp"`
-	Units              float32      `json:"units" datastore:"units,noindex"`
-	ReferenceReadValue int          `json:"y" datastore:"referenceReadValue,noindex"`
+	LocalTime          string    `json:"label" datastore:"localtime,noindex"`
+	TimeValue          TimeValue `json:"x" datastore:"timestamp"`
+	Units              float32   `json:"units" datastore:"units,noindex"`
+	ReferenceReadValue int       `json:"y" datastore:"referenceReadValue,noindex"`
 }
 
 // This holds an array of injections for a whole day
 type DayOfInjections struct {
-	Injections     []Injection
+	Injections []Injection
 }
 
 // GetTime gets the time of an Injection value
