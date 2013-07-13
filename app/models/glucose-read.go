@@ -1,8 +1,8 @@
 package models
 
 import (
+	"app/timeutils"
 	"time"
-	"timeutils"
 )
 
 // GlucoseRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external

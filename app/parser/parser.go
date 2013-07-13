@@ -1,17 +1,17 @@
 package parser
 
 import (
+	"app/models"
+	"app/sysutils"
+	"app/timeutils"
 	"appengine"
 	"appengine/datastore"
 	"container/list"
 	"encoding/xml"
 	"fmt"
 	"io"
-	"models"
 	"strings"
-	"sysutils"
 	"time"
-	"timeutils"
 )
 
 type Meter struct {
@@ -226,14 +226,14 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	}
 
 	if len(injections) > 0 {
-		// Store the last batch 
+		// Store the last batch
 		daysOfInjections = append(daysOfInjections, models.DayOfInjections{injections})
 		context.Infof("Flushing %d days of injections", len(daysOfInjections))
 		injectionBatchHandler(context, parentKey, daysOfInjections)
 	}
 
 	if len(carbs) > 0 {
-		// Store the last batch 
+		// Store the last batch
 		daysOfCarbs = append(daysOfCarbs, models.DayOfCarbs{carbs})
 		context.Infof("Flushing %d days of carbs", len(daysOfCarbs))
 		carbsBatchHandler(context, parentKey, daysOfCarbs)

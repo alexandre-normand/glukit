@@ -1,14 +1,14 @@
 package store
 
 import (
+	"app/datautils"
+	"app/models"
+	"app/sysutils"
+	"app/timeutils"
 	"appengine"
 	"appengine/datastore"
-	"datautils"
 	"math"
-	"models"
-	"sysutils"
 	"time"
-	"timeutils"
 )
 
 func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfile models.GlukitUser) (key *datastore.Key, err error) {
