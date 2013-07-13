@@ -1,3 +1,5 @@
+// The engine package is where the magic happens. The analysis and insightful bits of data we generate are computed by this
+// package. It's the Glukit engine™.
 package engine
 
 import (
