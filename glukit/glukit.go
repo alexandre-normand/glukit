@@ -60,9 +60,9 @@ type RenderVariables struct {
 	ChannelToken string
 }
 
-var graphTemplate = template.Must(template.ParseFiles("templates/graph.html"))
-var landingTemplate = template.Must(template.ParseFiles("templates/landing.html"))
-var nodataTemplate = template.Must(template.ParseFiles("templates/nodata.html"))
+var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html"))
+var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
+var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
 
 var processFile = delay.Func("processSingleFile", processSingleFile)
 var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
