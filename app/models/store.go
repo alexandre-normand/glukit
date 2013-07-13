@@ -1,13 +1,13 @@
 package models
 
 import (
+	"app/sysutils"
+	"app/timeutils"
 	"appengine/datastore"
 	"fmt"
 	"log"
 	"strconv"
-	"sysutils"
 	"time"
-	"timeutils"
 )
 
 func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {

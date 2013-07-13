@@ -1,7 +1,7 @@
 package models
 
 import (
-	"goauth2/oauth"
+	"lib/goauth2/oauth"
 	"time"
 )
 

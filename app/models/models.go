@@ -4,8 +4,8 @@ Package models provides model types
 package models
 
 import (
+	"app/timeutils"
 	"time"
-	"timeutils"
 )
 
 const (

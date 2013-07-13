@@ -1,8 +1,8 @@
 package models
 
 import (
+	"app/timeutils"
 	"time"
-	"timeutils"
 )
 
 // Represents a carbohydrate intake

@@ -1,6 +1,13 @@
 package glukit
 
 import (
+	"app/engine"
+	"app/fetcher"
+	"app/models"
+	"app/parser"
+	"app/store"
+	"app/sysutils"
+	"app/timeutils"
 	"appengine"
 	"appengine/channel"
 	"appengine/datastore"
@@ -9,23 +16,16 @@ import (
 	"appengine/urlfetch"
 	"appengine/user"
 	"bufio"
-	"drive"
 	"encoding/json"
-	"engine"
-	"fetcher"
 	"fmt"
-	stat "github.com/grd/stat"
-	"goauth2/oauth"
 	"html/template"
-	"models"
+	"lib/drive"
+	"lib/github.com/grd/stat"
+	"lib/goauth2/oauth"
 	"net/http"
 	"os"
-	"parser"
 	"sort"
-	"store"
-	"sysutils"
 	"time"
-	"timeutils"
 )
 
 const (

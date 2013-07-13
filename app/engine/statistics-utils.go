@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"models"
+	"app/models"
 )
 
 // BuildHistogram generates a histogram from an array of GlucoseRead. The resulting histogram is
