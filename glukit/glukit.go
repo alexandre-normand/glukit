@@ -570,7 +570,7 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 func buildPerfectBaseline(glucoseReads []models.GlucoseRead) (reads []models.GlucoseRead) {
 	reads = make([]models.GlucoseRead, len(glucoseReads))
 	for i := range glucoseReads {
-		reads[i] = models.GlucoseRead{glucoseReads[i].LocalTime, glucoseReads[i].TimeValue, 83}
+		reads[i] = models.GlucoseRead{glucoseReads[i].LocalTime, glucoseReads[i].Timestamp, 83}
 	}
 
 	return reads

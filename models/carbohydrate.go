@@ -8,7 +8,7 @@ import (
 // Represents a carbohydrate intake
 type Carb struct {
 	LocalTime          string    `json:"label" datastore:"localtime,noindex"`
-	TimeValue          TimeValue `json:"x" datastore:"timestamp"`
+	Timestamp          Timestamp `json:"x" datastore:"timestamp"`
 	Grams              float32   `json:"carbs" datastore:"grams,noindex"`
 	ReferenceReadValue int       `json:"y" datastore:"referenceReadValue,noindex"`
 }
@@ -31,7 +31,7 @@ func (slice CarbSlice) Len() int {
 }
 
 func (slice CarbSlice) Less(i, j int) bool {
-	return slice[i].TimeValue < slice[j].TimeValue
+	return slice[i].Timestamp < slice[j].Timestamp
 }
 
 func (slice CarbSlice) Swap(i, j int) {
@@ -42,8 +42,8 @@ func (slice CarbSlice) Swap(i, j int) {
 func (slice CarbSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue,
-			LinearInterpolateY(matchingReads, slice[i].TimeValue), slice[i].Grams}
+		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
+			LinearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Grams}
 		dataPoints[i] = dataPoint
 	}
 

@@ -9,7 +9,7 @@ import (
 // meter
 type GlucoseRead struct {
 	LocalTime string    `json:"label" datastore:"localtime,noindex"`
-	TimeValue TimeValue `json:"x" datastore:"timestamp"`
+	Timestamp Timestamp `json:"x" datastore:"timestamp"`
 	Value     int       `json:"y" datastore:"value,noindex"`
 }
 
@@ -35,7 +35,7 @@ func (slice GlucoseReadSlice) Get(i int) float64 {
 }
 
 func (slice GlucoseReadSlice) Less(i, j int) bool {
-	return slice[i].TimeValue < slice[j].TimeValue
+	return slice[i].Timestamp < slice[j].Timestamp
 }
 
 func (slice GlucoseReadSlice) Swap(i, j int) {
@@ -46,7 +46,7 @@ func (slice GlucoseReadSlice) Swap(i, j int) {
 func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue, slice[i].Value, float32(slice[i].Value)}
+		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp, slice[i].Value, float32(slice[i].Value)}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints

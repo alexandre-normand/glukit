@@ -44,7 +44,7 @@ func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (f
 	sort.Sort(models.GlucoseReadSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
-		elementTime := time.Unix(int64(data[i].TimeValue), 0)
+		elementTime := time.Unix(int64(data[i].Timestamp), 0)
 		if endOfDayIndex < 0 && elementTime.Before(upperBound) {
 			endOfDayIndex = i
 		}
@@ -73,7 +73,7 @@ func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time)
 	sort.Sort(models.InjectionSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
-		elementTime := time.Unix(int64(data[i].TimeValue), 0)
+		elementTime := time.Unix(int64(data[i].Timestamp), 0)
 		if endOfDayIndex < 0 && elementTime.Before(upperBound) {
 			endOfDayIndex = i
 		}
@@ -101,7 +101,7 @@ func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filtered
 	sort.Sort(models.CarbSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
-		elementTime := time.Unix(int64(data[i].TimeValue), 0)
+		elementTime := time.Unix(int64(data[i].Timestamp), 0)
 		if endOfDayIndex < 0 && elementTime.Before(upperBound) {
 			endOfDayIndex = i
 		}
@@ -129,7 +129,7 @@ func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (
 	sort.Sort(models.ExerciseSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
-		elementTime := time.Unix(int64(data[i].TimeValue), 0)
+		elementTime := time.Unix(int64(data[i].Timestamp), 0)
 		if endOfDayIndex < 0 && elementTime.Before(upperBound) {
 			endOfDayIndex = i
 		}
