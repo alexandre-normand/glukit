@@ -23,7 +23,7 @@ func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfil
 func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []models.DayOfReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfReads))
 	for i := range daysOfReads {
-		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", int64(daysOfReads[i].Reads[0].TimeValue), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", int64(daysOfReads[i].Reads[0].Timestamp), userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of reads", len(elementKeys), len(daysOfReads))
@@ -58,7 +58,7 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []models.DayOfInjections) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfInjections))
 	for i := range daysOfInjections {
-		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", int64(daysOfInjections[i].Injections[0].TimeValue), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", int64(daysOfInjections[i].Injections[0].Timestamp), userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of injections", len(elementKeys), len(daysOfInjections))
@@ -74,7 +74,7 @@ func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.
 func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []models.DayOfCarbs) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfCarbs))
 	for i := range daysOfCarbs {
-		elementKeys[i] = datastore.NewKey(context, "DayOfCarbs", "", int64(daysOfCarbs[i].Carbs[0].TimeValue), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfCarbs", "", int64(daysOfCarbs[i].Carbs[0].Timestamp), userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of carbs", len(elementKeys), len(daysOfCarbs))
@@ -90,7 +90,7 @@ func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, 
 func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []models.DayOfExercises) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfExercises))
 	for i := range daysOfExercises {
-		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", int64(daysOfExercises[i].Exercises[0].TimeValue), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", int64(daysOfExercises[i].Exercises[0].Timestamp), userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of exercises", len(elementKeys), len(daysOfExercises))

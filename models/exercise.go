@@ -8,7 +8,7 @@ import (
 // Represents an exercise event
 type Exercise struct {
 	LocalTime         string    `json:"label" datastore:"localtime,noindex"`
-	TimeValue         TimeValue `json:"unixtime" datastore:"timestamp"`
+	Timestamp         Timestamp `json:"unixtime" datastore:"timestamp"`
 	DurationInMinutes int       `json:"duration" datastore:"duration,noindex"`
 	// One of: light, medium, heavy
 	Intensity string `json:"intensity" datastore:"intensity,noindex"`
@@ -32,7 +32,7 @@ func (slice ExerciseSlice) Len() int {
 }
 
 func (slice ExerciseSlice) Less(i, j int) bool {
-	return slice[i].TimeValue < slice[j].TimeValue
+	return slice[i].Timestamp < slice[j].Timestamp
 }
 
 func (slice ExerciseSlice) Swap(i, j int) {
@@ -43,8 +43,8 @@ func (slice ExerciseSlice) Swap(i, j int) {
 func (slice ExerciseSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].LocalTime, slice[i].TimeValue,
-			LinearInterpolateY(matchingReads, slice[i].TimeValue), float32(slice[i].DurationInMinutes)}
+		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
+			LinearInterpolateY(matchingReads, slice[i].Timestamp), float32(slice[i].DurationInMinutes)}
 		dataPoints[i] = dataPoint
 	}
 
