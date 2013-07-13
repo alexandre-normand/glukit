@@ -1,3 +1,4 @@
+// This package provides some useful fonctions to filter/merge and do various operations on the data.
 package datautils
 
 import (
@@ -6,29 +7,7 @@ import (
 	"time"
 )
 
-func BuildHistogram(reads []models.GlucoseRead) (data []models.Coordinate) {
-	distribution := make(map[int]int)
-
-	for i := range reads {
-		currentReadValue := reads[i].Value
-		currentValue, found := distribution[currentReadValue]
-		if found {
-			distribution[currentReadValue] = currentValue + 1
-		} else {
-			distribution[currentReadValue] = 1
-		}
-	}
-
-	data = make([]models.Coordinate, len(distribution))
-	j := 0
-	for key, value := range distribution {
-		data[j] = models.Coordinate{key, value}
-		j = j + 1
-	}
-
-	return data
-}
-
+// FilterReads filters out any GlucoseRead that is outside of the lower and upper bounds. The two bounds are inclusive.
 func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (filteredData []models.GlucoseRead) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
@@ -58,6 +37,7 @@ func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (f
 
 }
 
+// FilterReads filters out any Injection that is outside of the lower and upper bounds. The two bounds are inclusive.
 func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time) (filteredData []models.Injection) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
@@ -86,6 +66,7 @@ func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time)
 	return data[startOfDayIndex : endOfDayIndex+1]
 }
 
+// FilterReads filters out any Carb element that is outside of the lower and upper bounds. The two bounds are inclusive.
 func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filteredData []models.Carb) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
@@ -114,6 +95,7 @@ func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filtered
 	return data[startOfDayIndex : endOfDayIndex+1]
 }
 
+// FilterReads filters out any Exercise element that is outside of the lower and upper bounds. The two bounds are inclusive.
 func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (filteredData []models.Exercise) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
@@ -140,4 +122,28 @@ func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (
 	}
 
 	return data[startOfDayIndex : endOfDayIndex+1]
+}
+
+// MergeGlucoseReadArrays merges two arrays of GlucoseRead elements.
+func MergeGlucoseReadArrays(first, second []models.GlucoseRead) []models.GlucoseRead {
+	newslice := make([]models.GlucoseRead, len(first)+len(second))
+	copy(newslice, first)
+	copy(newslice[len(first):], second)
+	return newslice
+}
+
+// MergeCarbArrays merges two arrays of Carb elements.
+func MergeCarbArrays(first, second []models.Carb) []models.Carb {
+	newslice := make([]models.Carb, len(first)+len(second))
+	copy(newslice, first)
+	copy(newslice[len(first):], second)
+	return newslice
+}
+
+// MergeInjectionArrays merges two arrays of Injection elements.
+func MergeInjectionArrays(first, second []models.Injection) []models.Injection {
+	newslice := make([]models.Injection, len(first)+len(second))
+	copy(newslice, first)
+	copy(newslice[len(first):], second)
+	return newslice
 }

@@ -5,17 +5,17 @@ api_version: go1
 
 handlers:
 - url: /favicon.ico
-  static_files: images/Glukit.ico
-  upload: images/Glukit.ico
+  static_files: view/images/Glukit.ico
+  upload: view/images/Glukit.ico
 
 - url: /js
-  static_dir: js
+  static_dir: view/js
 
 - url: /css
-  static_dir: css
+  static_dir: view/css
 
 - url: /images
-  static_dir: images
+  static_dir: view/images
 
 - url: /graph
   script: _go_app
