@@ -9,7 +9,6 @@ import (
 	"appengine/urlfetch"
 	"appengine/user"
 	"bufio"
-	"datautils"
 	"drive"
 	"encoding/json"
 	"engine"
@@ -522,7 +521,7 @@ func generateTrackingData(writer http.ResponseWriter, request *http.Request, rea
 		trackingData.Max, _ = stat.Max(models.ReadStatsSlice(reads))
 		trackingData.Min, _ = stat.Min(models.ReadStatsSlice(reads))
 		trackingData.Median = stat.MedianFromSortedData(models.ReadStatsSlice(reads))
-		distribution := datautils.BuildHistogram(reads)
+		distribution := engine.BuildHistogram(reads)
 		sort.Sort(models.CoordinateSlice(distribution))
 		trackingData.Distribution = distribution
 	}
