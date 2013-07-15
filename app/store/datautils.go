@@ -32,8 +32,12 @@ func FilterReads(data []model.GlucoseRead, lowerBound, upperBound time.Time) (fi
 		}
 	}
 
-	return data[startOfDayIndex : endOfDayIndex+1]
+	// We don't have data in those boundaries so return an empty array
+	if startOfDayIndex == -1 || endOfDayIndex == -1 {
+		return make([]model.GlucoseRead, 0)
+	}
 
+	return data[startOfDayIndex : endOfDayIndex+1]
 }
 
 // FilterReads filters out any Injection that is outside of the lower and upper bounds. The two bounds are inclusive.
@@ -60,6 +64,11 @@ func FilterInjections(data []model.Injection, lowerBound, upperBound time.Time) 
 		if startOfDayIndex < 0 && elementTime.Before(lowerBound) {
 			startOfDayIndex = i + 1
 		}
+	}
+
+	// We don't have data in those boundaries so return an empty array
+	if startOfDayIndex == -1 || endOfDayIndex == -1 {
+		return make([]model.Injection, 0)
 	}
 
 	return data[startOfDayIndex : endOfDayIndex+1]
@@ -91,6 +100,11 @@ func FilterCarbs(data []model.Carb, lowerBound, upperBound time.Time) (filteredD
 		}
 	}
 
+	// We don't have data in those boundaries so return an empty array
+	if startOfDayIndex == -1 || endOfDayIndex == -1 {
+		return make([]model.Carb, 0)
+	}
+
 	return data[startOfDayIndex : endOfDayIndex+1]
 }
 
@@ -118,6 +132,11 @@ func FilterExercises(data []model.Exercise, lowerBound, upperBound time.Time) (f
 		if startOfDayIndex < 0 && elementTime.Before(lowerBound) {
 			startOfDayIndex = i + 1
 		}
+	}
+
+	// We don't have data in those boundaries so return an empty array
+	if startOfDayIndex == -1 || endOfDayIndex == -1 {
+		return make([]model.Exercise, 0)
 	}
 
 	return data[startOfDayIndex : endOfDayIndex+1]

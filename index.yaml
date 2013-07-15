@@ -20,6 +20,11 @@ indexes:
   properties:
   - name: startTime
 
+- kind: DayOfExercises
+  ancestor: yes
+  properties:
+  - name: startTime
+
 - kind: DayOfInjections
   ancestor: yes
   properties:
