@@ -1,8 +1,7 @@
-package models
+package model
 
 import (
-	"app/sysutils"
-	"app/timeutils"
+	"app/util"
 	"appengine/datastore"
 	"fmt"
 	"log"
@@ -25,14 +24,14 @@ func (dayOfReads *DayOfReads) Load(channel <-chan datastore.Property) error {
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				sysutils.Propagate(err)
+				util.Propagate(err)
 			}
 
 			readTime := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We need to convert value to int64 and cast it as int
 			value := int(columnValue.(int64))
 
-			localTime := timeutils.LocalTimeWithDefaultTimezone(readTime)
+			localTime := util.LocalTimeWithDefaultTimezone(readTime)
 			//context.Infof("Loading read with info: %s, %s, %d", localTime, readTime, value)
 			read := GlucoseRead{localTime, Timestamp(readTime.Unix()), value}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
@@ -96,7 +95,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				sysutils.Propagate(err)
+				util.Propagate(err)
 			}
 
 			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
@@ -104,7 +103,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 			// the store
 			value := float32(columnValue.(float64))
 
-			localTime := timeutils.LocalTimeWithDefaultTimezone(timestamp)
+			localTime := util.LocalTimeWithDefaultTimezone(timestamp)
 			injection := Injection{localTime, Timestamp(timestamp.Unix()), value, UNDEFINED_READ}
 			dayOfInjections.Injections = append(dayOfInjections.Injections, injection)
 		}
@@ -167,7 +166,7 @@ func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				sysutils.Propagate(err)
+				util.Propagate(err)
 			}
 
 			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
@@ -175,7 +174,7 @@ func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
 			// the store
 			value := float32(columnValue.(float64))
 
-			localTime := timeutils.LocalTimeWithDefaultTimezone(timestamp)
+			localTime := util.LocalTimeWithDefaultTimezone(timestamp)
 			carb := Carb{localTime, Timestamp(timestamp.Unix()), value, UNDEFINED_READ}
 			dayOfCarbs.Carbs = append(dayOfCarbs.Carbs, carb)
 		}
@@ -238,7 +237,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				sysutils.Propagate(err)
+				util.Propagate(err)
 			}
 
 			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
@@ -248,7 +247,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 			var intensity string
 			fmt.Sscanf(value, EXERCISE_VALUE_FORMAT, &duration, &intensity)
 
-			localTime := timeutils.LocalTimeWithDefaultTimezone(timestamp)
+			localTime := util.LocalTimeWithDefaultTimezone(timestamp)
 			exercise := Exercise{localTime, Timestamp(timestamp.Unix()), duration, intensity}
 			dayOfExercises.Exercises = append(dayOfExercises.Exercises, exercise)
 		}

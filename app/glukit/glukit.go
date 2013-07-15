@@ -2,12 +2,10 @@ package glukit
 
 import (
 	"app/engine"
-	"app/fetcher"
-	"app/models"
-	"app/parser"
+	"app/importer"
+	"app/model"
 	"app/store"
-	"app/sysutils"
-	"app/timeutils"
+	"app/util"
 	"appengine"
 	"appengine/channel"
 	"appengine/datastore"
@@ -49,9 +47,9 @@ func config() *oauth.Config {
 }
 
 type DataSeries struct {
-	Name string             `json:"name"`
-	Data []models.DataPoint `json:"data"`
-	Type string             `json:"type"`
+	Name string            `json:"name"`
+	Data []model.DataPoint `json:"data"`
+	Type string            `json:"type"`
 }
 
 type RenderVariables struct {
@@ -71,7 +69,7 @@ var refreshUserData = delay.Func("refreshUserData", func(context appengine.Conte
 		"real one which we define in init() to override this implementation!")
 })
 
-var emptyDataPointSlice []models.DataPoint
+var emptyDataPointSlice []model.DataPoint
 
 func init() {
 	http.HandleFunc("/json.demo", demoContent)
@@ -104,15 +102,15 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 		context.Infof("No data found for user [%s], creating it", user.Email)
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
 		// We store the refresh token separately from the rest. This token is long-lived, meaning that if we have a glukit user with no refresh token, we need to force getting a new one (which is to be avoided)
-		_, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{user.Email, "", "", time.Now(), "", "", timeutils.BEGINNING_OF_TIME, timeutils.BEGINNING_OF_TIME, oauthToken, oauthToken.RefreshToken, models.UNDEFINED_SCORE})
+		_, err = store.StoreUserProfile(context, time.Now(), model.GlukitUser{user.Email, "", "", time.Now(), "", "", util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME, oauthToken, oauthToken.RefreshToken, model.UNDEFINED_SCORE})
 		if err != nil {
-			sysutils.Propagate(err)
+			util.Propagate(err)
 		}
 		// We only schedule the auto refresh on first access since all subsequent runs of scheduled tasks will also
 		// reschedule themselve a new run
 		scheduleAutoRefresh = true
 	} else if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	} else {
 		oauthToken = glukitUser.Token
 
@@ -144,14 +142,14 @@ func callback(writer http.ResponseWriter, request *http.Request) {
 				transport.Token.RefreshToken = glukitUser.RefreshToken
 
 				err := transport.Refresh(context)
-				sysutils.Propagate(err)
+				util.Propagate(err)
 
 				context.Debugf("Storing new refreshed token [%s] in datastore...", oauthToken)
 				glukitUser.LastUpdated = time.Now()
 				glukitUser.Token = oauthToken
 				_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
 				if err != nil {
-					sysutils.Propagate(err)
+					util.Propagate(err)
 				}
 			}
 
@@ -203,7 +201,7 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 	}
 
 	nextUpdate := time.Now().AddDate(0, 0, 1)
-	files, err := fetcher.SearchDataFiles(transport.Client(), glukitUser.LastUpdated)
+	files, err := importer.SearchDataFiles(transport.Client(), glukitUser.LastUpdated)
 	if err != nil {
 		context.Warningf("Error while searching for files on google drive for user [%s]: %v", userEmail, err)
 	} else {
@@ -224,7 +222,7 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 		task.ETA = nextUpdate
 		taskqueue.Add(context, task, "refresh")
 
-		context.Infof("Scheduled next data update for user [%s] at [%s]", userEmail, nextUpdate.Format(timeutils.TIMEFORMAT))
+		context.Infof("Scheduled next data update for user [%s] at [%s]", userEmail, nextUpdate.Format(util.TIMEFORMAT))
 	} else {
 		context.Infof("Not scheduling a the next refresh as requested by autoScheduleNextRun [%t]", autoScheduleNextRun)
 	}
@@ -246,7 +244,7 @@ func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oa
 	}
 
 	token, err := t.Exchange(context, code)
-	sysutils.Propagate(err)
+	util.Propagate(err)
 
 	context.Infof("Got brand new oauth token [%v] with refresh token [%s]", token, token.RefreshToken)
 	return *token, t
@@ -274,7 +272,7 @@ func processData(token *oauth.Token, files []*drive.File, context appengine.Cont
 	for i := range files {
 		task, err := processFile.Task(token, files[i], userEmail, userProfileKey)
 		if err != nil {
-			sysutils.Propagate(err)
+			util.Propagate(err)
 		}
 		taskqueue.Add(context, task, "store")
 	}
@@ -289,23 +287,23 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 		Token: token,
 	}
 
-	reader, err := fetcher.GetFileReader(context, t, file)
+	reader, err := importer.GetFileReader(context, t, file)
 	if err != nil {
 		context.Infof("Error reading file %s, skipping...", file.OriginalFilename)
 	} else {
 		// Default to beginning of time
-		startTime := timeutils.BEGINNING_OF_TIME
+		startTime := util.BEGINNING_OF_TIME
 		if lastFileImportLog, err := store.GetFileImportLog(context, userProfileKey, file.Id); err == nil {
 			startTime = lastFileImportLog.LastDataProcessed
-			context.Infof("Reloading data from file [%s]-[%s] starting at date [%s]...", file.Id, file.OriginalFilename, startTime.Format(timeutils.TIMEFORMAT))
+			context.Infof("Reloading data from file [%s]-[%s] starting at date [%s]...", file.Id, file.OriginalFilename, startTime.Format(util.TIMEFORMAT))
 		} else if err == datastore.ErrNoSuchEntity {
 			context.Debugf("First import of file [%s]-[%s]...", file.Id, file.OriginalFilename)
 		} else if err != nil {
-			sysutils.Propagate(err)
+			util.Propagate(err)
 		}
 
-		lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
-		store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum, LastDataProcessed: lastReadTime})
+		lastReadTime := importer.ParseContent(context, reader, 500, userProfileKey, startTime, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+		store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum, LastDataProcessed: lastReadTime})
 		reader.Close()
 
 		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
@@ -325,7 +323,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			}
 		} else {
 			context.Debugf("Skipping recalculation of GlukitScore because the last calculation was with a more recent read [%s] than the most recent read from this last batch [%s]",
-				glukitUser.Score.UpperBound.Format(timeutils.TIMEFORMAT), lastReadTime.Format(timeutils.TIMEFORMAT))
+				glukitUser.Score.UpperBound.Format(util.TIMEFORMAT), lastReadTime.Format(util.TIMEFORMAT))
 		}
 	}
 	channel.Send(context, userEmail, "Refresh")
@@ -367,8 +365,8 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime := parser.ParseContent(context, reader, 500, userProfileKey, timeutils.BEGINNING_OF_TIME, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
-	store.LogFileImport(context, userProfileKey, models.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum", LastDataProcessed: lastReadTime})
+	lastReadTime := importer.ParseContent(context, reader, 500, userProfileKey, util.BEGINNING_OF_TIME, store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+	store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum", LastDataProcessed: lastReadTime})
 	channel.Send(context, DEMO_EMAIL, "Refresh")
 }
 
@@ -378,20 +376,20 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	_, key, _, _, err := store.GetUserData(context, DEMO_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
-		dummyToken := oauth.Token{"", "", timeutils.BEGINNING_OF_TIME}
+		dummyToken := oauth.Token{"", "", util.BEGINNING_OF_TIME}
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), models.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(), timeutils.BEGINNING_OF_TIME, dummyToken, "", models.UNDEFINED_SCORE})
+		key, err = store.StoreUserProfile(context, time.Now(), model.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(), util.BEGINNING_OF_TIME, dummyToken, "", model.UNDEFINED_SCORE})
 		if err != nil {
-			sysutils.Propagate(err)
+			util.Propagate(err)
 		}
 
 		task, err := processDemoFile.Task(key)
 		if err != nil {
-			sysutils.Propagate(err)
+			util.Propagate(err)
 		}
 		taskqueue.Add(context, task, "store")
 	} else if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	} else {
 		context.Infof("Data already stored for demo user [%s], continuing...", DEMO_EMAIL)
 	}
@@ -442,27 +440,27 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, lowerBound, upperBound, err := store.GetUserData(context, DEMO_EMAIL)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	glucoseReads, err := store.GetUserReads(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 	injections, err := store.GetUserInjections(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 	carbs, err := store.GetUserCarbs(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	context.Infof("Got %d reads", len(glucoseReads))
 	writeUserJsonData(writer, glucoseReads, injections, carbs)
 }
 
-func writeUserJsonData(writer http.ResponseWriter, reads []models.GlucoseRead, injections []models.Injection, carbs []models.Carb) {
+func writeUserJsonData(writer http.ResponseWriter, reads []model.GlucoseRead, injections []model.Injection, carbs []model.Carb) {
 	enc := json.NewEncoder(writer)
 	individuals := make([]DataSeries, 4)
 
@@ -472,10 +470,10 @@ func writeUserJsonData(writer http.ResponseWriter, reads []models.GlucoseRead, i
 		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "Carbs"}
 		individuals[3] = DataSeries{"Perfection", emptyDataPointSlice, "ComparisonReads"}
 	} else {
-		individuals[0] = DataSeries{"You", models.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
-		individuals[1] = DataSeries{"You.Injection", models.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", models.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"}
-		individuals[3] = DataSeries{"Perfection", models.GlucoseReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
+		individuals[0] = DataSeries{"You", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
+		individuals[1] = DataSeries{"You.Injection", model.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
+		individuals[2] = DataSeries{"You.Carbohydrates", model.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"}
+		individuals[3] = DataSeries{"Perfection", model.GlucoseReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
 	}
 
 	enc.Encode(individuals)
@@ -487,20 +485,20 @@ func content(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	reads, err := store.GetUserReads(context, user.Email, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 	injections, err := store.GetUserInjections(context, user.Email, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 	carbs, err := store.GetUserCarbs(context, user.Email, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	value := writer.Header()
@@ -509,20 +507,20 @@ func content(writer http.ResponseWriter, request *http.Request) {
 	writeUserJsonData(writer, reads, injections, carbs)
 }
 
-func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []models.GlucoseRead) {
+func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []model.GlucoseRead) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	var trackingData models.TrackingData
+	var trackingData model.TrackingData
 	if len(reads) > 0 {
-		sort.Sort(models.ReadStatsSlice(reads))
-		trackingData.Mean = stat.Mean(models.ReadStatsSlice(reads))
-		trackingData.Deviation = stat.AbsdevMean(models.ReadStatsSlice(reads), 83)
-		trackingData.Max, _ = stat.Max(models.ReadStatsSlice(reads))
-		trackingData.Min, _ = stat.Min(models.ReadStatsSlice(reads))
-		trackingData.Median = stat.MedianFromSortedData(models.ReadStatsSlice(reads))
+		sort.Sort(model.ReadStatsSlice(reads))
+		trackingData.Mean = stat.Mean(model.ReadStatsSlice(reads))
+		trackingData.Deviation = stat.AbsdevMean(model.ReadStatsSlice(reads), 83)
+		trackingData.Max, _ = stat.Max(model.ReadStatsSlice(reads))
+		trackingData.Min, _ = stat.Min(model.ReadStatsSlice(reads))
+		trackingData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
 		distribution := engine.BuildHistogram(reads)
-		sort.Sort(models.CoordinateSlice(distribution))
+		sort.Sort(model.CoordinateSlice(distribution))
 		trackingData.Distribution = distribution
 	}
 
@@ -536,12 +534,12 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	reads, err := store.GetUserReads(context, user.Email, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	generateTrackingData(writer, request, reads)
@@ -555,21 +553,21 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 
 	_, _, lowerBound, upperBound, err := store.GetUserData(context, DEMO_EMAIL)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	reads, err := store.GetUserReads(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	generateTrackingData(writer, request, reads)
 }
 
-func buildPerfectBaseline(glucoseReads []models.GlucoseRead) (reads []models.GlucoseRead) {
-	reads = make([]models.GlucoseRead, len(glucoseReads))
+func buildPerfectBaseline(glucoseReads []model.GlucoseRead) (reads []model.GlucoseRead) {
+	reads = make([]model.GlucoseRead, len(glucoseReads))
 	for i := range glucoseReads {
-		reads[i] = models.GlucoseRead{glucoseReads[i].LocalTime, glucoseReads[i].Timestamp, 83}
+		reads[i] = model.GlucoseRead{glucoseReads[i].LocalTime, glucoseReads[i].Timestamp, 83}
 	}
 
 	return reads

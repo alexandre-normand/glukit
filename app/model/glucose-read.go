@@ -1,7 +1,7 @@
-package models
+package model
 
 import (
-	"app/timeutils"
+	"app/util"
 	"time"
 )
 
@@ -20,7 +20,7 @@ type DayOfReads struct {
 
 // GetTime gets the time of a GlucoseRead value
 func (read GlucoseRead) GetTime() (timeValue time.Time) {
-	value, _ := timeutils.ParseTime(read.LocalTime, timeutils.TIMEZONE)
+	value, _ := util.ParseTime(read.LocalTime, util.TIMEZONE)
 	return value
 }
 

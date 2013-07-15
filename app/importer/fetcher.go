@@ -1,7 +1,7 @@
-package fetcher
+package importer
 
 import (
-	"app/timeutils"
+	"app/util"
 	"appengine"
 	"fmt"
 	"io"
@@ -18,7 +18,7 @@ func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.F
 	if service, err := drive.New(client); err != nil {
 		return nil, err
 	} else {
-		query := fmt.Sprintf("fullText contains \"<Glucose\" and fullText contains \"<Patient Id=\" and modifiedDate > '%s'", lastUpdate.Format(timeutils.DRIVE_TIMEFORMAT))
+		query := fmt.Sprintf("fullText contains \"<Glucose\" and fullText contains \"<Patient Id=\" and modifiedDate > '%s'", lastUpdate.Format(util.DRIVE_TIMEFORMAT))
 		call := service.Files.List().MaxResults(10).Q(query)
 		if filelist, err := call.Do(); err != nil {
 			return nil, err

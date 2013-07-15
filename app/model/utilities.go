@@ -1,4 +1,4 @@
-package models
+package model
 
 // LinearInterpolateY does a linear interpolation of the Y value of a given GlucoseRead for a given
 // time value
