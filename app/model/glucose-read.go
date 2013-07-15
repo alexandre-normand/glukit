@@ -14,7 +14,7 @@ type GlucoseRead struct {
 }
 
 // This holds an array of reads for a whole day
-type DayOfReads struct {
+type DayOfGlucoseReads struct {
 	Reads []GlucoseRead
 }
 

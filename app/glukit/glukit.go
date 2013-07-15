@@ -1,3 +1,4 @@
+// The glukit package is the main package for the application. This is where it all starts.
 package glukit
 
 import (
@@ -443,15 +444,15 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 		util.Propagate(err)
 	}
 
-	glucoseReads, err := store.GetUserReads(context, DEMO_EMAIL, lowerBound, upperBound)
+	glucoseReads, err := store.GetGlucoseReads(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
-	injections, err := store.GetUserInjections(context, DEMO_EMAIL, lowerBound, upperBound)
+	injections, err := store.GetInjections(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
-	carbs, err := store.GetUserCarbs(context, DEMO_EMAIL, lowerBound, upperBound)
+	carbs, err := store.GetCarbs(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
@@ -488,15 +489,15 @@ func content(writer http.ResponseWriter, request *http.Request) {
 		util.Propagate(err)
 	}
 
-	reads, err := store.GetUserReads(context, user.Email, lowerBound, upperBound)
+	reads, err := store.GetGlucoseReads(context, user.Email, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
-	injections, err := store.GetUserInjections(context, user.Email, lowerBound, upperBound)
+	injections, err := store.GetInjections(context, user.Email, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
-	carbs, err := store.GetUserCarbs(context, user.Email, lowerBound, upperBound)
+	carbs, err := store.GetCarbs(context, user.Email, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
@@ -537,7 +538,7 @@ func tracking(writer http.ResponseWriter, request *http.Request) {
 		util.Propagate(err)
 	}
 
-	reads, err := store.GetUserReads(context, user.Email, lowerBound, upperBound)
+	reads, err := store.GetGlucoseReads(context, user.Email, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
@@ -556,7 +557,7 @@ func demoTracking(writer http.ResponseWriter, request *http.Request) {
 		util.Propagate(err)
 	}
 
-	reads, err := store.GetUserReads(context, DEMO_EMAIL, lowerBound, upperBound)
+	reads, err := store.GetGlucoseReads(context, DEMO_EMAIL, lowerBound, upperBound)
 	if err != nil {
 		util.Propagate(err)
 	}
