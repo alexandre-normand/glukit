@@ -5,7 +5,6 @@ import (
 	"app/util"
 	"appengine"
 	"appengine/datastore"
-	"container/list"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -13,12 +12,14 @@ import (
 	"time"
 )
 
+// Meter represents the xml element that we then map to a GlucoseRead
 type Meter struct {
 	InternalTime string `xml:"InternalTime,attr"`
 	DisplayTime  string `xml:"DisplayTime,attr"`
 	Value        int    `xml:"Value,attr"`
 }
 
+// Event represents the xml structure that holds all events. This includes injections, carbs and exercise.
 type Event struct {
 	InternalTime string `xml:"InternalTime,attr"`
 	DisplayTime  string `xml:"DisplayTime,attr"`
@@ -27,11 +28,15 @@ type Event struct {
 	Description  string `xml:"Decription,attr"`
 }
 
-func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, carbs []model.DayOfReads) ([]*datastore.Key, error), carbsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []model.DayOfCarbs) ([]*datastore.Key, error), injectionBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time) {
+// ParseContent is the big function that parses the Dexcom xml file. It is given a reader to the file and it parses batches of days of GlucoseReads/Events. It streams the content but
+// keeps some in memory until it reaches a full batch of a type. A batch is an array of DayOf[GlucoseReads,Injection,Carbs,Exercises]. A batch is flushed to the datastore once it reaches
+// the given batchSize or we reach the end of the file.
+// TODO: This should be broken down into smaller functions, come one!
+func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, carbs []model.DayOfGlucoseReads) ([]*datastore.Key, error), carbsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []model.DayOfCarbs) ([]*datastore.Key, error), injectionBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time) {
 	decoder := xml.NewDecoder(reader)
 
 	reads := make([]model.GlucoseRead, 0)
-	daysOfReads := make([]model.DayOfReads, 0, batchSize)
+	daysOfReads := make([]model.DayOfGlucoseReads, 0, batchSize)
 
 	injections := make([]model.Injection, 0)
 	daysOfInjections := make([]model.DayOfInjections, 0, batchSize)
@@ -80,12 +85,12 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						// have the same day value while being months apart.
 						if glucoseRead.GetTime().Day() != lastRead.GetTime().Day() {
 							// Create a day of reads and append it to the batch
-							daysOfReads = append(daysOfReads, model.DayOfReads{reads})
+							daysOfReads = append(daysOfReads, model.DayOfGlucoseReads{reads})
 
 							if len(daysOfReads) == batchSize {
 								// Send the batch to be handled and restart another one
 								readsBatchHandler(context, parentKey, daysOfReads)
-								daysOfReads = make([]model.DayOfReads, 0, batchSize)
+								daysOfReads = make([]model.DayOfGlucoseReads, 0, batchSize)
 							}
 
 							reads = make([]model.GlucoseRead, 0, batchSize)
@@ -219,7 +224,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 
 	// Run the final batch for each
 	if len(reads) > 0 {
-		daysOfReads = append(daysOfReads, model.DayOfReads{reads})
+		daysOfReads = append(daysOfReads, model.DayOfGlucoseReads{reads})
 		context.Infof("Flushing %d days of reads", len(daysOfReads))
 		readsBatchHandler(context, parentKey, daysOfReads)
 	}
@@ -247,14 +252,4 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 
 	context.Infof("Done parsing and storing all data")
 	return lastRead.GetTime()
-}
-
-func ConvertAsReadsArray(glucoseReads *list.List) (reads []model.GlucoseRead) {
-	reads = make([]model.GlucoseRead, glucoseReads.Len())
-	for e, i := glucoseReads.Front(), 0; e != nil; e, i = e.Next(), i+1 {
-		meter := e.Value.(Meter)
-		reads[i] = model.GlucoseRead{meter.DisplayTime, model.Timestamp(util.GetTimeInSeconds(meter.InternalTime)), meter.Value}
-	}
-
-	return reads
 }

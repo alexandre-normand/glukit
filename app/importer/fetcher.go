@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// SearchDataFiles does a search on GoogleDrive for any file that look like it's a Dexcom xml file.
+// The search is restricted to files that have a modified date after the given last update time.
 func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.File, err error) {
 	var files []*drive.File
 
@@ -38,7 +40,7 @@ func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.F
 	return files, nil
 }
 
-// Caller should call Close() when done
+// GetFileReader returns the file reader for the GoogleDrive file. The caller is responsible for calling Close() when done.
 func GetFileReader(context appengine.Context, client http.RoundTripper, file *drive.File) (reader io.ReadCloser, err error) {
 	// t parameter should use an oauth.Transport
 	downloadUrl := file.DownloadUrl
