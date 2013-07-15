@@ -433,6 +433,64 @@ func nodata(w http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// writeAsJson writes the set of GlucoseReads, Injections, Carbs and Exercises as json. This is what is called from the javascript
+// front-end to get the data.
+func writeAsJson(writer http.ResponseWriter, reads []model.GlucoseRead, injections []model.Injection, carbs []model.Carb, exercises []model.Exercise) {
+	enc := json.NewEncoder(writer)
+	individuals := make([]DataSeries, 5)
+
+	if len(reads) == 0 {
+		individuals[0] = DataSeries{"You", emptyDataPointSlice, "GlucoseReads"}
+		individuals[1] = DataSeries{"You.Injection", emptyDataPointSlice, "Injections"}
+		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "Carbs"}
+		individuals[3] = DataSeries{"You.Exercises", emptyDataPointSlice, "Exercises"}
+		individuals[4] = DataSeries{"Perfection", emptyDataPointSlice, "ComparisonReads"}
+	} else {
+		individuals[0] = DataSeries{"You", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
+		individuals[1] = DataSeries{"You.Injection", model.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
+		individuals[2] = DataSeries{"You.Carbohydrates", model.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"}
+		individuals[3] = DataSeries{"You.Exercises", model.ExerciseSlice(exercises).ToDataPointSlice(reads), "Exercises"}
+		individuals[4] = DataSeries{"Perfection", model.GlucoseReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
+	}
+
+	enc.Encode(individuals)
+}
+
+// content returns the json data that feeds the graph generation.
+func content(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
+	if err != nil {
+		util.Propagate(err)
+	}
+
+	reads, err := store.GetGlucoseReads(context, user.Email, lowerBound, upperBound)
+	if err != nil {
+		util.Propagate(err)
+	}
+	injections, err := store.GetInjections(context, user.Email, lowerBound, upperBound)
+	if err != nil {
+		util.Propagate(err)
+	}
+	carbs, err := store.GetCarbs(context, user.Email, lowerBound, upperBound)
+	if err != nil {
+		util.Propagate(err)
+	}
+	exercises, err := store.GetExercises(context, user.Email, lowerBound, upperBound)
+	if err != nil {
+		util.Propagate(err)
+	}
+
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	writeAsJson(writer, reads, injections, carbs, exercises)
+}
+
+// Analogous to the demo function but for the demo user.
+// TODO simplify by just calling demo() with the DEMO_EMAIL value
 func demoContent(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
@@ -456,56 +514,13 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		util.Propagate(err)
 	}
+	exercises, err := store.GetExercises(context, DEMO_EMAIL, lowerBound, upperBound)
+	if err != nil {
+		util.Propagate(err)
+	}
 
 	context.Infof("Got %d reads", len(glucoseReads))
-	writeUserJsonData(writer, glucoseReads, injections, carbs)
-}
-
-func writeUserJsonData(writer http.ResponseWriter, reads []model.GlucoseRead, injections []model.Injection, carbs []model.Carb) {
-	enc := json.NewEncoder(writer)
-	individuals := make([]DataSeries, 4)
-
-	if len(reads) == 0 {
-		individuals[0] = DataSeries{"You", emptyDataPointSlice, "GlucoseReads"}
-		individuals[1] = DataSeries{"You.Injection", emptyDataPointSlice, "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "Carbs"}
-		individuals[3] = DataSeries{"Perfection", emptyDataPointSlice, "ComparisonReads"}
-	} else {
-		individuals[0] = DataSeries{"You", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
-		individuals[1] = DataSeries{"You.Injection", model.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", model.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"}
-		individuals[3] = DataSeries{"Perfection", model.GlucoseReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
-	}
-
-	enc.Encode(individuals)
-}
-
-func content(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	user := user.Current(context)
-
-	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	reads, err := store.GetGlucoseReads(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	injections, err := store.GetInjections(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	carbs, err := store.GetCarbs(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	writeUserJsonData(writer, reads, injections, carbs)
+	writeAsJson(writer, glucoseReads, injections, carbs, exercises)
 }
 
 func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []model.GlucoseRead) {
