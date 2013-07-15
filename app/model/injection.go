@@ -1,7 +1,7 @@
-package models
+package model
 
 import (
-	"app/timeutils"
+	"app/util"
 	"time"
 )
 
@@ -20,7 +20,7 @@ type DayOfInjections struct {
 
 // GetTime gets the time of an Injection value
 func (injection Injection) GetTime() (timeValue time.Time) {
-	value, _ := timeutils.ParseTime(injection.LocalTime, timeutils.TIMEZONE)
+	value, _ := util.ParseTime(injection.LocalTime, util.TIMEZONE)
 	return value
 }
 

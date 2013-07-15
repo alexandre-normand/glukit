@@ -1,4 +1,4 @@
-package models
+package model
 
 // Type for a slice of GlucoseReads with comparison based on value rather than time. It is used as read statistics.
 type ReadStatsSlice []GlucoseRead

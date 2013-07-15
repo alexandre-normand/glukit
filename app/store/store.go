@@ -1,26 +1,25 @@
+// This package provides the interface and functions to deal with the storage of data.
 package store
 
 import (
-	"app/datautils"
-	"app/models"
-	"app/sysutils"
-	"app/timeutils"
+	"app/model"
+	"app/util"
 	"appengine"
 	"appengine/datastore"
 	"math"
 	"time"
 )
 
-func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfile models.GlukitUser) (key *datastore.Key, err error) {
+func StoreUserProfile(context appengine.Context, updatedAt time.Time, userProfile model.GlukitUser) (key *datastore.Key, err error) {
 	key, error := datastore.Put(context, GetUserKey(context, userProfile.Email), &userProfile)
 	if error != nil {
-		sysutils.Propagate(error)
+		util.Propagate(error)
 	}
 
 	return key, nil
 }
 
-func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []models.DayOfReads) (keys []*datastore.Key, err error) {
+func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []model.DayOfReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfReads))
 	for i := range daysOfReads {
 		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", int64(daysOfReads[i].Reads[0].Timestamp), userProfileKey)
@@ -55,7 +54,7 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 	return elementKeys, nil
 }
 
-func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []models.DayOfInjections) (keys []*datastore.Key, err error) {
+func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfInjections))
 	for i := range daysOfInjections {
 		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", int64(daysOfInjections[i].Injections[0].Timestamp), userProfileKey)
@@ -71,7 +70,7 @@ func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.
 	return elementKeys, nil
 }
 
-func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []models.DayOfCarbs) (keys []*datastore.Key, err error) {
+func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []model.DayOfCarbs) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfCarbs))
 	for i := range daysOfCarbs {
 		elementKeys[i] = datastore.NewKey(context, "DayOfCarbs", "", int64(daysOfCarbs[i].Carbs[0].Timestamp), userProfileKey)
@@ -87,7 +86,7 @@ func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, 
 	return elementKeys, nil
 }
 
-func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []models.DayOfExercises) (keys []*datastore.Key, err error) {
+func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfExercises))
 	for i := range daysOfExercises {
 		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", int64(daysOfExercises[i].Exercises[0].Timestamp), userProfileKey)
@@ -103,7 +102,7 @@ func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.K
 	return elementKeys, nil
 }
 
-func LogFileImport(context appengine.Context, userProfileKey *datastore.Key, fileImport models.FileImportLog) (key *datastore.Key, err error) {
+func LogFileImport(context appengine.Context, userProfileKey *datastore.Key, fileImport model.FileImportLog) (key *datastore.Key, err error) {
 	key = datastore.NewKey(context, "FileImportLog", fileImport.Id, 0, userProfileKey)
 
 	context.Infof("Emitting a Put for file import log with key [%s] for file id [%s]", key, fileImport.Id)
@@ -116,11 +115,11 @@ func LogFileImport(context appengine.Context, userProfileKey *datastore.Key, fil
 	return key, nil
 }
 
-func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, fileId string) (fileImport *models.FileImportLog, err error) {
+func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, fileId string) (fileImport *model.FileImportLog, err error) {
 	key := datastore.NewKey(context, "FileImportLog", fileId, 0, userProfileKey)
 
 	context.Infof("Reading file import log for file id [%s]", fileId)
-	fileImport = new(models.FileImportLog)
+	fileImport = new(model.FileImportLog)
 	error := datastore.Get(context, key, fileImport)
 	if error != nil {
 		return nil, error
@@ -133,8 +132,8 @@ func GetUserKey(context appengine.Context, email string) (key *datastore.Key) {
 	return datastore.NewKey(context, "GlukitUser", email, 0, nil)
 }
 
-func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile *models.GlukitUser, err error) {
-	userProfile = new(models.GlukitUser)
+func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile *model.GlukitUser, err error) {
+	userProfile = new(model.GlukitUser)
 	context.Infof("Fetching user profile for key: %s", key.String())
 	error := datastore.Get(context, key, userProfile)
 	if error != nil {
@@ -143,20 +142,20 @@ func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile 
 
 	return userProfile, nil
 }
-func GetUserData(context appengine.Context, email string) (userProfile *models.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
+func GetUserData(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
 	key = GetUserKey(context, email)
 	userProfile, err = GetUserProfile(context, key)
 	if err != nil {
 		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
 	}
 
-	upperBound = timeutils.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
+	upperBound = util.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
 	lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
 
 	return userProfile, key, lowerBound, upperBound, nil
 }
 
-func GetUserReads(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (reads []models.GlucoseRead, err error) {
+func GetUserReads(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (reads []model.GlucoseRead, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -167,7 +166,7 @@ func GetUserReads(context appengine.Context, email string, lowerBound time.Time,
 	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfReads models.DayOfReads
+	var daysOfReads model.DayOfReads
 
 	iterator := query.Run(context)
 	count := 0
@@ -177,16 +176,16 @@ func GetUserReads(context appengine.Context, email string, lowerBound time.Time,
 		count = len(daysOfReads.Reads)
 	}
 
-	filteredReads := datautils.FilterReads(daysOfReads.Reads, lowerBound, upperBound)
+	filteredReads := FilterReads(daysOfReads.Reads, lowerBound, upperBound)
 
 	if err != datastore.Done {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	return filteredReads, nil
 }
 
-func GetUserInjections(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (injections []models.Injection, err error) {
+func GetUserInjections(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (injections []model.Injection, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -197,7 +196,7 @@ func GetUserInjections(context appengine.Context, email string, lowerBound time.
 	context.Infof("Scanning for injections between %s and %s to get injections between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfInjections").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfInjections models.DayOfInjections
+	var daysOfInjections model.DayOfInjections
 
 	iterator := query.Run(context)
 	count := 0
@@ -207,16 +206,16 @@ func GetUserInjections(context appengine.Context, email string, lowerBound time.
 		count = len(daysOfInjections.Injections)
 	}
 
-	filteredInjections := datautils.FilterInjections(daysOfInjections.Injections, lowerBound, upperBound)
+	filteredInjections := FilterInjections(daysOfInjections.Injections, lowerBound, upperBound)
 
 	if err != datastore.Done {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	return filteredInjections, nil
 }
 
-func GetUserCarbs(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (carbs []models.Carb, err error) {
+func GetUserCarbs(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (carbs []model.Carb, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -227,7 +226,7 @@ func GetUserCarbs(context appengine.Context, email string, lowerBound time.Time,
 	context.Infof("Scanning for carbs between %s and %s to get carbs between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfCarbs").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfCarbs models.DayOfCarbs
+	var daysOfCarbs model.DayOfCarbs
 
 	iterator := query.Run(context)
 	count := 0
@@ -237,17 +236,17 @@ func GetUserCarbs(context appengine.Context, email string, lowerBound time.Time,
 		count = len(daysOfCarbs.Carbs)
 	}
 
-	filteredCarbs := datautils.FilterCarbs(daysOfCarbs.Carbs, lowerBound, upperBound)
+	filteredCarbs := FilterCarbs(daysOfCarbs.Carbs, lowerBound, upperBound)
 
 	if err != datastore.Done {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	return filteredCarbs, nil
 }
 
 // Retrieves exercise values for the specified lower and upper bounds for the user identified by the email address
-func GetUserExercises(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (exercises []models.Exercise, err error) {
+func GetUserExercises(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (exercises []model.Exercise, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -258,7 +257,7 @@ func GetUserExercises(context appengine.Context, email string, lowerBound time.T
 	context.Infof("Scanning for exercises between %s and %s to get exercises between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfExercises").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfExercises models.DayOfExercises
+	var daysOfExercises model.DayOfExercises
 
 	iterator := query.Run(context)
 	count := 0
@@ -268,10 +267,10 @@ func GetUserExercises(context appengine.Context, email string, lowerBound time.T
 		count = len(daysOfExercises.Exercises)
 	}
 
-	filteredExercises := datautils.FilterExercises(daysOfExercises.Exercises, lowerBound, upperBound)
+	filteredExercises := FilterExercises(daysOfExercises.Exercises, lowerBound, upperBound)
 
 	if err != datastore.Done {
-		sysutils.Propagate(err)
+		util.Propagate(err)
 	}
 
 	return filteredExercises, nil

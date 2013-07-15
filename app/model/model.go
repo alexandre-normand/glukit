@@ -1,10 +1,10 @@
 /*
 Package models provides model types
 */
-package models
+package model
 
 import (
-	"app/timeutils"
+	"app/util"
 	"time"
 )
 
@@ -15,7 +15,7 @@ const (
 )
 
 // "Dynamic" constants, those should never be updated
-var UNDEFINED_SCORE = GlukitScore{UNDEFINED_SCORE_VALUE, timeutils.BEGINNING_OF_TIME, timeutils.BEGINNING_OF_TIME}
+var UNDEFINED_SCORE = GlukitScore{UNDEFINED_SCORE_VALUE, util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME}
 
 type Timestamp int64
 

@@ -1,14 +1,13 @@
-// This package provides some useful fonctions to filter/merge and do various operations on the data.
-package datautils
+package store
 
 import (
-	"app/models"
+	"app/model"
 	"sort"
 	"time"
 )
 
 // FilterReads filters out any GlucoseRead that is outside of the lower and upper bounds. The two bounds are inclusive.
-func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (filteredData []models.GlucoseRead) {
+func FilterReads(data []model.GlucoseRead, lowerBound, upperBound time.Time) (filteredData []model.GlucoseRead) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
 		return data
@@ -20,7 +19,7 @@ func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (f
 
 	// Sort might not be strictly needed depending on the ordering of the datastore loading but since there doesn't
 	// seem to be any warranty, sorting seems like a good idea
-	sort.Sort(models.GlucoseReadSlice(data))
+	sort.Sort(model.GlucoseReadSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
 		elementTime := time.Unix(int64(data[i].Timestamp), 0)
@@ -38,7 +37,7 @@ func FilterReads(data []models.GlucoseRead, lowerBound, upperBound time.Time) (f
 }
 
 // FilterReads filters out any Injection that is outside of the lower and upper bounds. The two bounds are inclusive.
-func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time) (filteredData []models.Injection) {
+func FilterInjections(data []model.Injection, lowerBound, upperBound time.Time) (filteredData []model.Injection) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
 		return data
@@ -50,7 +49,7 @@ func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time)
 
 	// Sort might not be strictly needed depending on the ordering of the datastore loading but since there doesn't
 	// seem to be any warranty, sorting seems like a good idea
-	sort.Sort(models.InjectionSlice(data))
+	sort.Sort(model.InjectionSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
 		elementTime := time.Unix(int64(data[i].Timestamp), 0)
@@ -67,7 +66,7 @@ func FilterInjections(data []models.Injection, lowerBound, upperBound time.Time)
 }
 
 // FilterReads filters out any Carb element that is outside of the lower and upper bounds. The two bounds are inclusive.
-func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filteredData []models.Carb) {
+func FilterCarbs(data []model.Carb, lowerBound, upperBound time.Time) (filteredData []model.Carb) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
 		return data
@@ -79,7 +78,7 @@ func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filtered
 
 	// Sort might not be strictly needed depending on the ordering of the datastore loading but since there doesn't
 	// seem to be any warranty, sorting seems like a good idea
-	sort.Sort(models.CarbSlice(data))
+	sort.Sort(model.CarbSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
 		elementTime := time.Unix(int64(data[i].Timestamp), 0)
@@ -96,7 +95,7 @@ func FilterCarbs(data []models.Carb, lowerBound, upperBound time.Time) (filtered
 }
 
 // FilterReads filters out any Exercise element that is outside of the lower and upper bounds. The two bounds are inclusive.
-func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (filteredData []models.Exercise) {
+func FilterExercises(data []model.Exercise, lowerBound, upperBound time.Time) (filteredData []model.Exercise) {
 	// Nothing to sort, return immediately
 	if len(data) == 0 {
 		return data
@@ -108,7 +107,7 @@ func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (
 
 	// Sort might not be strictly needed depending on the ordering of the datastore loading but since there doesn't
 	// seem to be any warranty, sorting seems like a good idea
-	sort.Sort(models.ExerciseSlice(data))
+	sort.Sort(model.ExerciseSlice(data))
 
 	for i := arraySize - 1; i > 0; i-- {
 		elementTime := time.Unix(int64(data[i].Timestamp), 0)
@@ -125,24 +124,24 @@ func FilterExercises(data []models.Exercise, lowerBound, upperBound time.Time) (
 }
 
 // MergeGlucoseReadArrays merges two arrays of GlucoseRead elements.
-func MergeGlucoseReadArrays(first, second []models.GlucoseRead) []models.GlucoseRead {
-	newslice := make([]models.GlucoseRead, len(first)+len(second))
+func MergeGlucoseReadArrays(first, second []model.GlucoseRead) []model.GlucoseRead {
+	newslice := make([]model.GlucoseRead, len(first)+len(second))
 	copy(newslice, first)
 	copy(newslice[len(first):], second)
 	return newslice
 }
 
 // MergeCarbArrays merges two arrays of Carb elements.
-func MergeCarbArrays(first, second []models.Carb) []models.Carb {
-	newslice := make([]models.Carb, len(first)+len(second))
+func MergeCarbArrays(first, second []model.Carb) []model.Carb {
+	newslice := make([]model.Carb, len(first)+len(second))
 	copy(newslice, first)
 	copy(newslice[len(first):], second)
 	return newslice
 }
 
 // MergeInjectionArrays merges two arrays of Injection elements.
-func MergeInjectionArrays(first, second []models.Injection) []models.Injection {
-	newslice := make([]models.Injection, len(first)+len(second))
+func MergeInjectionArrays(first, second []model.Injection) []model.Injection {
+	newslice := make([]model.Injection, len(first)+len(second))
 	copy(newslice, first)
 	copy(newslice[len(first):], second)
 	return newslice
