@@ -13,6 +13,13 @@ import (
 	"sort"
 )
 
+// Represents a generic DataSeries structure with a series of DataPoints
+type DataSeries struct {
+	Name string            `json:"name"`
+	Data []model.DataPoint `json:"data"`
+	Type string            `json:"type"`
+}
+
 // content renders the most recent day's worth of data as json for the active user
 func content(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
