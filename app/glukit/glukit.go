@@ -15,15 +15,12 @@ import (
 	"appengine/urlfetch"
 	"appengine/user"
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"lib/drive"
-	"lib/github.com/grd/stat"
 	"lib/goauth2/oauth"
 	"net/http"
 	"os"
-	"sort"
 	"time"
 )
 
@@ -72,24 +69,13 @@ var refreshUserData = delay.Func("refreshUserData", func(context appengine.Conte
 
 var emptyDataPointSlice []model.DataPoint
 
-func init() {
-	http.HandleFunc("/json.demo", demoContent)
-	http.HandleFunc("/json", content)
-	http.HandleFunc("/json.demo.tracking", demoTracking)
-	http.HandleFunc("/json.tracking", tracking)
-
-	http.HandleFunc("/demo", renderDemo)
-	http.HandleFunc("/graph", renderRealUser)
-
-	http.HandleFunc("/", landing)
-	http.HandleFunc("/nodata", nodata)
-	http.HandleFunc("/realuser", handleRealUser)
-	http.HandleFunc("/oauth2callback", callback)
-
-	refreshUserData = delay.Func("refreshUserData", updateUserData)
-}
-
-func callback(writer http.ResponseWriter, request *http.Request) {
+// handleLoggedInUser is responsible for directing the user to the graph page after optionally:
+//   1. Storing the GlukitUser entry if it's the first access
+//   2. Refreshing the glukit oauth token
+//   3. Kick off the processing of background import of files
+//
+// TODO: This is a big function, this should be split up into smaller ones
+func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
@@ -330,26 +316,6 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 	channel.Send(context, userEmail, "Refresh")
 }
 
-func handleRealUser(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	user := user.Current(context)
-
-	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
-	if err != nil || len(glukitUser.RefreshToken) == 0 {
-		context.Infof("Redirecting [%s], glukitUser [%v] for authorization", user.Email, glukitUser)
-
-		configuration := config()
-		context.Debugf("We don't current have a refresh token (either lost or it's the first access). Let's set the ApprovalPrompt to force to get a new one...")
-		configuration.ApprovalPrompt = "force"
-
-		url := configuration.AuthCodeURL(request.URL.RawQuery)
-		http.Redirect(writer, request, url, http.StatusFound)
-	} else {
-		context.Infof("User [%s] already exists with a valid refresh token [%s], skipping authorization step...", glukitUser.RefreshToken, user.Email)
-		callback(writer, request)
-	}
-}
-
 func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.Key) {
 
 	// open input file
@@ -371,215 +337,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	channel.Send(context, DEMO_EMAIL, "Refresh")
 }
 
-func renderDemo(w http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-
-	_, key, _, _, err := store.GetUserData(context, DEMO_EMAIL)
-	if err == datastore.ErrNoSuchEntity {
-		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
-		dummyToken := oauth.Token{"", "", util.BEGINNING_OF_TIME}
-		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when this is ready
-		key, err = store.StoreUserProfile(context, time.Now(), model.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(), util.BEGINNING_OF_TIME, dummyToken, "", model.UNDEFINED_SCORE})
-		if err != nil {
-			util.Propagate(err)
-		}
-
-		task, err := processDemoFile.Task(key)
-		if err != nil {
-			util.Propagate(err)
-		}
-		taskqueue.Add(context, task, "store")
-	} else if err != nil {
-		util.Propagate(err)
-	} else {
-		context.Infof("Data already stored for demo user [%s], continuing...", DEMO_EMAIL)
-	}
-
-	render(DEMO_EMAIL, "/json.demo", w, request)
-}
-
-func renderRealUser(w http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	user := user.Current(context)
-	render(user.Email, "/json", w, request)
-}
-
-func render(email string, datapath string, w http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	token, err := channel.Create(context, email)
-	if err != nil {
-		context.Criticalf("Error creating channel for user [%s]", email)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	renderVariables := &RenderVariables{DataPath: datapath, ChannelToken: token}
-
-	if err := graphTemplate.Execute(w, renderVariables); err != nil {
-		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func landing(w http.ResponseWriter, request *http.Request) {
-	if err := landingTemplate.Execute(w, nil); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func nodata(w http.ResponseWriter, request *http.Request) {
-	if err := nodataTemplate.Execute(w, nil); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// writeAsJson writes the set of GlucoseReads, Injections, Carbs and Exercises as json. This is what is called from the javascript
-// front-end to get the data.
-func writeAsJson(writer http.ResponseWriter, reads []model.GlucoseRead, injections []model.Injection, carbs []model.Carb, exercises []model.Exercise) {
-	enc := json.NewEncoder(writer)
-	individuals := make([]DataSeries, 5)
-
-	if len(reads) == 0 {
-		individuals[0] = DataSeries{"You", emptyDataPointSlice, "GlucoseReads"}
-		individuals[1] = DataSeries{"You.Injection", emptyDataPointSlice, "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "Carbs"}
-		individuals[3] = DataSeries{"You.Exercises", emptyDataPointSlice, "Exercises"}
-		individuals[4] = DataSeries{"Perfection", emptyDataPointSlice, "ComparisonReads"}
-	} else {
-		individuals[0] = DataSeries{"You", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
-		individuals[1] = DataSeries{"You.Injection", model.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", model.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"}
-		individuals[3] = DataSeries{"You.Exercises", model.ExerciseSlice(exercises).ToDataPointSlice(reads), "Exercises"}
-		individuals[4] = DataSeries{"Perfection", model.GlucoseReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
-	}
-
-	enc.Encode(individuals)
-}
-
-// content returns the json data that feeds the graph generation.
-func content(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	user := user.Current(context)
-
-	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	reads, err := store.GetGlucoseReads(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	injections, err := store.GetInjections(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	carbs, err := store.GetCarbs(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	exercises, err := store.GetExercises(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	writeAsJson(writer, reads, injections, carbs, exercises)
-}
-
-// Analogous to the demo function but for the demo user.
-// TODO simplify by just calling demo() with the DEMO_EMAIL value
-func demoContent(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	_, _, lowerBound, upperBound, err := store.GetUserData(context, DEMO_EMAIL)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	glucoseReads, err := store.GetGlucoseReads(context, DEMO_EMAIL, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	injections, err := store.GetInjections(context, DEMO_EMAIL, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	carbs, err := store.GetCarbs(context, DEMO_EMAIL, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	exercises, err := store.GetExercises(context, DEMO_EMAIL, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	context.Infof("Got %d reads", len(glucoseReads))
-	writeAsJson(writer, glucoseReads, injections, carbs, exercises)
-}
-
-func generateTrackingData(writer http.ResponseWriter, request *http.Request, reads []model.GlucoseRead) {
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	var trackingData model.TrackingData
-	if len(reads) > 0 {
-		sort.Sort(model.ReadStatsSlice(reads))
-		trackingData.Mean = stat.Mean(model.ReadStatsSlice(reads))
-		trackingData.Deviation = stat.AbsdevMean(model.ReadStatsSlice(reads), 83)
-		trackingData.Max, _ = stat.Max(model.ReadStatsSlice(reads))
-		trackingData.Min, _ = stat.Min(model.ReadStatsSlice(reads))
-		trackingData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
-		distribution := engine.BuildHistogram(reads)
-		sort.Sort(model.CoordinateSlice(distribution))
-		trackingData.Distribution = distribution
-	}
-
-	enc := json.NewEncoder(writer)
-	enc.Encode(trackingData)
-}
-
-func tracking(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-	user := user.Current(context)
-
-	_, _, lowerBound, upperBound, err := store.GetUserData(context, user.Email)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	reads, err := store.GetGlucoseReads(context, user.Email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	generateTrackingData(writer, request, reads)
-}
-
-func demoTracking(writer http.ResponseWriter, request *http.Request) {
-	context := appengine.NewContext(request)
-
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	_, _, lowerBound, upperBound, err := store.GetUserData(context, DEMO_EMAIL)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	reads, err := store.GetGlucoseReads(context, DEMO_EMAIL, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-
-	generateTrackingData(writer, request, reads)
-}
-
+// buildPerfectBaseline generates an array of reads that represents the target/perfection
 func buildPerfectBaseline(glucoseReads []model.GlucoseRead) (reads []model.GlucoseRead) {
 	reads = make([]model.GlucoseRead, len(glucoseReads))
 	for i := range glucoseReads {
