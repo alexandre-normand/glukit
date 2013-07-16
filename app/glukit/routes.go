@@ -10,11 +10,17 @@ import (
 	"appengine/delay"
 	"appengine/taskqueue"
 	"appengine/user"
+	"html/template"
 	"lib/goauth2/oauth"
 	"net/http"
 	"time"
 )
 
+var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html"))
+var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
+var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
+
+// init initializes the routes and global initialization
 func init() {
 	// Json endpoints
 	http.HandleFunc("/json.demo", demoContent)
@@ -36,6 +42,7 @@ func init() {
 	refreshUserData = delay.Func("refreshUserData", updateUserData)
 }
 
+// landing executes the landing page template
 func landing(w http.ResponseWriter, request *http.Request) {
 	if err := landingTemplate.Execute(w, nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -50,10 +57,13 @@ func nodata(w http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// oauthCallback is invoked on return of the google oauth flow after being
+// the user comes back from being redirected to google oauth for authorization
 func oauthCallback(writer http.ResponseWriter, request *http.Request) {
 	handleLoggedInUser(writer, request)
 }
 
+// renderDemo executes the graph template for the demo user
 func renderDemo(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
@@ -84,12 +94,14 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	render(DEMO_EMAIL, "/json.demo", w, request)
 }
 
+// renderRealUser executes the graph page template for a real user
 func renderRealUser(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 	render(user.Email, "/json", w, request)
 }
 
+// render executed the graph page template
 func render(email string, datapath string, w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	token, err := channel.Create(context, email)
@@ -107,6 +119,7 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 	}
 }
 
+// handleRealUser handles the flow for a real non-demo user. It will redirect to authorization if required
 func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
