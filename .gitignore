@@ -27,5 +27,6 @@ _testmain.go
 
 .hg
 
-github.com/grd/stat
+lib/github.com/grd/stat
+code.google.com/*
 notes.log
