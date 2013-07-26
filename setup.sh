@@ -6,7 +6,7 @@ fi
 
 mkdir -p code.google.com/p
 cd code.google.com/p
-ln -fs ../../../goauth2
+ln -fs ../../lib/goauth2
 mkdir -p google-api-go-client
 cd google-api-go-client
 ln -fs ../../../../google-api-go-client/googleapi
