@@ -101,7 +101,7 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 		count = len(daysOfReads.Reads)
 	}
 
-	filteredReads := FilterReads(daysOfReads.Reads, lowerBound, upperBound)
+	filteredReads := filterReads(daysOfReads.Reads, lowerBound, upperBound)
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -152,7 +152,7 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 		count = len(daysOfInjections.Injections)
 	}
 
-	filteredInjections := FilterInjections(daysOfInjections.Injections, lowerBound, upperBound)
+	filteredInjections := filterInjections(daysOfInjections.Injections, lowerBound, upperBound)
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -203,7 +203,9 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 		count = len(daysOfCarbs.Carbs)
 	}
 
-	filteredCarbs := FilterCarbs(daysOfCarbs.Carbs, lowerBound, upperBound)
+	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(daysOfCarbs.Carbs), daysOfCarbs.Carbs)
+	filteredCarbs := filterCarbs(daysOfCarbs.Carbs, lowerBound, upperBound)
+	context.Debugf("Finished filterting with %d carbs", len(filteredCarbs))
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -254,7 +256,7 @@ func GetExercises(context appengine.Context, email string, lowerBound time.Time,
 		count = len(daysOfExercises.Exercises)
 	}
 
-	filteredExercises := FilterExercises(daysOfExercises.Exercises, lowerBound, upperBound)
+	filteredExercises := filterExercises(daysOfExercises.Exercises, lowerBound, upperBound)
 
 	if err != datastore.Done {
 		util.Propagate(err)

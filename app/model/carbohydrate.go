@@ -43,7 +43,7 @@ func (slice CarbSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
-			LinearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Grams}
+			linearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Grams}
 		dataPoints[i] = dataPoint
 	}
 
