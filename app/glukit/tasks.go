@@ -188,5 +188,21 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 		store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 	store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum",
 		LastDataProcessed: lastReadTime})
+
+	if userProfile, err := store.GetUserProfile(context, userProfileKey); err != nil {
+		context.Warningf("Error while persisting score for %s: %v", DEMO_EMAIL, err)
+	} else {
+		if glukitScore, err := engine.CalculateGlukitScore(context, userProfile); err != nil {
+			context.Warningf("Error while calculating score for %s: %v", DEMO_EMAIL, err)
+		} else {
+			userProfile.Score = *glukitScore
+			if _, err = store.StoreUserProfile(context, time.Now(), *userProfile); err != nil {
+				context.Warningf("Error while persisting score for %s: %v", DEMO_EMAIL, err)
+			} else {
+				context.Infof("Stored glukit score of [%d] for glukit user [%s]", glukitScore.Value, DEMO_EMAIL)
+			}
+		}
+	}
+
 	channel.Send(context, DEMO_EMAIL, "Refresh")
 }

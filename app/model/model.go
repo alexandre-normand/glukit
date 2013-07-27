@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	TARGET_GLUCOSE_VALUE  = 83
 	UNDEFINED_READ        = -1
 	EXERCISE_VALUE_FORMAT = "%d,%s"
 	UNDEFINED_SCORE_VALUE = int64(-1)

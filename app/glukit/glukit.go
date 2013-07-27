@@ -180,7 +180,7 @@ func getEnvSettings() (host, clientId, clientSecret string) {
 func buildPerfectBaseline(glucoseReads []model.GlucoseRead) (reads []model.GlucoseRead) {
 	reads = make([]model.GlucoseRead, len(glucoseReads))
 	for i := range glucoseReads {
-		reads[i] = model.GlucoseRead{glucoseReads[i].LocalTime, glucoseReads[i].Timestamp, 83}
+		reads[i] = model.GlucoseRead{glucoseReads[i].LocalTime, glucoseReads[i].Timestamp, model.TARGET_GLUCOSE_VALUE}
 	}
 
 	return reads

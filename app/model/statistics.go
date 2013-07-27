@@ -19,14 +19,13 @@ func (slice ReadStatsSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-// Represents the structure of the tracking data for a user
-type TrackingData struct {
-	Mean         float64      `json:"mean"`
-	Median       float64      `json:"median"`
-	Deviation    float64      `json:"deviation"`
-	Min          float64      `json:"min"`
-	Max          float64      `json:"max"`
-	Distribution []Coordinate `json:"distribution"`
+// Represents the structure of the dashboard data for a user
+type DashboardData struct {
+	Average float64 `json:"average"`
+	Median  float64 `json:"median"`
+	High    float64 `json:"high"`
+	Low     float64 `json:"low"`
+	Score   int64   `json:"score"`
 }
 
 type CoordinateSlice []Coordinate
