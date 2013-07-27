@@ -68,10 +68,10 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 func CalculateIndividualReadScoreWeight(context appengine.Context, read model.GlucoseRead) (weightedScoreContribution int) {
 	weightedScoreContribution = 0
 
-	if read.Value > 83 {
-		weightedScoreContribution = (read.Value - 83) * HIGH_MULTIPLIER
-	} else if read.Value < 83 {
-		weightedScoreContribution = -(read.Value - 83) * LOW_MULTIPLIER
+	if read.Value > model.TARGET_GLUCOSE_VALUE {
+		weightedScoreContribution = (read.Value - model.TARGET_GLUCOSE_VALUE) * HIGH_MULTIPLIER
+	} else if read.Value < model.TARGET_GLUCOSE_VALUE {
+		weightedScoreContribution = -(read.Value - model.TARGET_GLUCOSE_VALUE) * LOW_MULTIPLIER
 	}
 	//context.Debugf("Calculated individual score of [%d] with read value [%d]", weightedScoreContribution, read.Value)
 	return weightedScoreContribution

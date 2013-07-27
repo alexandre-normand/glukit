@@ -25,8 +25,8 @@ func init() {
 	// Json endpoints
 	http.HandleFunc("/json.demo", demoContent)
 	http.HandleFunc("/json", content)
-	http.HandleFunc("/json.demo.tracking", demoTracking)
-	http.HandleFunc("/json.tracking", tracking)
+	http.HandleFunc("/json.demo.dashboard", demoDashboard)
+	http.HandleFunc("/json.dashboard", dashboard)
 
 	// "main"-page for both demo and real users
 	http.HandleFunc("/demo", renderDemo)

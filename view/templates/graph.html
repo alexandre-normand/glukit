@@ -160,10 +160,10 @@
     	  }
     } );
     }
-    function showTrackingData()
+    function showDashboard()
     {
         var distribution = null;
-        $.getJSON('{{.DataPath}}.tracking', function(data) {
+        $.getJSON('{{.DataPath}}.dashboard', function(data) {
           var items = [];
 
           $.each(data, function(key, val) {
@@ -179,25 +179,6 @@
             'class': 'tracking_table',
             html: items.join('')
           }).appendTo('#trackerData');
-
-        // Clear anything first
-        var trackerDistribution = document.getElementById("trackerDistribution");
-        trackerDistribution.innerHTML = '';
-
-        var distributionGraph = new Rickshaw.Graph( {
-            element: document.getElementById("trackerDistribution"),
-            width: 150,
-            height: 160,
-            renderer: 'multi',
-            stroke: true,
-            series: [{
-                color: 'steelblue',
-                data: distribution,
-                renderer: 'bar'
-            }]
-        });
-
-        distributionGraph.render();
         });
     }
 
@@ -208,12 +189,12 @@
       socket.onopen = function() {
         console.log("connected");
         showDataBrowser();
-        showTrackingData();
+        showDashboard();
       };
       socket.onmessage = function(message) {
         console.log("onMessage: " + message.data);
         showDataBrowser();
-        showTrackingData();
+        showDashboard();
       };
       socket.onerror = function() {
         console.log("error");

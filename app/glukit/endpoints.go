@@ -1,7 +1,6 @@
 package glukit
 
 import (
-	"app/engine"
 	"app/model"
 	"app/store"
 	"app/util"
@@ -88,24 +87,24 @@ func writeAsJson(writer http.ResponseWriter, reads []model.GlucoseRead, injectio
 	enc.Encode(individuals)
 }
 
-// tracking renders the tracking statistics as json
-func tracking(writer http.ResponseWriter, request *http.Request) {
+// dashboard renders the dashboard statistics as json
+func dashboard(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	trackingDataForUser(writer, request, user.Email)
+	dashboardDataForUser(writer, request, user.Email)
 }
 
-// demoTracking renders the tracking statistics as json for the demo user
-func demoTracking(writer http.ResponseWriter, request *http.Request) {
-	trackingDataForUser(writer, request, DEMO_EMAIL)
+// demodashboard renders the dashboard statistics as json for the demo user
+func demoDashboard(writer http.ResponseWriter, request *http.Request) {
+	dashboardDataForUser(writer, request, DEMO_EMAIL)
 }
 
-// trackingDataForUser retrieves reads and generates tracking statistics from them
-func trackingDataForUser(writer http.ResponseWriter, request *http.Request, email string) {
+// dashboardDataForUser retrieves reads and generates dashboard statistics from them
+func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
 
-	_, _, lowerBound, upperBound, err := store.GetUserData(context, email)
+	userProfile, _, lowerBound, upperBound, err := store.GetUserData(context, email)
 	if err != nil {
 		util.Propagate(err)
 	}
@@ -115,28 +114,25 @@ func trackingDataForUser(writer http.ResponseWriter, request *http.Request, emai
 		util.Propagate(err)
 	}
 
-	writeTrackingDataAsJson(writer, request, reads)
+	writeDashboardDataAsJson(writer, request, reads, userProfile)
 }
 
-// writeTrackingDataAsJson calculates tracking statistics from an array of GlucoseReads and writes it
+// writedashboardDataAsJson calculates dashboard statistics from an array of GlucoseReads and writes it
 // as json
-func writeTrackingDataAsJson(writer http.ResponseWriter, request *http.Request, reads []model.GlucoseRead) {
+func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request, reads []model.GlucoseRead, userProfile *model.GlukitUser) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
-	var trackingData model.TrackingData
+	var dashboardData model.DashboardData
 	if len(reads) > 0 {
 		sort.Sort(model.ReadStatsSlice(reads))
-		trackingData.Mean = stat.Mean(model.ReadStatsSlice(reads))
-		trackingData.Deviation = stat.AbsdevMean(model.ReadStatsSlice(reads), 83)
-		trackingData.Max, _ = stat.Max(model.ReadStatsSlice(reads))
-		trackingData.Min, _ = stat.Min(model.ReadStatsSlice(reads))
-		trackingData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
-		distribution := engine.BuildHistogram(reads)
-		sort.Sort(model.CoordinateSlice(distribution))
-		trackingData.Distribution = distribution
+		dashboardData.Average = stat.Mean(model.ReadStatsSlice(reads))
+		dashboardData.High, _ = stat.Max(model.ReadStatsSlice(reads))
+		dashboardData.Low, _ = stat.Min(model.ReadStatsSlice(reads))
+		dashboardData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
+		dashboardData.Score = userProfile.Score.Value
 	}
 
 	enc := json.NewEncoder(writer)
-	enc.Encode(trackingData)
+	enc.Encode(dashboardData)
 }
