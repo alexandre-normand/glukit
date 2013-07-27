@@ -11,3 +11,4 @@ Naive glukit score estimate = glukitScore(Generally good average, 14) => 362880
 
 Personal Glukit score from end of March = 128640
 Personal Glukit score as of July 20th = 88120
+Score improvement between March and now = Personal Glukit score as of July 20th - Personal Glukit score from end of March => -40520
