@@ -1,6 +1,7 @@
 package glukit
 
 import (
+	"app/engine"
 	"app/model"
 	"app/store"
 	"app/util"
@@ -130,7 +131,7 @@ func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request,
 		dashboardData.High, _ = stat.Max(model.ReadStatsSlice(reads))
 		dashboardData.Low, _ = stat.Min(model.ReadStatsSlice(reads))
 		dashboardData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
-		dashboardData.Score = userProfile.Score.Value
+		dashboardData.Score = engine.CalculateUserFacingScore(userProfile.Score)
 	}
 
 	enc := json.NewEncoder(writer)
