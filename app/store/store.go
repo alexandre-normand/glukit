@@ -10,6 +10,21 @@ import (
 	"time"
 )
 
+// Error interface to distinguish between temporary errors from permanent ones
+type StoreError struct {
+	msg       string
+	Temporary bool // Is the error temporary?
+}
+
+func (e StoreError) Error() string {
+	return e.msg
+}
+
+var (
+	// ErrNoImportedDataFound is returned when the user doesn't have data imported yet.
+	ErrNoImportedDataFound = StoreError{"store: no imported data found", true}
+)
+
 // GetUserKey returns the GlukitUser datastore key given its email address.
 func GetUserKey(context appengine.Context, email string) (key *datastore.Key) {
 	return datastore.NewKey(context, "GlukitUser", email, 0, nil)
@@ -296,7 +311,8 @@ func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, 
 	return fileImport, nil
 }
 
-// GetUserData returns a GlukitUser entry and the boundaries of its most recent complete day of reads.
+// GetUserData returns a GlukitUser entry and the boundaries of its most recent complete day of reads. If the user doesn't have any imported data yet,
+// GetUserData returns ErrNoImportedDataFound
 func GetUserData(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
 	key = GetUserKey(context, email)
 	userProfile, err = GetUserProfile(context, key)
@@ -304,8 +320,12 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
 	}
 
-	upperBound = util.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
-	lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
-
-	return userProfile, key, lowerBound, upperBound, nil
+	// If the most recent read is still at the beginning on time, we know no data has been imported yet
+	if util.BEGINNING_OF_TIME.Equal(userProfile.MostRecentRead) {
+		return userProfile, key, util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME, ErrNoImportedDataFound
+	} else {
+		upperBound = util.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
+		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
+		return userProfile, key, lowerBound, upperBound, nil
+	}
 }

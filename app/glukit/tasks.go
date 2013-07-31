@@ -33,7 +33,7 @@ var refreshUserData = delay.Func("refreshUserData", func(context appengine.Conte
 // It also schedules itself to run again the next day unless the token is invalid.
 func updateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
 	glukitUser, userProfileKey, _, _, err := store.GetUserData(context, userEmail)
-	if err != nil {
+	if _, ok := err.(store.StoreError); err != nil && !ok {
 		context.Errorf("We're trying to run an update data task for user [%s] that doesn't exist. "+
 			"Got error: %v", userEmail, err)
 		return

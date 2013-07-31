@@ -38,31 +38,34 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 func mostRecentDayAsJson(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
 	_, _, lowerBound, upperBound, err := store.GetUserData(context, email)
-	if err != nil {
+	if err != nil && err == store.ErrNoImportedDataFound {
+		context.Debugf("No imported data found for user [%s]", email)
+		http.Error(writer, err.Error(), 404)
+	} else if err != nil {
 		util.Propagate(err)
-	}
+	} else {
+		reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
+		if err != nil {
+			util.Propagate(err)
+		}
+		injections, err := store.GetInjections(context, email, lowerBound, upperBound)
+		if err != nil {
+			util.Propagate(err)
+		}
+		carbs, err := store.GetCarbs(context, email, lowerBound, upperBound)
+		if err != nil {
+			util.Propagate(err)
+		}
+		exercises, err := store.GetExercises(context, email, lowerBound, upperBound)
+		if err != nil {
+			util.Propagate(err)
+		}
 
-	reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	injections, err := store.GetInjections(context, email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	carbs, err := store.GetCarbs(context, email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
-	exercises, err := store.GetExercises(context, email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
-	}
+		value := writer.Header()
+		value.Add("Content-type", "application/json")
 
-	value := writer.Header()
-	value.Add("Content-type", "application/json")
-
-	writeAsJson(writer, reads, injections, carbs, exercises)
+		writeAsJson(writer, reads, injections, carbs, exercises)
+	}
 }
 
 // writeAsJson writes the set of GlucoseReads, Injections, Carbs and Exercises as json. This is what is called from the javascript
@@ -106,16 +109,19 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 	context := appengine.NewContext(request)
 
 	userProfile, _, lowerBound, upperBound, err := store.GetUserData(context, email)
-	if err != nil {
+	if err != nil && err == store.ErrNoImportedDataFound {
+		context.Debugf("No imported data found for user [%s]", email)
+		http.Error(writer, err.Error(), 404)
+	} else if err != nil {
 		util.Propagate(err)
-	}
+	} else {
+		reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
+		if err != nil {
+			util.Propagate(err)
+		}
 
-	reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
-	if err != nil {
-		util.Propagate(err)
+		writeDashboardDataAsJson(writer, request, reads, userProfile)
 	}
-
-	writeDashboardDataAsJson(writer, request, reads, userProfile)
 }
 
 // writedashboardDataAsJson calculates dashboard statistics from an array of GlucoseReads and writes it

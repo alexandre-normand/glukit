@@ -125,12 +125,13 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 	user := user.Current(context)
 
 	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
-	if err != nil || len(glukitUser.RefreshToken) == 0 {
-		context.Infof("Redirecting [%s], glukitUser [%v] for authorization", user.Email, glukitUser)
+	if _, ok := err.(store.StoreError); err != nil && !ok || len(glukitUser.RefreshToken) == 0 {
+		context.Infof("Redirecting [%s], glukitUser [%v] for authorization. Error: [%v]", user.Email, glukitUser, err)
 
 		configuration := config()
 		context.Debugf("We don't current have a refresh token (either lost or it's " +
 			"the first access). Let's set the ApprovalPrompt to force to get a new one...")
+
 		configuration.ApprovalPrompt = "force"
 
 		url := configuration.AuthCodeURL(request.URL.RawQuery)

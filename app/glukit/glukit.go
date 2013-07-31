@@ -75,7 +75,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 		// We only schedule the auto refresh on first access since all subsequent runs of scheduled tasks will also
 		// reschedule themselve a new run
 		scheduleAutoRefresh = true
-	} else if err != nil {
+	} else if _, ok := err.(store.StoreError); err != nil && !ok {
 		util.Propagate(err)
 	} else {
 		oauthToken = glukitUser.Token
