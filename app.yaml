@@ -25,6 +25,11 @@ handlers:
   script: _go_app
   login: required
 
+- url: /alr
+  script: _go_app
+  login: required
+
 - url: /.*
   script: _go_app
+
 

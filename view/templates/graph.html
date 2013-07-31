@@ -1,9 +1,12 @@
 <html>
   <head>
-
-
-        <link type="text/css" rel="stylesheet" href="css/graph.css">
-        <link type="text/css" rel="stylesheet" href="css/detail.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Glukit</title>
+    <link rel="stylesheet" href="css/foundation.css" />
+    <script src="js/vendor/custom.modernizr.js"></script>
+      <link type="text/css" rel="stylesheet" href="css/graph.css">
+      <link type="text/css" rel="stylesheet" href="css/detail.css">
     	<script src="js/d3.v3/d3.v3.js"></script>
 
     	<script src="js/jquery-2.0.0.min.js"></script>
@@ -13,7 +16,7 @@
 
         <style>
         #chart_container {
-                position: fixed;
+                position: relative;
                 font-family: Arial, Helvetica, sans-serif;
         }
         #chart {
@@ -61,20 +64,115 @@
 
         </style>
   </head>
-  <body>
-  <div id="chart_container">
-    <div id="y_axis"></div>
-  	<div id="chart" style="clear: both"></div>
-  	<div id="injections_chart" style="clear: both"></div>
-  	<div id="legend_container">
-  		<div id="smoother" title="Smoothing"></div>
-  		<div id="legend"></div>
-  	</div>
-  	<div id="slider"></div>
+  <body class="dataPage">
+<nav class="top-bar dataPage-topbar mainDataPage">
+  <ul class="title-area">
+    <!-- Title Area -->
+   <li class="name hackwhite">
+      <h1><a href="#"><img src="images/glukit.png" id="droplet"></a></h1>
+    </li>
+    <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+    <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+  </ul>
+
+  <section class="top-bar-section mainDataPage">
+    <!-- Left Nav Section -->
+    <ul class="left hackwhite">
+      <li class="divider"></li>
+      <li class="active hackwhite"><a href="#">How you're doing</a></li>
+      <li class="divider"></li>
+      <li class="active hackwhite"><a href="#">Compare</a></li>
+      <li class="divider"></li>
+      <li class="active hackwhite"><a href="#">Explore</a></li>
+      <li class="divider"></li>
+    </ul>
+
+    <!-- Right Nav Section -->
+    <ul class="right hackwhite">
+      <li class="divider hide-for-small"></li>
+      <li class="divider hackwhite"></li>
+      <li class="divider show-for-small hackwhite"></li>
+      <li class="has-form">
+        <a class="button" href="index-test.html" style="color:white !important">Sign out</a>
+      </li>
+      <!-- <li class="active hackwhite has-dropdown"><img src="img/settings-cog.png"></li> -->
+      <li class="divider"></li>
+    </ul>
+  </section>
+</nav>
+<div class="row belowHeader" style="overflow:hidden; padding-top:4px">
+    <div class="large-16 columns">
+      <div class="row">
+        <div class="large-16 columns">
+          <h3 class="datepicker" style="color:#888"><img src="images/back-arrow.png">           Friday, July 26th 2013</h3>
+          <!-- <p style="float:right; color: #404040; padding-top:6px">Welcome, Alex!</p> -->
+        </div>
+      </div>
+      
+
+      <!-- should generate this dynamically --> 
+      <div class="row">
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights glukitScore"></div>
+            <h5>Glukit score</h5>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights dailyAverage"></div>
+            <h5>Daily average</h5>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights dailyHigh"></div>
+            <h5>Daily high</h5>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights dailyLow"></div>
+            <h5>Daily low</h5>
+          </div>
+        </div>
+      </div>
+      
+      <hr id="features">
+        
+      <div class="row">
+        <div class="large-16 columns">
+          <div class="slab graph">
+            <div id="chart_container">
+            <div id="y_axis"></div>
+            <div id="chart" style="clear: both"></div>
+            <div id="injections_chart" style="clear: both"></div>
+            <div id="legend_container">
+              <div id="smoother" title="Smoothing"></div>
+            <div id="legend"></div>
+            </div>
+            <div id="slider"></div>
+          </div>
+          </div>
+        </div>
+      
+      </div>
+      
+      <div class="row">
+        <div class="footer">
+          
+          <div class="large-16 columns" style="height:30px">
+     
+          </div>
+        </div>
+      
+      </div>
+    </div>    
   </div>
+  
 
   <div style="float: right;" id="tracker">
-      Oh yesterday...
+      ALR!
       <div id="trackerData"></div>
       <div id="trackerDistribution"></div>
   </div>
@@ -82,14 +180,15 @@
 
 
 <script>
+
     function showDataBrowser() {
     var chartNode = document.getElementById("chart");
     chartNode.innerHTML = '';
 
     var graph = new Rickshaw.Graph.Ajax( {
     	element: document.getElementById("chart"),
-    	width: 1200,
-    	height: 600,
+    	width: 800,
+    	height: 400,
     	renderer: 'multi',
         max: 300,
         min: 0,
@@ -166,13 +265,38 @@
         $.getJSON('{{.DataPath}}.dashboard', function(data) {
           var items = [];
 
+
+          //testing out a hack to show an overlay when there is no data uploaded.
+          $.each(data, function(key, val) {
+            if (data['average'] == 0) {
+                //if we don't find an average (this is a hack!) then call noData
+                noData();
+            } 
+            else {
+                console.log('nop');
+            }
+          });
+
+
           $.each(data, function(key, val) {
             if (key != 'distribution') {
                 items.push('<tr><td>' + key + ': ' + Math.round(val*100)/100 + '</td></tr>');
-            } else {
+            } 
+            else {
                 distribution = val
             }
           });
+
+          //ALR: checking some items
+          console.log(data);
+          console.log(items);
+          //hooking up the endpoint to be displayed in the dashboard
+          $(".glukitScore").text(data['score']);
+          $(".dailyAverage").text(data['median']); //need to change this to average (round existing avg value)
+          $(".dailyHigh").text(data['high']);
+          $(".dailyLow").text(data['low']);
+          //end of ALR code
+
 
           $("#trackerData > table").remove();
           $('<table/>', {
@@ -181,6 +305,20 @@
           }).appendTo('#trackerData');
         });
     }
+
+    //testing showing an overlay with upload instructions for users with no data
+  function noData () {
+     console.log('this is a function');
+     
+     var overlay = $('<div id="overlay"> HI!!!</div>');
+      overlay.appendTo($(".belowHeader"));
+      
+      /*
+      var testText = $('<div id="testText">Hi I want to see how this renders</div>');
+      testText.appendTo($("belowHeader"));
+      */
+  }
+
 
 </script>
   <script>
@@ -203,5 +341,49 @@
         console.log("close");
       };
     </script>
+      <script>
+  document.write('<script src=' +
+  ('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
+  '.js><\/script>')
+  </script>
+  
+  <script src="js/foundation.min.js"></script>
+  <!--
+  
+  <script src="js/foundation/foundation.js"></script>
+  
+  <script src="js/foundation/foundation.interchange.js"></script>
+  
+  <script src="js/foundation/foundation.dropdown.js"></script>
+  
+  <script src="js/foundation/foundation.placeholder.js"></script>
+  
+  <script src="js/foundation/foundation.forms.js"></script>
+  
+  <script src="js/foundation/foundation.alerts.js"></script>
+  
+  <script src="js/foundation/foundation.magellan.js"></script>
+  
+  <script src="js/foundation/foundation.reveal.js"></script>
+  
+  <script src="js/foundation/foundation.tooltips.js"></script>
+  
+  <script src="js/foundation/foundation.clearing.js"></script>
+  
+  <script src="js/foundation/foundation.cookie.js"></script>
+  
+  <script src="js/foundation/foundation.joyride.js"></script>
+  
+  <script src="js/foundation/foundation.orbit.js"></script>
+  
+  <script src="js/foundation/foundation.section.js"></script>
+  
+  <script src="js/foundation/foundation.topbar.js"></script>
+  
+  -->
+  
+  <script>
+    $(document).foundation();
+  </script>
   </body>
 </html>
