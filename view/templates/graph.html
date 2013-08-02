@@ -38,32 +38,11 @@
                 width: 0;
         }
         .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
-
-/* old css - can delete
-        #tracker {
-            width: 150px;
-            height: 300px;
-            background-color: #D1E6F0;
-            margin-right: 5em;
-            padding-right: 1em;
-            padding-top: 1em;
-            padding-bottom: 1em;
-            padding-left: 1em;
-
-        }
-
-        #trackerDistribution {
-            padding-top: 1em;
-            margin-left: auto;
-            margin-right: auto;
-        }
-*/
         #injections_chart {
             position: absolute;
             top: 0;
             left: 40px;
           }
-
         </style>
   </head>
   <body class="dataPage">
@@ -76,21 +55,22 @@
     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
     <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
   </ul>
-
+<div class="fixed"></div>
   <section class="top-bar-section mainDataPage">
-    <!-- Left Nav Section -->
-    <ul class="left hackwhite">
-      <li class="divider"></li>
+    <!-- Left Nav Section 
+    <ul class="left hackwhite"> 
+    </ul>
+    -->
+
+    <!-- Right Nav Section -->
+    <ul class="right hackwhite">
+     <li class="divider"></li>
       <li class="active hackwhite"><a href="#">How you're doing</a></li>
       <li class="divider"></li>
       <li class="active hackwhite"><a href="#">Compare</a></li>
       <li class="divider"></li>
       <li class="active hackwhite"><a href="#">Explore</a></li>
       <li class="divider"></li>
-    </ul>
-
-    <!-- Right Nav Section -->
-    <ul class="right hackwhite">
       <li class="divider hide-for-small"></li>
       <li class="divider hackwhite"></li>
       <li class="divider show-for-small hackwhite"></li>
@@ -101,7 +81,27 @@
       <li class="divider"></li>
     </ul>
   </section>
+</div>
 </nav>
+<!-- testing an overlay! -->
+
+  <div id="overlay" class="hidden">
+    <div class="row">
+      <div class="large-16 columns">
+        <div class="large-4 large-offset-1 columns"> <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div>
+        <div class="large-10 columns"><h3>Uh oh! Looks like you havent uploaded any data yet. Let's get you up and running.</h3></div>
+      </div>
+      
+        <ul>
+          <li class="large-10 large-offset-5 small-centered large-uncentered columns"><h5>Connect your monitor to your personal computer to sync</h5></li>
+          <li class="large-10 large-offset-2 small-centered large-uncentered columns"><h5>Export your data and save it to Google Drive</h5></li>
+          <li class="large-10 large-offset-2 small-centered large-uncentered columns"><h5>Return to Glukit!</h5></li>
+        </ul>
+    </div>
+  </div>
+
+
+  
 <div class="row belowHeader" style="overflow:hidden; padding-top:4px">
     <div class="large-16 columns">
       <div class="row">
@@ -110,8 +110,7 @@
           <!-- <p style="float:right; color: #404040; padding-top:6px">Welcome, Alex!</p> -->
         </div>
       </div>
-      
-
+       
       <!-- should generate this dynamically --> 
       <div class="row dashboard">
         <div class="large-4 columns">
@@ -140,6 +139,8 @@
         </div>
       </div>
       
+
+
       <hr id="features">
         
       <div class="row">
@@ -162,15 +163,17 @@
       
       <div class="row">
         <div class="footer">
-          
-          <div class="large-16 columns" style="height:30px">
-     
+          <div class="large-16 columns" style="height:30px">     
           </div>
         </div>
       
       </div>
     </div>    
   </div>
+
+
+
+
     
 <script>
 
@@ -256,10 +259,6 @@
     {
         var distribution = null;
         $.getJSON('{{.DataPath}}.dashboard', function(data) {
-        
-          //ALR: checking some items
-          console.log(data);
-          console.log(items);
 
           //hooking up the endpoint to be displayed in the dashboard
           $(".glukitScore").text(data['score']);
@@ -268,11 +267,15 @@
           $(".dailyLow").text(data['low']);
 
         }).fail(function() { 
-            noData();
+          $("div#overlay").removeClass("hidden");
+           //blurring the text behind the overlay for effect  
+          $('.dashboard').css({'text-shadow': '5px 5px 5px #999', 'color':'transparent'});
+            //noData();
          });
     }
 
-    //testing showing an overlay with upload instructions for users with no data
+    /* testing show an overlay with upload instructions for users with no data 
+
   function noData () {
      console.log('this is a function'); 
      var overlay = $('<div id="overlay"><div class="row"><div class="large-16 columns noDataGroup"><h2>Uh oh! Looks like you havent uploaded any data yet.</h2>   <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div></div></div>');
@@ -281,7 +284,7 @@
     //blurring the text behind the overlay for effect  
      $('.dashboard').css({'text-shadow': '5px 5px 5px white', 'color':'transparent'});
   }
-
+*/
 
   
 </script>
