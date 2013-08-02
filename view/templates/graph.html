@@ -7,6 +7,7 @@
     <script src="js/vendor/custom.modernizr.js"></script>
       <link type="text/css" rel="stylesheet" href="css/graph.css">
       <link type="text/css" rel="stylesheet" href="css/detail.css">
+       <link type="text/css" rel="stylesheet" href="css/main.css">
     	<script src="js/d3.v3/d3.v3.js"></script>
 
     	<script src="js/jquery-2.0.0.min.js"></script>
@@ -38,6 +39,7 @@
         }
         .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
 
+/* old css - can delete
         #tracker {
             width: 150px;
             height: 300px;
@@ -55,7 +57,7 @@
             margin-left: auto;
             margin-right: auto;
         }
-
+*/
         #injections_chart {
             position: absolute;
             top: 0;
@@ -111,7 +113,7 @@
       
 
       <!-- should generate this dynamically --> 
-      <div class="row">
+      <div class="row dashboard">
         <div class="large-4 columns">
           <div class="slab">
             <div class="insights glukitScore"></div>
@@ -169,16 +171,7 @@
       </div>
     </div>    
   </div>
-  
-
-  <div style="float: right;" id="tracker">
-      ALR!
-      <div id="trackerData"></div>
-      <div id="trackerDistribution"></div>
-  </div>
-
-
-
+    
 <script>
 
     function showDataBrowser() {
@@ -263,63 +256,34 @@
     {
         var distribution = null;
         $.getJSON('{{.DataPath}}.dashboard', function(data) {
-          var items = [];
-
-
-          //testing out a hack to show an overlay when there is no data uploaded.
-          $.each(data, function(key, val) {
-            if (data['average'] == 0) {
-                //if we don't find an average (this is a hack!) then call noData
-                noData();
-            } 
-            else {
-                console.log('nop');
-            }
-          });
-
-
-          $.each(data, function(key, val) {
-            if (key != 'distribution') {
-                items.push('<tr><td>' + key + ': ' + Math.round(val*100)/100 + '</td></tr>');
-            } 
-            else {
-                distribution = val
-            }
-          });
-
+        
           //ALR: checking some items
           console.log(data);
           console.log(items);
+
           //hooking up the endpoint to be displayed in the dashboard
           $(".glukitScore").text(data['score']);
           $(".dailyAverage").text(data['median']); //need to change this to average (round existing avg value)
           $(".dailyHigh").text(data['high']);
           $(".dailyLow").text(data['low']);
-          //end of ALR code
 
-
-          $("#trackerData > table").remove();
-          $('<table/>', {
-            'class': 'tracking_table',
-            html: items.join('')
-          }).appendTo('#trackerData');
-        });
+        }).fail(function() { 
+            noData();
+         });
     }
 
     //testing showing an overlay with upload instructions for users with no data
   function noData () {
-     console.log('this is a function');
-     
-     var overlay = $('<div id="overlay"> HI!!!</div>');
+     console.log('this is a function'); 
+     var overlay = $('<div id="overlay"><div class="row"><div class="large-16 columns noDataGroup"><h2>Uh oh! Looks like you havent uploaded any data yet.</h2>   <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div></div></div>');
       overlay.appendTo($(".belowHeader"));
-      
-      /*
-      var testText = $('<div id="testText">Hi I want to see how this renders</div>');
-      testText.appendTo($("belowHeader"));
-      */
+
+    //blurring the text behind the overlay for effect  
+     $('.dashboard').css({'text-shadow': '5px 5px 5px white', 'color':'transparent'});
   }
 
 
+  
 </script>
   <script>
       channel = new goog.appengine.Channel('{{.ChannelToken}}');
