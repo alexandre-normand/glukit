@@ -40,7 +40,7 @@ func mostRecentDayAsJson(writer http.ResponseWriter, request *http.Request, emai
 	_, _, lowerBound, upperBound, err := store.GetUserData(context, email)
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
-		http.Error(writer, err.Error(), 404)
+		http.Error(writer, err.Error(), 204)
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
@@ -111,7 +111,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 	userProfile, _, lowerBound, upperBound, err := store.GetUserData(context, email)
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
-		http.Error(writer, err.Error(), 404)
+		http.Error(writer, err.Error(), 204)
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
