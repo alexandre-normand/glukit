@@ -81,7 +81,6 @@ func CalculateIndividualReadScoreWeight(context appengine.Context, read model.Gl
 // CalculateUserFacingScore maps an internal GlukitScore to a user facing value (should be between 0 and 100)
 func CalculateUserFacingScore(internal model.GlukitScore) (external int64) {
 	internalAsFloat := float64(internal.Value)
-	externalAsFloat := 100 + internalAsFloat*(-0.0002298+4.36414*math.Pow10(-10)*internalAsFloat-8.57647*math.Pow10(-22)*
-		math.Pow(internalAsFloat, 3)+7.30739*math.Pow10(-28)*math.Pow(internalAsFloat, 4)-1.63087*math.Pow10(-34)*math.Pow(internalAsFloat, 5))
+	externalAsFloat := 100.689 + 3.8502e-6*internalAsFloat - 0.0631063*math.Sqrt(internalAsFloat-3014.77)
 	return int64(externalAsFloat)
 }
