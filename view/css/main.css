@@ -64,9 +64,9 @@
 #overlay {
     padding-top: 10%;
     background-color: #fff;
-    filter:alpha(opacity=90);
-    -moz-opacity:0.90;
-    -khtml-opacity: 0.90;
+    filter:alpha(opacity=80);
+    -moz-opacity:0.80;
+    -khtml-opacity: 0.80;
     opacity: 0.90;
     z-index: 20000;
     position: absolute;
@@ -75,13 +75,14 @@
 }
 /* blurring the text behind the overlay */
 .blurryText{
-  color: transparent;
-  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+  color: rgba(0, 0, 0, 0) !important;
+  text-shadow: 0 0 1px #888 !important;
 }
 
 #instructions{
   list-style-type: none;
 }
+
 
 /* Styles for screens that are atleast 768px; */
 @media only screen and (min-width: 768px) {
@@ -114,9 +115,9 @@
 #droplet{
   height: 40px;
   padding-top: 10px;
-  -moz-box-sizing: none !important;
-  -webkit-box-sizing: none !important;
-  box-sizing: none !important; 
+  -moz-box-sizing: none;
+  -webkit-box-sizing: none;
+  box-sizing: none; 
 }
 
 .dataPage{
@@ -124,5 +125,5 @@
 }
 
 .dataPage-topbar{
-  background-color: #ffffff !important;
+  background-color: #ffffff;
 }

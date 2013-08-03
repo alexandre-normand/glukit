@@ -20,7 +20,7 @@
     <ul class="title-area">
     <!-- Title Area -->
       <li class="name hackwhite">
-      <h1><a href="#"><img src="images/glukit.png" id="droplet"></a></h1>
+      <h1><a href="index.html"><img src="images/glukit.png" id="droplet"></a></h1>
       </li>
     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
       <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
@@ -225,7 +225,7 @@
         }).fail(function() { 
           $("div#overlay").removeClass("hidden");
            //blurring the text behind the overlay for effect  
-          $('.dashboard').css({'text-shadow': '5px 5px 5px #999', 'color':'transparent'});
+          $('.dashboard').addClass("blurryText");
             //noData();
          });
     }
