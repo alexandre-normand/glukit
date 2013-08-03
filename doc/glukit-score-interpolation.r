@@ -19,3 +19,6 @@ curve(ffmm, from=1, to=2556288, col="blue")
 curve(fhyman, from=1, to=2556288, col="red")
 curve(fmono, from=1, to=2556288, col="green")
 lines(s, y, col="purple")
+
+# From Eureqa
+internal <- 1:2556299; external <- 100.689 + 3.8502e-6*internal - 0.0631063*sqrt(internal - 3014.77)
