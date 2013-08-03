@@ -14,6 +14,7 @@ import (
 	"lib/goauth2/oauth"
 	"net/http"
 	"time"
+	"fmt"
 )
 
 var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html"))
@@ -141,4 +142,5 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 			glukitUser.RefreshToken, user.Email)
 		oauthCallback(writer, request)
 	}
+	fmt.Fprintf(writer, "Hello, %v!", user)
 }

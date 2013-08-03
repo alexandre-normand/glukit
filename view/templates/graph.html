@@ -7,61 +7,30 @@
     <script src="js/vendor/custom.modernizr.js"></script>
       <link type="text/css" rel="stylesheet" href="css/graph.css">
       <link type="text/css" rel="stylesheet" href="css/detail.css">
-       <link type="text/css" rel="stylesheet" href="css/main.css">
+      <link type="text/css" rel="stylesheet" href="css/main.css">
     	<script src="js/d3.v3/d3.v3.js"></script>
-
     	<script src="js/jquery-2.0.0.min.js"></script>
-
     	<script src="js/rickshaw.js"></script>
-        <script type="text/javascript" src="/_ah/channel/jsapi"></script>
-
-        <style>
-        #chart_container {
-                position: relative;
-                font-family: Arial, Helvetica, sans-serif;
-        }
-        #chart {
-                position: absolute;
-                top: 0;
-                left: 40px;
-        }
-        #y_axis {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                width: 40px;
-        }
-        #legend_container {
-                position: absolute;
-                right: 0;
-                bottom: 26px;
-                width: 0;
-        }
-        .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
-        #injections_chart {
-            position: absolute;
-            top: 0;
-            left: 40px;
-          }
-        </style>
+      <script type="text/javascript" src="/_ah/channel/jsapi"></script>
   </head>
   <body class="dataPage">
-<nav class="top-bar dataPage-topbar mainDataPage">
-  <ul class="title-area">
+
+<div class="sticky">
+  <nav class="top-bar dataPage-topbar mainDataPage">
+    <ul class="title-area">
     <!-- Title Area -->
-   <li class="name hackwhite">
+      <li class="name hackwhite">
       <h1><a href="#"><img src="images/glukit.png" id="droplet"></a></h1>
-    </li>
+      </li>
     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-    <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+      <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
   </ul>
-<div class="fixed"></div>
-  <section class="top-bar-section mainDataPage">
+  <div class="fixed"></div>
+  <section class="top-bar-section">
     <!-- Left Nav Section 
     <ul class="left hackwhite"> 
     </ul>
     -->
-
     <!-- Right Nav Section -->
     <ul class="right hackwhite">
      <li class="divider"></li>
@@ -83,25 +52,24 @@
   </section>
 </div>
 </nav>
-<!-- testing an overlay! -->
+</div>
 
+<!-- Overlay if user hasn't imported data yet. NOT YET STYLED - NEED TO FIX! -->
   <div id="overlay" class="hidden">
     <div class="row">
       <div class="large-16 columns">
-        <div class="large-4 large-offset-1 columns"> <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div>
-        <div class="large-10 columns"><h3>Uh oh! Looks like you havent uploaded any data yet. Let's get you up and running.</h3></div>
+        <div class="large-3 large-offset-1 columns"> <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div>
+        <div class="large-10 columns"><h2>Uh oh! Looks like you havent uploaded any data yet. Let's get you up and running.</h2></div>
       </div>
-      
-        <ul>
-          <li class="large-10 large-offset-5 small-centered large-uncentered columns"><h5>Connect your monitor to your personal computer to sync</h5></li>
-          <li class="large-10 large-offset-2 small-centered large-uncentered columns"><h5>Export your data and save it to Google Drive</h5></li>
-          <li class="large-10 large-offset-2 small-centered large-uncentered columns"><h5>Return to Glukit!</h5></li>
-        </ul>
+      <div clas="row" style="height:90px"></div>
+        <ul id="instructions">
+          <li class="large-10 columns"><h4>1.&nbsp;Connect your monitor to your personal computer to sync</h4></li>
+          <li class="large-10 columns"><h4>2.&nbsp;Export your data and save it to Google Drive</h4></li>
+          <li class="large-10 columns"><h4>3.&nbsp;That's it. Magic!</h4></li>
+      </ul>
     </div>
   </div>
 
-
-  
 <div class="row belowHeader" style="overflow:hidden; padding-top:4px">
     <div class="large-16 columns">
       <div class="row">
@@ -111,7 +79,7 @@
         </div>
       </div>
        
-      <!-- should generate this dynamically --> 
+      <!-- Should be generating this dynamically - not DRY as is. --> 
       <div class="row dashboard">
         <div class="large-4 columns">
           <div class="slab">
@@ -139,10 +107,7 @@
         </div>
       </div>
       
-
-
-      <hr id="features">
-        
+      <hr id="features">        
       <div class="row">
         <div class="large-16 columns">
           <div class="slab graph">
@@ -158,25 +123,16 @@
           </div>
           </div>
         </div>
-      
       </div>
-      
       <div class="row">
         <div class="footer">
           <div class="large-16 columns" style="height:30px">     
           </div>
         </div>
-      
       </div>
     </div>    
   </div>
-
-
-
-
-    
 <script>
-
     function showDataBrowser() {
     var chartNode = document.getElementById("chart");
     chartNode.innerHTML = '';
