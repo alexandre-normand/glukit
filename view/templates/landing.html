@@ -1,88 +1,182 @@
 <html>
   <head>
-
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Glukit</title>
+  <link rel="stylesheet" href="css/foundation.css" />
+  <link type="text/css" rel="stylesheet" href="css/main.css">
     <link type="text/css" rel="stylesheet" href="http://code.shutterstock.com/rickshaw/src/css/graph.css">
     	<link type="text/css" rel="stylesheet" href="http://code.shutterstock.com/rickshaw/css/lines.css">
         <link type="text/css" rel="stylesheet" href="http://code.shutterstock.com/rickshaw/src/css/detail.css">
     	<script src="http://code.shutterstock.com/rickshaw/vendor/d3.v2.js"></script>
-
     	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-
     	<script src="js/rickshaw.js"></script>
-
-        <style>
-        #chart_container {
-                position: relative;
-                font-family: Arial, Helvetica, sans-serif;
-        }
-        #chart {
-                position: relative;
-                left: 40px;
-        }
-        #y_axis {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                width: 40px;
-        }
-        #legend_container {
-                position: absolute;
-                right: 0;
-                bottom: 26px;
-                width: 0;
-        }
-        .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
-
-        .landing { margin-left: auto; margin-right: auto }
-        table.landing { text-shadow: #E6E6E6 0.025em 0.025em 0.05em; margin-top: 50px; font-family: helvetica, arial, sans-serif; text-align: center ; font-color: #3F6778; font-size: 21px}
-            a:link {color:#7995A0;}      /* unvisited link */
-            a:visited {color:#7995A0;}  /* visited link */
-            a:hover {color:#556870;}  /* mouse over link */
-            a:active {color:#556870;}  /* selected link */
-
-            table{
-                table-layout: fixed;
-                width: 1240px;
-            }
-
-            th, td {
-                overflow: hidden;
-                width: 600px;
-            }
-
-            tr > td
-            {
-              padding-top: 1em;
-              padding-bottom: 1em;
-              vertical-align: middle;
-            }
-
-            td.content {
-
-            }
-
-            td.content:hover {
-                background-color: #6A8996;
-            }
-
-            td.or {
-                width: 40px;
-            }
-
-        </style>
   </head>
   <body>
-  <div >
-      <table class="landing">
-          <tr>
-              <td>Go to the <a href="/demo">demo</a></td><td class="or">or</td><td><a href="/realuser">continue</a> and use your own data!</td>
-          </tr>
-          <tr class="content"><td class="content"><a href="/demo"><img src="/images/demo.png" width="70%"/></a></td><td></td><td class="content"><a href="/realuser"><img src="/images/google_drive.png"/></td></tr>
-      </table>
+<div class="sticky">
+<nav class="top-bar" style="z-index: 30000">
+  <ul class="title-area">
+    <!-- Title Area -->
+    <li class="name">
+      <h1><a href="index.html"><img src="images/glukit.png" id="droplet"></a></h1>
+    </li>
+    <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+    <li class="toggle-topbar menu-icon"><a href="#">Menu</a></li>
+  </ul>
 
+  <section class="top-bar-section">
+    <!-- Left Nav Section -->
+    <ul class="left">
+      <li class="divider"></li>
+      <li class="active"><a href="#features">Features</a></li>
+      <li class="divider"></li>
+       <li class="active"><a href="#data">Demo</a></li>
+      <li class="divider"></li>
+      <li class="active"><a href="#mystory">My Story</a>
+      </li>
+      <li class="divider"></li>
+    </ul>
+
+    <!-- Right Nav Section -->
+    <ul class="right">
+      <li class="divider hide-for-small"></li>
+      
+      <li class="active"><a href="#" data-reveal-id="loginModal">Sign in</a>
+      </li>
+      <li class="divider"></li>
+      <li class="divider show-for-small"></li>
+      <li class="has-form">
+        <a class="button" href="#" style="color:white !important">Get started</a>
+      </li>
+    </ul>
+  </section>
+</nav>
+</div>
+  <div class="row" style="overflow:hidden; padding-top:10px">
+    <div class="large-16 columns">
+      <h3>Introducing Glukit</h3>
+      <h5>Keeping your blood sugar steadier than a drunken sailor</h5>
+      
+      <!-- Grid Example -->
+      <div class="row">
+        <div class="large-16 columns" style="padding-top:50px" id="comp">
+          <img src="images/mobileAndDesktop-comp.png">
+        </div>
+      </div>
+
+      <hr id="features">
+      <h3>Features</h3>
+          <!-- Grid Example -->
+      <div class="row">
+        <div class="large-16 columns">
+            <p>Retro minim elit High Life, consequat Neutra exercitation shoreditch before they sold out lo-fi accusamus pariatur ethical. Veniam vegan pork belly direct trade, non vinyl Cosby sweater messenger bag small batch eu Truffaut. Echo Park stumptown cray yr, artisan non Williamsburg. Raw denim nulla locavore, accusamus brunch occaecat wayfarers street art hella odio. Brunch 3 wolf moon asymmetrical, reprehenderit Neutra culpa ennui Truffaut. Ut pop-up Carles, ad try-hard before they sold out narwhal dolore nostrud typewriter +1 meggings. Pickled scenester photo booth aliquip +1 hoodie Williamsburg, Brooklyn lo-fi flexitarian.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="large-6 columns">
+          <div class="panel">
+            <img src="images/droplet.png">
+          </div>
+        </div>
+        <div class="large-6 columns">
+          <div class="panel">
+            <img src="images/droplet.png">
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="panel">
+            <img src="images/droplet.png">
+          </div>
+        </div>
+      </div>
+      
+      <hr id="data">
+    <h3>Demo</h3>
+          <!-- Grid Example -->
+      <div class="row">
+        <div class="large-16 columns">
+          <div class="panel">
+              <p>Go to the <a href="/demo">demo</a></p>
+              <a href="/demo"><img src="/images/demo.png"/></a>
+          </div>
+        </div>
+      </div>
+      
+      <hr id="mystory">
+      <h3>My Story</h3>
+      <div class="row">
+        <div class="large-4 columns">
+          <a href="#"><img src="images/alex-normand.jpg"></a>
+        </div>
+        <div class="large-12 columns">
+            <p>Artisan est fingerstache laborum gluten-free, next level pickled Schlitz eu cray nulla Marfa Truffaut. Hella in beard, aliquip enim roof party nisi. Pitchfork sriracha aute, art party Etsy Terry Richardson four loko veniam. Vero fugiat hashtag meggings. Blog post-ironic sustainable raw denim before they sold out. Bicycle rights 90's anim, consectetur sartorial Echo Park wayfarers helvetica gentrify Wes Anderson iPhone tousled. Tonx Brooklyn et cardigan. </p>
+            <p>
+            Occupy banh mi butcher 3 wolf moon plaid mlkshk. Mollit lo-fi biodiesel selfies fanny pack american apparel magna, aliquip tousled fixie Pinterest. Kitsch tote bag nesciunt chambray, ut aesthetic blog voluptate quinoa sunt selvage adipisicing pariatur quis. Incididunt pitchfork tofu shoreditch hashtag. Laborum consectetur labore readymade, anim single-origin coffee PBR farm-to-table. Gluten-free do cornhole, small batch semiotics Brooklyn dolor. Pork belly consectetur american apparel flexitarian.</p>
+        </div>
+      </div>
+      <hr>
+      <div class="row">
+        <div class="large-16 columns footer">
+          <div class="large-13 small-5 columns">
+            <p>Contact us</p>
+          </div>
+          <div class="large-3 small-5 columns">
+            <p>GlukitLabs 2013</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <div id="loginModal" class="reveal-modal">
+      <h2>Sign in</h2>
+      <p class="lead">With google auth.</p>
+      <p>It's super easy.</p>
+    <a href="/realuser"><button>This is your google account sign in!</button></a>
+      <a class="close-reveal-modal">&#215;</a>
+</div>
 
-  </body>
+<!-- background reveal element! -->
+<div class="reveal-modal-bg" style="display: none"></div>
+
+</body>
+  <script>
+  document.write('<script src=' +
+  ('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
+  '.js><\/script>')
+  </script>
+  
+  <script src="js/foundation.min.js"></script>
+ <!--
+  <script src="js/foundation/foundation.js"></script>
+  
+  <script src="js/foundation/foundation.interchange.js"></script>
+  
+  <script src="js/foundation/foundation.dropdown.js"></script>
+  
+  <script src="js/foundation/foundation.placeholder.js"></script>
+  
+  <script src="js/foundation/foundation.forms.js"></script>
+  
+  <script src="js/foundation/foundation.alerts.js"></script>
+  
+  <script src="js/foundation/foundation.magellan.js"></script>
+  
+  <script src="js/foundation/foundation.reveal.js"></script>
+  
+  <script src="js/foundation/foundation.tooltips.js"></script>
+  
+  <script src="js/foundation/foundation.clearing.js"></script>
+  
+  <script src="js/foundation/foundation.cookie.js"></script>
+  
+  <script src="js/foundation/foundation.joyride.js"></script>
+  
+  <script src="js/foundation/foundation.orbit.js"></script>
+  
+  -->
+  <script>
+    $(document).foundation();
+  </script>
+</body>
 </html>
