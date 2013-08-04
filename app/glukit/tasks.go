@@ -123,7 +123,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 
 	reader, err := importer.GetFileReader(context, t, file)
 	if err != nil {
-		context.Infof("Error reading file %s, skipping...", file.OriginalFilename)
+		context.Infof("Error reading file %s, skipping: [%v]", file.OriginalFilename, err)
 	} else {
 		// Default to beginning of time
 		startTime := util.BEGINNING_OF_TIME
