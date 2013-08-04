@@ -54,6 +54,10 @@ func GetFileReader(context appengine.Context, client http.RoundTripper, file *dr
 		context.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
+	// Request for compressed files to make download faster
+	req.Header.Add("Accept-Encoding", "gzip")
+	req.Header.Add("User-agent", "glukit (gzip)")
+
 	resp, err := client.RoundTrip(req)
 	if err != nil {
 		context.Errorf("An error occurred: %v\n", err)
