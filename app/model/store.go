@@ -66,9 +66,9 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 	}
 
 	for i := range reads {
-		//context.Infof("Sending read to channel %s, %d, %d", reads[i].readTimeWithDetaultTimezone, int64(reads[i].TimeValue), int64(reads[i].Value))
 		readTimestamp := int64(reads[i].Timestamp)
 		readOffset := readTimestamp - startTimestamp
+		//log.Printf("Sending read to channel %s, %d, %d", strconv.FormatInt(readOffset, 10), int64(reads[i].Timestamp), int64(reads[i].Value))
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
 			Value:   int64(reads[i].Value),

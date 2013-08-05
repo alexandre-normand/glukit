@@ -32,6 +32,7 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 	lowerBound := upperBound.AddDate(0, 0, -16)
 	score := model.UNDEFINED_SCORE_VALUE
 
+	context.Debugf("Getting reads for glukit score calculation from [%s] to [%s]", lowerBound, upperBound)
 	if reads, err := store.GetGlucoseReads(context, glukitUser.Email, lowerBound, upperBound); err != nil {
 		return &model.UNDEFINED_SCORE, err
 	} else {
@@ -40,12 +41,14 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 		// just normalize by stopping after the equivalent of full 14 days of reads (assuming most people won't have
 		// more than 2 days worth of missing data)
 		readCount := 0
+		score = 0
 
 		for i := 0; i < len(reads) && i < READS_REQUIREMENT; i++ {
 			score = score + int64(CalculateIndividualReadScoreWeight(context, reads[i]))
 			readCount = readCount + 1
 		}
 
+		context.Infof("Readcount of [%d] used for glukit score calculation of [%d]", readCount, score)
 		if readCount < READS_REQUIREMENT {
 			context.Warningf("Received only [%d] but required [%d] to calculate valid GlukitScore", readCount, READS_REQUIREMENT)
 			return &model.UNDEFINED_SCORE, nil
@@ -74,7 +77,7 @@ func CalculateIndividualReadScoreWeight(context appengine.Context, read model.Gl
 	} else if read.Value < model.TARGET_GLUCOSE_VALUE {
 		weightedScoreContribution = -(read.Value - model.TARGET_GLUCOSE_VALUE) * LOW_MULTIPLIER
 	}
-	//context.Debugf("Calculated individual score of [%d] with read value [%d]", weightedScoreContribution, read.Value)
+
 	return weightedScoreContribution
 }
 

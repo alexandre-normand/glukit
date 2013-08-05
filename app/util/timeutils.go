@@ -8,6 +8,10 @@ import (
 const (
 	// Default time format
 	TIMEFORMAT = "2006-01-02 15:04:05 MST"
+
+	// Default time format
+	TIMEFORMAT_NO_TZ = "2006-01-02 15:04:05"
+
 	// Time format used by the Google Drive api
 	DRIVE_TIMEFORMAT = "2006-01-02T15:04:05.000Z"
 	// Default timezone
@@ -20,6 +24,8 @@ const (
 // my data and we're in this timezone. This will have to change before
 // this goes live
 var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
+
+var UTC_LOCATION, _ = time.LoadLocation("UTC")
 var BEGINNING_OF_TIME = time.Unix(0, 0)
 
 // ParseGoogleDriveDate parses a Google Drive API time value
@@ -66,4 +72,16 @@ func GetEndOfDayBoundaryBefore(timeValue time.Time) (latestEndOfDayBoundary time
 // Returns the timevalue with its timezone set to the default TIMEZONE_LOCATION
 func TimeWithDefaultTimezone(timevalue time.Time) (localTime string) {
 	return timevalue.In(TIMEZONE_LOCATION).Format(TIMEFORMAT)
+}
+
+// Returns the timevalue with its timezone set to the default TIMEZONE_LOCATION but without
+// printing the timezone in the formatted string
+func TimeInDefaultTimezoneNoTz(timevalue time.Time) (localTime string) {
+	return timevalue.In(TIMEZONE_LOCATION).Format(TIMEFORMAT_NO_TZ)
+}
+
+// Returns the timevalue with its timezone set to UTC but without
+// printing the timezone in the formatted string
+func TimeInUTCNoTz(timevalue time.Time) (localTime string) {
+	return timevalue.In(UTC_LOCATION).Format(TIMEFORMAT_NO_TZ)
 }

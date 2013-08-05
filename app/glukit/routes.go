@@ -22,6 +22,10 @@ var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.ht
 
 // init initializes the routes and global initialization
 func init() {
+	// Create user Glukit Bernstein as a fallback for comparisons
+	http.HandleFunc("/_ah/warmup", initializeGlukitBernstein)
+	http.HandleFunc("/initpower", initializeGlukitBernstein)
+
 	// Json endpoints
 	http.HandleFunc("/json.demo", demoContent)
 	http.HandleFunc("/json", content)
@@ -75,7 +79,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(),
-				util.BEGINNING_OF_TIME, dummyToken, "", model.UNDEFINED_SCORE})
+				util.BEGINNING_OF_TIME, dummyToken, "", model.UNDEFINED_SCORE, true})
 		if err != nil {
 			util.Propagate(err)
 		}
