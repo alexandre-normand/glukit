@@ -68,7 +68,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 		// we have a glukit user with no refresh token, we need to force getting a new one (which is to be avoided)
 		_, err = store.StoreUserProfile(context, time.Now(), model.GlukitUser{user.Email, "", "", time.Now(),
 			"", "", util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME, oauthToken, oauthToken.RefreshToken,
-			model.UNDEFINED_SCORE})
+			model.UNDEFINED_SCORE, false})
 		if err != nil {
 			util.Propagate(err)
 		}

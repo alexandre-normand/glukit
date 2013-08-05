@@ -25,6 +25,12 @@ handlers:
   script: _go_app
   login: required
 
+- url: /initpower
+  script: _go_app  
+  login: admin
+
 - url: /.*
   script: _go_app
 
+inbound_services:
+- warmup
