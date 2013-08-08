@@ -137,7 +137,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			util.Propagate(err)
 		}
 
-		lastReadTime := importer.ParseContent(context, reader, 500, userProfileKey, startTime,
+		lastReadTime := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, startTime,
 			store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 		store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum,
 			LastDataProcessed: lastReadTime})
@@ -184,7 +184,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime := importer.ParseContent(context, reader, 500, userProfileKey, util.BEGINNING_OF_TIME,
+	lastReadTime := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.BEGINNING_OF_TIME,
 		store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 	store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum",
 		LastDataProcessed: lastReadTime})

@@ -5,6 +5,7 @@ package model
 
 import (
 	"app/util"
+	"math"
 	"time"
 )
 
@@ -12,7 +13,7 @@ const (
 	TARGET_GLUCOSE_VALUE  = 83
 	UNDEFINED_READ        = -1
 	EXERCISE_VALUE_FORMAT = "%d,%s"
-	UNDEFINED_SCORE_VALUE = int64(-1)
+	UNDEFINED_SCORE_VALUE = int64(math.MaxInt64)
 )
 
 // "Dynamic" constants, those should never be updated

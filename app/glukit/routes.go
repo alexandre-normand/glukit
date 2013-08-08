@@ -28,7 +28,8 @@ func init() {
 
 	// Json endpoints
 	http.HandleFunc("/json.demo", demoContent)
-	http.HandleFunc("/json", content)
+	http.HandleFunc("/json", personalData)
+	http.HandleFunc("/steadySailor", steadySailorData)
 	http.HandleFunc("/json.demo.dashboard", demoDashboard)
 	http.HandleFunc("/json.dashboard", dashboard)
 
@@ -78,7 +79,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// TODO: Populate GlukitUser correctly, this will likely require
 		// getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(),
-			model.GlukitUser{DEMO_EMAIL, "", "", time.Now(), "", "", time.Now(),
+			model.GlukitUser{DEMO_EMAIL, "Demo", "OfMe", time.Now(), model.DIABETES_TYPE_1, "", time.Now(),
 				util.BEGINNING_OF_TIME, dummyToken, "", model.UNDEFINED_SCORE, true})
 		if err != nil {
 			util.Propagate(err)
