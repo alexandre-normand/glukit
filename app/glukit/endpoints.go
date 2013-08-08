@@ -20,8 +20,13 @@ type DataSeries struct {
 	Type string            `json:"type"`
 }
 
+var EMPTY_GLUCOSE_READ_SLICE []model.GlucoseRead
+var EMPTY_EXERCISE_SLICE []model.Exercise
+var EMPTY_INJECTION_SLICE []model.Injection
+var EMPTY_CARB_SLICE []model.Carb
+
 // content renders the most recent day's worth of data as json for the active user
-func content(writer http.ResponseWriter, request *http.Request) {
+func personalData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
@@ -65,6 +70,37 @@ func mostRecentDayAsJson(writer http.ResponseWriter, request *http.Request, emai
 		value.Add("Content-type", "application/json")
 
 		writeAsJson(writer, reads, injections, carbs, exercises)
+	}
+}
+
+// find the steady sailor and retrieve his most recent day's worth of data.
+func steadySailorData(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	steadySailorDataForEmail(writer, request, user.Email)
+}
+
+// find the steady sailor and retrieve his most recent day's worth of data.
+func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request, recipientEmail string) {
+	context := appengine.NewContext(request)
+	steadySailor, _, lowerBound, upperBound, err := store.FindSteadySailor(context, recipientEmail)
+
+	if err != nil && err == store.ErrNoSteadySailorMatchFound {
+		context.Debugf("No steady sailor match found for user [%s]", recipientEmail)
+		http.Error(writer, err.Error(), 204)
+	} else if err != nil {
+		util.Propagate(err)
+	} else {
+		reads, err := store.GetGlucoseReads(context, steadySailor.Email, lowerBound, upperBound)
+		if err != nil {
+			util.Propagate(err)
+		}
+
+		value := writer.Header()
+		value.Add("Content-type", "application/json")
+
+		writeAsJson(writer, reads, EMPTY_INJECTION_SLICE, EMPTY_CARB_SLICE, EMPTY_EXERCISE_SLICE)
 	}
 }
 

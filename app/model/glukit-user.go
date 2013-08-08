@@ -18,7 +18,7 @@ type GlukitUser struct {
 	Token          oauth.Token `datastore:"token",noindex`
 	RefreshToken   string      `datastore:"refreshToken",noindex`
 	Score          GlukitScore `datastore:"score"`
-	InternalUser   bool        `datastore:"internal"`
+	Internal       bool        `datastore:"internal"`
 }
 
 // Represents a GlukitScore value
@@ -27,3 +27,9 @@ type GlukitScore struct {
 	UpperBound time.Time `datastore:"upperBound"`
 	UpdatedAt  time.Time `datastore:"updatedAt"`
 }
+
+// Type of diabetes
+const (
+	DIABETES_TYPE_1 = "T1"
+	DIABETES_TYPE_2 = "T2"
+)

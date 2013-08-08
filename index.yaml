@@ -35,6 +35,17 @@ indexes:
   properties:
   - name: startTime
 
+- kind: GlukitUser
+  properties:
+  - name: diabetesType
+  - name: score.value
+
+- kind: GlukitUser
+  properties:
+  - name: diabetesType
+  - name: score.value
+    direction: desc
+
 - kind: Injection
   ancestor: yes
   properties:

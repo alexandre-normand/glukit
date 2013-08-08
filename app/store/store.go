@@ -23,6 +23,9 @@ func (e StoreError) Error() string {
 var (
 	// ErrNoImportedDataFound is returned when the user doesn't have data imported yet.
 	ErrNoImportedDataFound = StoreError{"store: no imported data found", true}
+
+	// ErrNoSteadySailorMatchFound is returned when the user doesn't have any steady sailor matching his profile
+	ErrNoSteadySailorMatchFound = StoreError{"store: no match for a steady sailor found", true}
 )
 
 // GetUserKey returns the GlukitUser datastore key given its email address.
@@ -328,4 +331,64 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
 		return userProfile, key, lowerBound, upperBound, nil
 	}
+}
+
+// FindSteadySailor queries the datastore for others users of the same type of diabetes. It will then select the match that
+// has a top glukit score and return that user profile along with the boundaries for its most recent day of reads.
+// The steps involved are:
+//    - Find the user profile of the recipient
+//    - Query the data store for profile data that matches (using the type of diabetes) in ascending order of score value
+//       * A first time for users that are NOT internal
+//       * A second time including internal users (if the first one returns no match)
+//    - Filter out the recipient profile that could be returned in the search
+//    - If match found, get the profile of the steady sailor
+func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorProfile *model.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
+	key = GetUserKey(context, recipientEmail)
+
+	recipientProfile, err := GetUserProfile(context, key)
+	if err != nil {
+		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
+	}
+
+	// Only get the top-sailor of the same type of diabetes. We might want to throw some randomization in there and pick one of the top 10
+	// using cursors or offsets. We need to check at least for two because the recipient user will always be returned by the query.
+	// It's more efficient to filter the recipient after the fact than before.
+	query := datastore.NewQuery("GlukitUser").
+		Filter("diabetesType =", recipientProfile.DiabetesType).
+		Order("score.value").Limit(5)
+
+	var steadySailors []model.GlukitUser
+	query.GetAll(context, &steadySailors)
+
+	// Stop when we find the first match.
+
+	// First, try for real users
+	for i := 0; sailorProfile == nil && i < len(steadySailors); i++ {
+		context.Debugf("Loaded steady sailor with email [%s]...", steadySailors[i].Email)
+		if steadySailors[i].Email != recipientProfile.Email && !steadySailors[i].Internal {
+			sailorProfile = &steadySailors[i]
+		}
+	}
+
+	// Failing that, get an internal user
+	if sailorProfile == nil {
+		context.Debugf("Could not find a real user match for recipient [%s], falling back to internal users...", recipientEmail)
+		for i := 0; sailorProfile == nil && i < len(steadySailors); i++ {
+			context.Debugf("Loaded steady sailor with email [%s]...", steadySailors[i].Email)
+			if steadySailors[i].Email != recipientProfile.Email {
+				sailorProfile = &steadySailors[i]
+			}
+		}
+	}
+
+	if sailorProfile == nil {
+		context.Warningf("No steady sailor match found for user [%s] with type of diabetes [%s]", recipientEmail, recipientProfile.DiabetesType)
+		return nil, nil, util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME, ErrNoSteadySailorMatchFound
+	} else {
+		context.Warningf("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
+		upperBound = util.GetEndOfDayBoundaryBefore(sailorProfile.MostRecentRead)
+		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
+		return sailorProfile, GetUserKey(context, sailorProfile.Email), lowerBound, upperBound, nil
+	}
+
 }
