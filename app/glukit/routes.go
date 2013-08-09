@@ -142,5 +142,5 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 			glukitUser.RefreshToken, user.Email)
 		oauthCallback(writer, request)
 	}
-	fmt.Fprintf(writer, "Hello, %v!", user)
+	 fmt.Fprintf(writer, "Hello, %v!", user)
 }

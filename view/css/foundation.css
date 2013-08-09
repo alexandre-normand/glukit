@@ -50,11 +50,16 @@ body {
   position: relative;
   cursor: default; }
 
-a:hover {
-  cursor: pointer; }
-
 a:focus {
   outline: none; }
+
+li.divider a:hover {
+  cursor: pointer; 
+  color: #F2F2F2 !important;
+  background-color: blue !important;
+  z-index: 1000000;
+}
+
 
 img,
 object,
@@ -2753,7 +2758,7 @@ form.custom {
   left: 0;
   position: fixed;
   top: 0;
-  z-index: 99; }
+  z-index: 99999; }
 
 .top-bar {
   overflow: hidden;
@@ -2761,7 +2766,7 @@ form.custom {
   position: relative;
   background-color: #F2F2F2;
   height:64px; 
-  padding:5px; 
+  padding:0px; 
   box-shadow: 0 0 16px #888;
   margin-bottom: 1.875em; }
   .top-bar ul {
@@ -2780,7 +2785,8 @@ form.custom {
     margin-bottom: 0; }
   .top-bar .title-area {
     position: relative;
-    margin: 0; }
+    margin: 0; 
+    padding-bottom: 22px;}
   .top-bar .name {
     height: 45px;
     margin: 0;
@@ -2856,26 +2862,34 @@ form.custom {
     margin: 0; }
    .top-bar-section .divider,
   .top-bar-section [role="separator"] {
-    /* border-bottom: solid 1px #2b2b2b;
-    border-top: none; */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 1px 0 0 rgba(255, 255, 255, 0.11);
+    border-top: none; 
     clear: both;
     height: 0px;
-    width: 100%; }
+    width: 100%;
+    padding-top: 0px;
+   }
   .top-bar-section ul li > a {
     display: block;
     width: 100%;
     color: #404041;
-    padding: 22px 0 12px 0;
+    padding: 22px 0 22px 0;
     padding-left: 15px;
-    font-size: 0.9125em;
-    font-weight: bold;
-    background: #fff; }
+    font-size: 1.1125em;
+    font-weight: normal;
+    background: #fff; 
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.11);
+  /* height: 52px; */
+}
     .top-bar-section ul li > a.hover {
-      background: #090909;
+      background: #fff;
       color: white; }
     .top-bar-section ul li > a.button {
-      background: #2ba6cb;
-      font-size: 0.8125em; }
+      background: #3498DB;
+      font-size: 1.1125em;
+      margin-bottom: 10px; }
       .top-bar-section ul li > a.button.hover {
         background: #2284a1; }
     .top-bar-section ul li > a.button.secondary {
@@ -2970,7 +2984,7 @@ form.custom {
       height: 2em;
       padding: 0 10px;
       position: relative;
-      top: 8px; }
+      top: 14px; }
     .top-bar.expanded {
       background: #111111; }
 
@@ -2982,7 +2996,7 @@ form.custom {
     -webkit-transition: none 0 0;
     -moz-transition: none 0 0;
     transition: none 0 0;
-    padding-top: 0.46em;
+    padding-top: 0em;
     left: 0 !important; }
     .top-bar-section ul {
       width: auto;
@@ -2995,7 +3009,7 @@ form.custom {
           display: none; }
     .top-bar-section li a:not(.button) {
       padding: 0 50px;
-      line-height: 45px;
+      line-height:64px;
       background: #F2F2F2; }
       .top-bar-section li a:not(.button).hover {
         background: black; }

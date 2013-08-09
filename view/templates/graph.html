@@ -12,6 +12,7 @@
     	<script src="js/jquery-2.0.0.min.js"></script>
     	<script src="js/rickshaw.js"></script>
       <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+      <script src="js/main.js"></script>
   </head>
   <body class="dataPage">
 
@@ -19,7 +20,7 @@
   <nav class="top-bar dataPage-topbar mainDataPage">
     <ul class="title-area">
     <!-- Title Area -->
-      <li class="name hackwhite">
+      <li class="name">
       <h1><a href="index.html"><img src="images/glukit.png" id="droplet"></a></h1>
       </li>
     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
@@ -32,19 +33,17 @@
     </ul>
     -->
     <!-- Right Nav Section -->
-    <ul class="right hackwhite">
+    <ul class="right">
      <li class="divider"></li>
-      <li class="active hackwhite"><a href="#">How you're doing</a></li>
+      <li class="active navlink"><a href="#">How you're doing</a></li>
+      <li class="divider "></li>
+      <li class="active navlink"><a href="#">Compare</a></li>
       <li class="divider"></li>
-      <li class="active hackwhite"><a href="#">Compare</a></li>
-      <li class="divider"></li>
-      <li class="active hackwhite"><a href="#">Explore</a></li>
+      <li class="active navlink"><a href="#">Explore</a></li>
       <li class="divider"></li>
       <li class="divider hide-for-small"></li>
-      <li class="divider hackwhite"></li>
-      <li class="divider show-for-small hackwhite"></li>
       <li class="has-form">
-        <a class="button" href="index-test.html" style="color:white !important">Sign out</a>
+        <a class="button" href="index.html" style="color:white !important">Sign out</a>
       </li>
       <!-- <li class="active hackwhite has-dropdown"><img src="img/settings-cog.png"></li> -->
       <li class="divider"></li>
@@ -61,12 +60,6 @@
         <div class="large-3 large-offset-1 columns"> <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div>
         <div class="large-10 columns"><h2>Uh oh! Looks like you havent uploaded any data yet. Let's get you up and running.</h2></div>
       </div>
-      <div clas="row" style="height:90px"></div>
-        <ul id="instructions">
-          <li class="large-10 columns"><h4>1.&nbsp;Connect your monitor to your personal computer to sync</h4></li>
-          <li class="large-10 columns"><h4>2.&nbsp;Export your data and save it to Google Drive</h4></li>
-          <li class="large-10 columns"><h4>3.&nbsp;That's it. Magic!</h4></li>
-      </ul>
     </div>
   </div>
 
@@ -230,8 +223,7 @@
          });
     }
 
-    /* testing show an overlay with upload instructions for users with no data 
-
+/* testing show an overlay with upload instructions for users with no data 
   function noData () {
      console.log('this is a function'); 
      var overlay = $('<div id="overlay"><div class="row"><div class="large-16 columns noDataGroup"><h2>Uh oh! Looks like you havent uploaded any data yet.</h2>   <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div></div></div>');
@@ -242,7 +234,6 @@
   }
 */
 
-  
 </script>
   <script>
       channel = new goog.appengine.Channel('{{.ChannelToken}}');

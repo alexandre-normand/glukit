@@ -11,6 +11,7 @@
     	<script src="http://code.shutterstock.com/rickshaw/vendor/d3.v2.js"></script>
     	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
     	<script src="js/rickshaw.js"></script>
+      <script src="js/main.js"></script>
   </head>
   <body>
 <div class="sticky">
@@ -28,11 +29,11 @@
     <!-- Left Nav Section -->
     <ul class="left">
       <li class="divider"></li>
-      <li class="active"><a href="#features">Features</a></li>
+      <li class="active navlink"><a href="#features">Features</a></li>
       <li class="divider"></li>
-       <li class="active"><a href="#data">Demo</a></li>
+       <li class="active navlink"><a href="#data">Demo</a></li>
       <li class="divider"></li>
-      <li class="active"><a href="#mystory">My Story</a>
+      <li class="active navlink"><a href="#mystory">My Story</a>
       </li>
       <li class="divider"></li>
     </ul>
@@ -41,10 +42,10 @@
     <ul class="right">
       <li class="divider hide-for-small"></li>
       
-      <li class="active"><a href="#" data-reveal-id="loginModal">Sign in</a>
+      <li class="active navlink"><a href="#" data-reveal-id="loginModal">Sign in</a>
       </li>
       <li class="divider"></li>
-      <li class="divider show-for-small"></li>
+      <!-- <li class="divider show-for-small"></li> -->
       <li class="has-form">
         <a class="button" href="#" style="color:white !important">Get started</a>
       </li>
@@ -101,7 +102,7 @@
       <div class="row">
         <div class="large-16 columns footer">
           <div class="large-13 small-5 columns">
-            <p>Contact us</p>
+            <p><a href="#">Contact us</a></p>
           </div>
           <div class="large-3 small-5 columns">
             <p>GlukitLabs 2013</p>
@@ -128,8 +129,10 @@
   ('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
   '.js><\/script>')
   </script>
-  
+    
   <script src="js/foundation.min.js"></script>
+  <script src="js/foundation.topbar.js"></script>
+
  <!--
   <script src="js/foundation/foundation.js"></script>
   
@@ -161,5 +164,7 @@
   <script>
     $(document).foundation();
   </script>
+
+  
 </body>
 </html>
