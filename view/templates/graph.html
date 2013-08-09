@@ -1,86 +1,130 @@
 <html>
   <head>
-
-
-        <link type="text/css" rel="stylesheet" href="css/graph.css">
-        <link type="text/css" rel="stylesheet" href="css/detail.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Glukit</title>
+    <link rel="stylesheet" href="css/foundation.css" />
+    <script src="js/vendor/custom.modernizr.js"></script>
+      <link type="text/css" rel="stylesheet" href="css/graph.css">
+      <link type="text/css" rel="stylesheet" href="css/detail.css">
+      <link type="text/css" rel="stylesheet" href="css/main.css">
     	<script src="js/d3.v3/d3.v3.js"></script>
-
     	<script src="js/jquery-2.0.0.min.js"></script>
-
     	<script src="js/rickshaw.js"></script>
-        <script type="text/javascript" src="/_ah/channel/jsapi"></script>
-
-        <style>
-        #chart_container {
-                position: fixed;
-                font-family: Arial, Helvetica, sans-serif;
-        }
-        #chart {
-                position: absolute;
-                top: 0;
-                left: 40px;
-        }
-        #y_axis {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                width: 40px;
-        }
-        #legend_container {
-                position: absolute;
-                right: 0;
-                bottom: 26px;
-                width: 0;
-        }
-        .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
-
-        #tracker {
-            width: 150px;
-            height: 300px;
-            background-color: #D1E6F0;
-            margin-right: 5em;
-            padding-right: 1em;
-            padding-top: 1em;
-            padding-bottom: 1em;
-            padding-left: 1em;
-
-        }
-
-        #trackerDistribution {
-            padding-top: 1em;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        #injections_chart {
-            position: absolute;
-            top: 0;
-            left: 40px;
-          }
-
-        </style>
+      <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+      <script src="js/main.js"></script>
   </head>
-  <body>
-  <div id="chart_container">
-    <div id="y_axis"></div>
-  	<div id="chart" style="clear: both"></div>
-  	<div id="injections_chart" style="clear: both"></div>
-  	<div id="legend_container">
-  		<div id="smoother" title="Smoothing"></div>
-  		<div id="legend"></div>
-  	</div>
-  	<div id="slider"></div>
+  <body class="dataPage">
+
+<div class="sticky">
+  <nav class="top-bar dataPage-topbar mainDataPage">
+    <ul class="title-area">
+    <!-- Title Area -->
+      <li class="name">
+      <h1><a href="index.html"><img src="images/glukit.png" id="droplet"></a></h1>
+      </li>
+    <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+      <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+  </ul>
+  <div class="fixed"></div>
+  <section class="top-bar-section">
+    <!-- Left Nav Section 
+    <ul class="left hackwhite"> 
+    </ul>
+    -->
+    <!-- Right Nav Section -->
+    <ul class="right">
+     <li class="divider"></li>
+      <li class="active navlink"><a href="#">How you're doing</a></li>
+      <li class="divider "></li>
+      <li class="active navlink"><a href="#">Compare</a></li>
+      <li class="divider"></li>
+      <li class="active navlink"><a href="#">Explore</a></li>
+      <li class="divider"></li>
+      <li class="divider hide-for-small"></li>
+      <li class="has-form">
+        <a class="button" href="index.html" style="color:white !important">Sign out</a>
+      </li>
+      <!-- <li class="active hackwhite has-dropdown"><img src="img/settings-cog.png"></li> -->
+      <li class="divider"></li>
+    </ul>
+  </section>
+</div>
+</nav>
+</div>
+
+<!-- Overlay if user hasn't imported data yet. NOT YET STYLED - NEED TO FIX! -->
+  <div id="overlay" class="hidden">
+    <div class="row">
+      <div class="large-16 columns">
+        <div class="large-3 large-offset-1 columns"> <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div>
+        <div class="large-10 columns"><h2>Uh oh! Looks like you havent uploaded any data yet. Let's get you up and running.</h2></div>
+      </div>
+    </div>
   </div>
 
-  <div style="float: right;" id="tracker">
-      Oh yesterday...
-      <div id="trackerData"></div>
-      <div id="trackerDistribution"></div>
+<div class="row belowHeader" style="overflow:hidden; padding-top:4px">
+    <div class="large-16 columns">
+      <div class="row">
+        <div class="large-16 columns">
+          <h3 class="datepicker" style="color:#888"><img src="images/back-arrow.png">           Friday, July 26th 2013</h3>
+          <!-- <p style="float:right; color: #404040; padding-top:6px">Welcome, Alex!</p> -->
+        </div>
+      </div>
+       
+      <!-- Should be generating this dynamically - not DRY as is. --> 
+      <div class="row dashboard">
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights glukitScore"></div>
+            <h5>Glukit score</h5>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights dailyAverage"></div>
+            <h5>Daily average</h5>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights dailyHigh"></div>
+            <h5>Daily high</h5>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="slab">
+            <div class="insights dailyLow"></div>
+            <h5>Daily low</h5>
+          </div>
+        </div>
+      </div>
+      
+      <hr id="features">        
+      <div class="row">
+        <div class="large-16 columns">
+          <div class="slab graph">
+            <div id="chart_container">
+            <div id="y_axis"></div>
+            <div id="chart" style="clear: both"></div>
+            <div id="injections_chart" style="clear: both"></div>
+            <div id="legend_container">
+              <div id="smoother" title="Smoothing"></div>
+            <div id="legend"></div>
+            </div>
+            <div id="slider"></div>
+          </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="footer">
+          <div class="large-16 columns" style="height:30px">     
+          </div>
+        </div>
+      </div>
+    </div>    
   </div>
-
-
-
 <script>
     function showDataBrowser() {
     var chartNode = document.getElementById("chart");
@@ -88,8 +132,8 @@
 
     var graph = new Rickshaw.Graph.Ajax( {
     	element: document.getElementById("chart"),
-    	width: 1200,
-    	height: 600,
+    	width: 800,
+    	height: 400,
     	renderer: 'multi',
         max: 300,
         min: 0,
@@ -164,23 +208,31 @@
     {
         var distribution = null;
         $.getJSON('{{.DataPath}}.dashboard', function(data) {
-          var items = [];
 
-          $.each(data, function(key, val) {
-            if (key != 'distribution') {
-                items.push('<tr><td>' + key + ': ' + Math.round(val*100)/100 + '</td></tr>');
-            } else {
-                distribution = val
-            }
-          });
+          //hooking up the endpoint to be displayed in the dashboard
+          $(".glukitScore").text(data['score']);
+          $(".dailyAverage").text(data['median']); //need to change this to average (round existing avg value)
+          $(".dailyHigh").text(data['high']);
+          $(".dailyLow").text(data['low']);
 
-          $("#trackerData > table").remove();
-          $('<table/>', {
-            'class': 'tracking_table',
-            html: items.join('')
-          }).appendTo('#trackerData');
-        });
+        }).fail(function() { 
+          $("div#overlay").removeClass("hidden");
+           //blurring the text behind the overlay for effect  
+          $('.dashboard').addClass("blurryText");
+            //noData();
+         });
     }
+
+/* testing show an overlay with upload instructions for users with no data 
+  function noData () {
+     console.log('this is a function'); 
+     var overlay = $('<div id="overlay"><div class="row"><div class="large-16 columns noDataGroup"><h2>Uh oh! Looks like you havent uploaded any data yet.</h2>   <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div></div></div>');
+      overlay.appendTo($(".belowHeader"));
+
+    //blurring the text behind the overlay for effect  
+     $('.dashboard').css({'text-shadow': '5px 5px 5px white', 'color':'transparent'});
+  }
+*/
 
 </script>
   <script>
@@ -203,5 +255,49 @@
         console.log("close");
       };
     </script>
+      <script>
+  document.write('<script src=' +
+  ('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
+  '.js><\/script>')
+  </script>
+  
+  <script src="js/foundation.min.js"></script>
+  <!--
+  
+  <script src="js/foundation/foundation.js"></script>
+  
+  <script src="js/foundation/foundation.interchange.js"></script>
+  
+  <script src="js/foundation/foundation.dropdown.js"></script>
+  
+  <script src="js/foundation/foundation.placeholder.js"></script>
+  
+  <script src="js/foundation/foundation.forms.js"></script>
+  
+  <script src="js/foundation/foundation.alerts.js"></script>
+  
+  <script src="js/foundation/foundation.magellan.js"></script>
+  
+  <script src="js/foundation/foundation.reveal.js"></script>
+  
+  <script src="js/foundation/foundation.tooltips.js"></script>
+  
+  <script src="js/foundation/foundation.clearing.js"></script>
+  
+  <script src="js/foundation/foundation.cookie.js"></script>
+  
+  <script src="js/foundation/foundation.joyride.js"></script>
+  
+  <script src="js/foundation/foundation.orbit.js"></script>
+  
+  <script src="js/foundation/foundation.section.js"></script>
+  
+  <script src="js/foundation/foundation.topbar.js"></script>
+  
+  -->
+  
+  <script>
+    $(document).foundation();
+  </script>
   </body>
 </html>
