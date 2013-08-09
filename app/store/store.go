@@ -350,6 +350,8 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
 	}
 
+	context.Debugf("Looking for other diabetes of type [%s]", recipientProfile.DiabetesType)
+
 	// Only get the top-sailor of the same type of diabetes. We might want to throw some randomization in there and pick one of the top 10
 	// using cursors or offsets. We need to check at least for two because the recipient user will always be returned by the query.
 	// It's more efficient to filter the recipient after the fact than before.
@@ -358,7 +360,12 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 		Order("score.value").Limit(5)
 
 	var steadySailors []model.GlukitUser
-	query.GetAll(context, &steadySailors)
+	_, err = query.GetAll(context, &steadySailors)
+	if err != nil {
+		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
+	}
+
+	context.Debugf("Found a few unfiltered matches [%v]", steadySailors)
 
 	// Stop when we find the first match.
 

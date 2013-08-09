@@ -10,11 +10,6 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
-- kind: CarbIntake
-  ancestor: yes
-  properties:
-  - name: timestamp
-
 - kind: DayOfCarbs
   ancestor: yes
   properties:
@@ -39,14 +34,3 @@ indexes:
   properties:
   - name: diabetesType
   - name: score.value
-
-- kind: GlukitUser
-  properties:
-  - name: diabetesType
-  - name: score.value
-    direction: desc
-
-- kind: Injection
-  ancestor: yes
-  properties:
-  - name: timestamp
