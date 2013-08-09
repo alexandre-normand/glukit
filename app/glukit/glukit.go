@@ -168,9 +168,9 @@ func getEnvSettings() (host, clientId, clientSecret string) {
 		clientSecret = "U3KV6G8sYqxa-qtjoxRnk6tX"
 
 	} else {
-		host = "glukit.appspot.com"
-		clientId = "414109645872-d6igmhnu0loafu53uphf8j67ou8ngjiu.apps.googleusercontent.com"
-		clientSecret = "IYbOW0Aha34xMqTaPVO-_ar5"
+		host = "www.mygluk.it"
+		clientId = "414109645872-actrhemoam4scv3b7dqco3b5ai5fov6o.apps.googleusercontent.com"
+		clientSecret = "_gTyIGfjBTO7PmiQ6l8jEEE8"
 	}
 
 	return host, clientId, clientSecret
