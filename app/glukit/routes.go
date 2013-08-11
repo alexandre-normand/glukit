@@ -14,12 +14,21 @@ import (
 	"lib/goauth2/oauth"
 	"net/http"
 	"time"
-	"fmt"
 )
 
 var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html"))
 var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
+
+const (
+	DEMO_PATH_PREFIX = "demo."
+)
+
+// Some variables that are used during rendering of templates
+type RenderVariables struct {
+	PathPrefix   string
+	ChannelToken string
+}
 
 // init initializes the routes and global initialization
 func init() {
@@ -28,11 +37,12 @@ func init() {
 	http.HandleFunc("/initpower", initializeGlukitBernstein)
 
 	// Json endpoints
-	http.HandleFunc("/json.demo", demoContent)
-	http.HandleFunc("/json", personalData)
+	http.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
+	http.HandleFunc("/data", personalData)
+	http.HandleFunc("/"+DEMO_PATH_PREFIX+"steadySailor", demoSteadySailorData)
 	http.HandleFunc("/steadySailor", steadySailorData)
-	http.HandleFunc("/json.demo.dashboard", demoDashboard)
-	http.HandleFunc("/json.dashboard", dashboard)
+	http.HandleFunc("/"+DEMO_PATH_PREFIX+"dashboard", demoDashboard)
+	http.HandleFunc("/dashboard", dashboard)
 
 	// "main"-page for both demo and real users
 	http.HandleFunc("/demo", renderDemo)
@@ -97,14 +107,14 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		context.Infof("Data already stored for demo user [%s], continuing...", DEMO_EMAIL)
 	}
 
-	render(DEMO_EMAIL, "/json.demo", w, request)
+	render(DEMO_EMAIL, DEMO_PATH_PREFIX, w, request)
 }
 
 // renderRealUser executes the graph page template for a real user
 func renderRealUser(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
-	render(user.Email, "/json", w, request)
+	render(user.Email, "", w, request)
 }
 
 // render executed the graph page template
@@ -117,7 +127,7 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 		return
 	}
 
-	renderVariables := &RenderVariables{DataPath: datapath, ChannelToken: token}
+	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token}
 
 	if err := graphTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
@@ -147,5 +157,4 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 			glukitUser.RefreshToken, user.Email)
 		oauthCallback(writer, request)
 	}
-	 fmt.Fprintf(writer, "Hello, %v!", user)
 }

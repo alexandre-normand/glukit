@@ -21,11 +21,6 @@ const (
 	DEMO_EMAIL = "demo@glukit.com"
 )
 
-type RenderVariables struct {
-	DataPath     string
-	ChannelToken string
-}
-
 var emptyDataPointSlice []model.DataPoint
 
 // config returns the configuration information for OAuth and Drive.

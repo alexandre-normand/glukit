@@ -129,7 +129,7 @@
     function showDataBrowser() {
     var chartNode = document.getElementById("chart");
     chartNode.innerHTML = '';
-
+    
     var graph = new Rickshaw.Graph.Ajax( {
     	element: document.getElementById("chart"),
     	width: 800,
@@ -137,20 +137,24 @@
     	renderer: 'multi',
         max: 300,
         min: 0,
-    	dataURL: '{{.DataPath}}',
+        preserve: true,
+    	  dataURL: '/{{.PathPrefix}}data',
+        onData: function(d) {                   
+                return d.data;
+        },
     	series: [
             {
-                name: 'You.Injection',
+                name: 'Injections',
                 color: '#4D94FF',
                 width: 2,
                 renderer: 'scatterplot'
             }, {
-                name: 'You.Carbohydrates',
+                name: 'Carbohydrates',
                 color: '#E65C5C',
                 width: 2,
                 renderer: 'scatterplot'
             }, {
-    			name: 'You',
+    			      name: 'GlucoseReads',
                 color: 'steelblue',
                 width: 2,
                 renderer: 'line'
@@ -158,19 +162,31 @@
              // Ugly workaround because scatterplot for injections and carbs are not placed correctly unless the reads line
              // has a scatterplot too..and we don't want to show it so we set the color to none
                {
-                name: 'You',
+                name: 'GlucoseReads',
                 color: 'none',
                 opacity: '0',
                 width: 2,
                 renderer: 'scatterplot'
-            }, {
-    			name: 'Perfection',
-    		    color: '#33AD33',
-    		    width: 2,
-                renderer: 'line'
-    		}
+             }
     		 ],
-    	onComplete: function(transport) {
+    	onComplete: function(transport) {          
+          $.getJSON('/{{.PathPrefix}}steadySailor').
+          done(function(data) {                                  
+            //transport.graph.series.push({data: data.data[0].data, color: '#33AD33', name: data.name, width: '1', rendered:'line'});
+            adjustedData = data.data[0].data;
+            if (adjustedData.length > 0) {             
+              offset = adjustedData[0].x - transport.graph.series[3].data[0].x;              
+              adjustedData.forEach(function(element) {
+                element.x = element.x - offset;
+              });
+            transport.graph.series.push({data: data.data[0].data, color: '#33AD33', name: data.name, width: '1', rendered:'line'});
+            transport.graph.update();
+            }
+          }).
+          fail(function( jqxhr, textStatus, error) { 
+            console.log( "Request Failed: " + error) 
+          });
+
     	    var x_axis = new Rickshaw.Graph.Axis.Time({
     	          graph: transport.graph,
     	        });
@@ -190,10 +206,10 @@
                             var date = '<span class="date">' + new Date(x * 1000).toTimeString() + '</span>';
                             var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
                             var content = null;
-                            if (series.name.indexOf('.') > 0) {
-                                content = swatch + series.name.substring(series.name.indexOf('.')+1) + ": " + parseFloat(d.value.r) + '<br>' + date;
+                            if (series.name === "Carbohydrates" || series.name === "Injections" || series.name === "GlucoseReads") {
+                                 content = swatch + series.name + ": " + parseFloat(d.value.r) + '<br>' + date;
                             } else {
-                                content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
+                                 content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
                             }
                             return content;
                         },
@@ -201,13 +217,13 @@
                         return new Date(x * 1000).toTimeString();
                     },
                 } );
-    	  }
-    } );
+    	   }
+    } );        
     }
     function showDashboard()
     {
         var distribution = null;
-        $.getJSON('{{.DataPath}}.dashboard', function(data) {
+        $.getJSON('/{{.PathPrefix}}dashboard', function(data) {
 
           //hooking up the endpoint to be displayed in the dashboard
           $(".glukitScore").text(data['score']);

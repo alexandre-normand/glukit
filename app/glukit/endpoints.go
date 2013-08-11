@@ -13,17 +13,20 @@ import (
 	"sort"
 )
 
+// Represents a DataResponse with an array of DataSeries and some metadata
+type DataResponse struct {
+	Name      string             `json:"name"`
+	Score     *model.GlukitScore `json:"score"`
+	Data      []DataSeries       `json:"data"`
+	AvatarUrl string             `json:"avatar"`
+}
+
 // Represents a generic DataSeries structure with a series of DataPoints
 type DataSeries struct {
 	Name string            `json:"name"`
 	Data []model.DataPoint `json:"data"`
 	Type string            `json:"type"`
 }
-
-var EMPTY_GLUCOSE_READ_SLICE []model.GlucoseRead
-var EMPTY_EXERCISE_SLICE []model.Exercise
-var EMPTY_INJECTION_SLICE []model.Injection
-var EMPTY_CARB_SLICE []model.Carb
 
 // content renders the most recent day's worth of data as json for the active user
 func personalData(writer http.ResponseWriter, request *http.Request) {
@@ -42,7 +45,7 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 // the given email address and writes to the response writer as json
 func mostRecentDayAsJson(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
-	_, _, lowerBound, upperBound, err := store.GetUserData(context, email)
+	glukitUser, _, lowerBound, upperBound, err := store.GetUserData(context, email)
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
 		http.Error(writer, err.Error(), 204)
@@ -69,7 +72,8 @@ func mostRecentDayAsJson(writer http.ResponseWriter, request *http.Request, emai
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		writeAsJson(writer, reads, injections, carbs, exercises)
+		response := DataResponse{Name: glukitUser.FirstName, Score: &glukitUser.Score, Data: generateDataSeriesFromData(reads, injections, carbs, exercises), AvatarUrl: ""}
+		writeAsJson(writer, response)
 	}
 }
 
@@ -79,6 +83,11 @@ func steadySailorData(writer http.ResponseWriter, request *http.Request) {
 	user := user.Current(context)
 
 	steadySailorDataForEmail(writer, request, user.Email)
+}
+
+// find the steady sailor for the demo user and retrieve his most recent day's worth of data.
+func demoSteadySailorData(writer http.ResponseWriter, request *http.Request) {
+	steadySailorDataForEmail(writer, request, DEMO_EMAIL)
 }
 
 // find the steady sailor and retrieve his most recent day's worth of data.
@@ -100,31 +109,35 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		writeAsJson(writer, reads, EMPTY_INJECTION_SLICE, EMPTY_CARB_SLICE, EMPTY_EXERCISE_SLICE)
+		response := DataResponse{Name: steadySailor.FirstName, Score: &steadySailor.Score, Data: generateDataSeriesFromData(reads, nil, nil, nil), AvatarUrl: ""}
+		writeAsJson(writer, response)
 	}
 }
 
-// writeAsJson writes the set of GlucoseReads, Injections, Carbs and Exercises as json. This is what is called from the javascript
+// writeAsJson writes a DataResponse with its set of GlucoseReads, Injections, Carbs and Exercises as json. This is what is called from the javascript
 // front-end to get the data.
-func writeAsJson(writer http.ResponseWriter, reads []model.GlucoseRead, injections []model.Injection, carbs []model.Carb, exercises []model.Exercise) {
+func writeAsJson(writer http.ResponseWriter, response DataResponse) {
 	enc := json.NewEncoder(writer)
-	individuals := make([]DataSeries, 5)
+	enc.Encode(response)
+}
 
-	if len(reads) == 0 {
-		individuals[0] = DataSeries{"You", emptyDataPointSlice, "GlucoseReads"}
-		individuals[1] = DataSeries{"You.Injection", emptyDataPointSlice, "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", emptyDataPointSlice, "Carbs"}
-		individuals[3] = DataSeries{"You.Exercises", emptyDataPointSlice, "Exercises"}
-		individuals[4] = DataSeries{"Perfection", emptyDataPointSlice, "ComparisonReads"}
-	} else {
-		individuals[0] = DataSeries{"You", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
-		individuals[1] = DataSeries{"You.Injection", model.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"}
-		individuals[2] = DataSeries{"You.Carbohydrates", model.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"}
-		individuals[3] = DataSeries{"You.Exercises", model.ExerciseSlice(exercises).ToDataPointSlice(reads), "Exercises"}
-		individuals[4] = DataSeries{"Perfection", model.GlucoseReadSlice(buildPerfectBaseline(reads)).ToDataPointSlice(), "ComparisonReads"}
+func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.Injection, carbs []model.Carb, exercises []model.Exercise) (dataSeries []DataSeries) {
+	data := make([]DataSeries, 1)
+
+	data[0] = DataSeries{"GlucoseReads", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
+	if injections != nil {
+		data = append(data, DataSeries{"Injections", model.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"})
 	}
 
-	enc.Encode(individuals)
+	if carbs != nil {
+		data = append(data, DataSeries{"Carbohydrates", model.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"})
+	}
+
+	if exercises != nil {
+		data = append(data, DataSeries{"Exercises", model.ExerciseSlice(exercises).ToDataPointSlice(reads), "Exercises"})
+	}
+
+	return data
 }
 
 // dashboard renders the dashboard statistics as json
