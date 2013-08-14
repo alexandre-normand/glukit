@@ -21,6 +21,7 @@ const (
 	GLUKIT_BERNSTEIN_EMAIL = "dr.bernstein@glukit.com"
 )
 
+var BERNSTEIN_EARLIEST_READ, _ = util.ParseTime("2013-06-01 12:00:00", "PST")
 var BERNSTEIN_MOST_RECENT_READ, _ = util.ParseTime("2014-03-11 12:00:00", "PST")
 var BERNSTEIN_BIRTH_DATE, _ = util.ParseTime("1934-06-17 00:00:00", "PST")
 
@@ -32,35 +33,31 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 	_, _, _, _, err := store.GetUserData(context, GLUKIT_BERNSTEIN_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for glukit bernstein user [%s], creating it", GLUKIT_BERNSTEIN_EMAIL)
-		dummyToken := oauth.Token{"", "", util.BEGINNING_OF_TIME}
+		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
 		userProfileKey, err := store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{GLUKIT_BERNSTEIN_EMAIL, "Glukit", "Bernstein", BERNSTEIN_BIRTH_DATE, model.DIABETES_TYPE_1, "America/New_York", time.Now(),
-				BERNSTEIN_MOST_RECENT_READ, dummyToken, "", model.UNDEFINED_SCORE, true})
+				BERNSTEIN_MOST_RECENT_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true})
 		if err != nil {
 			util.Propagate(err)
 		}
 
 		reader := generateBernsteinData(context)
-		lastReadTime := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.BEGINNING_OF_TIME,
+		lastReadTime := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.GLUKIT_EPOCH_TIME,
 			store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 		store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "bernstein", Md5Checksum: "dummychecksum",
 			LastDataProcessed: lastReadTime})
 
 		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
 			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
-		} else if glukitUser.Score.UpperBound.Before(lastReadTime) {
+		} else {
 			// Calculate Glukit Score here from the last 2 weeks of data
-			glukitScore, err := engine.CalculateGlukitScore(context, glukitUser)
+			newScoreCount, err := engine.CalculateGlukitScoreBatch(context, glukitUser)
 
 			if err != nil {
 				context.Warningf("Error calculating a new GlukitScore for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 			} else {
 				// Store the updated GlukitScore
-				context.Infof("New GlukitScore calculated for user [%s]: [%d]", GLUKIT_BERNSTEIN_EMAIL, glukitScore.Value)
-				glukitUser.Score = *glukitScore
-				if _, err := store.StoreUserProfile(context, time.Now(), *glukitUser); err != nil {
-					context.Errorf("Error persisting glukit score [%v] for user [%s]: %v", glukitScore, GLUKIT_BERNSTEIN_EMAIL, err)
-				}
+				context.Debugf("Batch calculation of [%d] glukit scores complete for user [%s]", newScoreCount, GLUKIT_BERNSTEIN_EMAIL)
 			}
 		}
 	} else if err != nil {
@@ -80,7 +77,7 @@ func generateBernsteinData(context appengine.Context) (reader io.Reader) {
 	buffer.WriteString("<MeterReadings></MeterReadings>\n")
 	buffer.WriteString("<GlucoseReadings>\n")
 
-	startTime, _ := util.ParseTime("2013-07-01 12:00:00", "PST")
+	startTime := BERNSTEIN_EARLIEST_READ
 	endTime := BERNSTEIN_MOST_RECENT_READ
 
 	context.Debugf("Data for bernstein from %s to %s:", util.TimeInDefaultTimezoneNoTz(startTime), util.TimeInDefaultTimezoneNoTz(endTime))

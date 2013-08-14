@@ -43,6 +43,8 @@ func init() {
 	http.HandleFunc("/steadySailor", steadySailorData)
 	http.HandleFunc("/"+DEMO_PATH_PREFIX+"dashboard", demoDashboard)
 	http.HandleFunc("/dashboard", dashboard)
+	http.HandleFunc("/"+DEMO_PATH_PREFIX+"glukitScores", glukitScoresForDemo)
+	http.HandleFunc("/glukitScores", glukitScores)
 
 	// "main"-page for both demo and real users
 	http.HandleFunc("/demo", renderDemo)
@@ -86,12 +88,12 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	_, key, _, _, err := store.GetUserData(context, DEMO_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
-		dummyToken := oauth.Token{"", "", util.BEGINNING_OF_TIME}
+		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
 		// TODO: Populate GlukitUser correctly, this will likely require
 		// getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{DEMO_EMAIL, "Demo", "OfMe", time.Now(), model.DIABETES_TYPE_1, "", time.Now(),
-				util.BEGINNING_OF_TIME, dummyToken, "", model.UNDEFINED_SCORE, true})
+				util.GLUKIT_EPOCH_TIME, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true})
 		if err != nil {
 			util.Propagate(err)
 		}

@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+const (
+	// Number of GlukitScores to batch in a single PutMulti
+	GLUKIT_SCORE_PUT_MULTI_SIZE = 200
+)
+
 // Error interface to distinguish between temporary errors from permanent ones
 type StoreError struct {
 	msg       string
@@ -18,6 +23,12 @@ type StoreError struct {
 
 func (e StoreError) Error() string {
 	return e.msg
+}
+
+type GlukitScoreScanQuery struct {
+	Limit *int
+	From  *time.Time
+	To    *time.Time
 }
 
 var (
@@ -324,8 +335,8 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 	}
 
 	// If the most recent read is still at the beginning on time, we know no data has been imported yet
-	if util.BEGINNING_OF_TIME.Equal(userProfile.MostRecentRead) {
-		return userProfile, key, util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME, ErrNoImportedDataFound
+	if util.GLUKIT_EPOCH_TIME.Equal(userProfile.MostRecentRead) {
+		return userProfile, key, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoImportedDataFound
 	} else {
 		upperBound = util.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
 		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
@@ -390,12 +401,72 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 
 	if sailorProfile == nil {
 		context.Warningf("No steady sailor match found for user [%s] with type of diabetes [%s]", recipientEmail, recipientProfile.DiabetesType)
-		return nil, nil, util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME, ErrNoSteadySailorMatchFound
+		return nil, nil, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoSteadySailorMatchFound
 	} else {
 		context.Warningf("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
 		upperBound = util.GetEndOfDayBoundaryBefore(sailorProfile.MostRecentRead)
 		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
 		return sailorProfile, GetUserKey(context, sailorProfile.Email), lowerBound, upperBound, nil
 	}
+}
 
+// StoreGlukitScoreBatch stores a batch of GlukitScores. The array could be of any size. A large batch of GlukitScores
+// will be internally split into multiple PutMultis.
+func StoreGlukitScoreBatch(context appengine.Context, userEmail string, glukitScores []model.GlukitScore) error {
+	parentKey := GetUserKey(context, userEmail)
+
+	totalBatchSize := float64(len(glukitScores))
+	for chunkStartIndex := 0; chunkStartIndex < len(glukitScores); chunkStartIndex = chunkStartIndex + GLUKIT_SCORE_PUT_MULTI_SIZE {
+		chunkEndIndex := int(math.Min(float64(chunkStartIndex+GLUKIT_SCORE_PUT_MULTI_SIZE), totalBatchSize))
+		glukitScoreChunk := glukitScores[chunkStartIndex:chunkEndIndex]
+		storeGlukitScoreChunk(context, parentKey, glukitScoreChunk)
+	}
+
+	return nil
+}
+
+func storeGlukitScoreChunk(context appengine.Context, parentKey *datastore.Key, glukitScoreChunk []model.GlukitScore) (keys []*datastore.Key, err error) {
+	context.Debugf("Storing chunk of [%d] glukit scores", len(glukitScoreChunk))
+
+	elementKeys := make([]*datastore.Key, len(glukitScoreChunk))
+	for i := range glukitScoreChunk {
+		elementKeys[i] = datastore.NewKey(context, "GlukitScore", "", glukitScoreChunk[i].UpperBound.Unix(), parentKey)
+	}
+
+	context.Infof("Emitting a PutMulti with [%d] keys for all [%d] glukit scores of chunk", len(elementKeys), len(glukitScoreChunk))
+	keys, error := datastore.PutMulti(context, elementKeys, glukitScoreChunk)
+	if error != nil {
+		context.Criticalf("Error writing [%d] glukit scores with keys [%s]: %v", len(elementKeys), elementKeys, error)
+		return nil, error
+	}
+
+	return elementKeys, nil
+}
+
+// GetGlukitScores returns all GlukitScores for the given email address and matching the query parameters
+func GetGlukitScores(context appengine.Context, email string, scanQuery GlukitScoreScanQuery) (scores []model.GlukitScore, err error) {
+	key := GetUserKey(context, email)
+
+	context.Infof("Scanning for glukit scores with limit [%d], from [%s], to [%s]", scanQuery.Limit, scanQuery.From, scanQuery.To)
+
+	query := datastore.NewQuery("GlukitScore").Ancestor(key)
+	if scanQuery.From != nil {
+		query = query.Filter("upperBound >=", scanQuery.From)
+	}
+	if scanQuery.To != nil {
+		query = query.Filter("upperBound <=", scanQuery.To)
+	}
+	if scanQuery.Limit != nil {
+		query = query.Limit(*scanQuery.Limit)
+	}
+	query = query.Order("-upperBound")
+
+	_, err = query.GetAll(context, &scores)
+
+	if err != datastore.Done {
+		util.Propagate(err)
+	}
+
+	context.Infof("Found [%d] glukit scores.", len(scores))
+	return scores, nil
 }

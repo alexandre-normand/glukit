@@ -17,7 +17,7 @@ const (
 )
 
 // "Dynamic" constants, those should never be updated
-var UNDEFINED_SCORE = GlukitScore{UNDEFINED_SCORE_VALUE, util.BEGINNING_OF_TIME, util.BEGINNING_OF_TIME}
+var UNDEFINED_SCORE = GlukitScore{Value: UNDEFINED_SCORE_VALUE, LowerBound: util.GLUKIT_EPOCH_TIME, UpperBound: util.GLUKIT_EPOCH_TIME, CalculatedOn: util.GLUKIT_EPOCH_TIME, ScoringVersion: -1}
 
 type Timestamp int64
 
