@@ -30,6 +30,12 @@ indexes:
   properties:
   - name: startTime
 
+- kind: GlukitScore
+  ancestor: yes
+  properties:
+  - name: upperBound
+    direction: desc
+
 - kind: GlukitUser
   properties:
   - name: diabetesType

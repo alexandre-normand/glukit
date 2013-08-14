@@ -26,7 +26,13 @@ const (
 var TIMEZONE_LOCATION, _ = time.LoadLocation("America/Los_Angeles")
 
 var UTC_LOCATION, _ = time.LoadLocation("UTC")
-var BEGINNING_OF_TIME = time.Unix(0, 0)
+
+// Beginning of time should be unix epoch 0 but, to optimize some processing
+// may iterate overtime starting at this value, we just define the notion
+// of Glukit epoch time and have this value be set to something less far back
+// but still before anything interesting happened in the Glukit world.
+// This maps to 01 Jan 2004 00:00:00 GMT.
+var GLUKIT_EPOCH_TIME = time.Unix(1072915200, 0)
 
 // ParseGoogleDriveDate parses a Google Drive API time value
 func ParseGoogleDriveDate(value string) (timeValue time.Time, err error) {
@@ -67,6 +73,15 @@ func GetEndOfDayBoundaryBefore(timeValue time.Time) (latestEndOfDayBoundary time
 	}
 
 	return latestEndOfDayBoundary
+}
+
+// GetMidnightUTCBefore returns the boundary of very last occurence of midnight before the given time.
+// To give an example, if the given time is July 17th 2h00 UTC, the boundary returned is going to be
+// July 17th 00h00. If the time is July 16th 23h00 PST, the boundary returned is July 16th 00h00.
+func GetMidnightUTCBefore(timeValue time.Time) (latestMidnightBoundary time.Time) {
+	timeInUTC := timeValue.In(UTC_LOCATION)
+	latestMidnightBoundary = time.Date(timeInUTC.Year(), timeInUTC.Month(), timeInUTC.Day(), 0, 0, 0, 0, UTC_LOCATION)
+	return latestMidnightBoundary
 }
 
 // Returns the timevalue with its timezone set to the default TIMEZONE_LOCATION

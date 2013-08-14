@@ -8,9 +8,12 @@ import (
 	"appengine"
 	"appengine/user"
 	"encoding/json"
+	"fmt"
 	"lib/github.com/grd/stat"
 	"net/http"
 	"sort"
+	"strconv"
+	"time"
 )
 
 // Represents a DataResponse with an array of DataSeries and some metadata
@@ -27,6 +30,12 @@ type DataSeries struct {
 	Data []model.DataPoint `json:"data"`
 	Type string            `json:"type"`
 }
+
+const (
+	QUERY_PARAM_LIMIT = "limit"
+	QUERY_PARAM_FROM  = "from"
+	QUERY_PARAM_TO    = "to"
+)
 
 // content renders the most recent day's worth of data as json for the active user
 func personalData(writer http.ResponseWriter, request *http.Request) {
@@ -72,7 +81,7 @@ func mostRecentDayAsJson(writer http.ResponseWriter, request *http.Request, emai
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{Name: glukitUser.FirstName, Score: &glukitUser.Score, Data: generateDataSeriesFromData(reads, injections, carbs, exercises), AvatarUrl: ""}
+		response := DataResponse{Name: glukitUser.FirstName, Score: &glukitUser.MostRecentScore, Data: generateDataSeriesFromData(reads, injections, carbs, exercises), AvatarUrl: ""}
 		writeAsJson(writer, response)
 	}
 }
@@ -109,7 +118,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{Name: steadySailor.FirstName, Score: &steadySailor.Score, Data: generateDataSeriesFromData(reads, nil, nil, nil), AvatarUrl: ""}
+		response := DataResponse{Name: steadySailor.FirstName, Score: &steadySailor.MostRecentScore, Data: generateDataSeriesFromData(reads, nil, nil, nil), AvatarUrl: ""}
 		writeAsJson(writer, response)
 	}
 }
@@ -176,6 +185,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 // writedashboardDataAsJson calculates dashboard statistics from an array of GlucoseReads and writes it
 // as json
 func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request, reads []model.GlucoseRead, userProfile *model.GlukitUser) {
+	context := appengine.NewContext(request)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
@@ -186,9 +196,85 @@ func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request,
 		dashboardData.High, _ = stat.Max(model.ReadStatsSlice(reads))
 		dashboardData.Low, _ = stat.Min(model.ReadStatsSlice(reads))
 		dashboardData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
-		dashboardData.Score = engine.CalculateUserFacingScore(userProfile.Score)
+		dashboardData.Score = engine.CalculateUserFacingScore(userProfile.MostRecentScore)
+		context.Debugf("Calculated user score of [%d] from internal score of [%d]", dashboardData.Score, userProfile.MostRecentScore.Value)
 	}
 
 	enc := json.NewEncoder(writer)
 	enc.Encode(dashboardData)
+}
+
+func glukitScores(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	glukitScoresForEmail(writer, request, user.Email)
+}
+
+func glukitScoresForDemo(writer http.ResponseWriter, request *http.Request) {
+	glukitScoresForEmail(writer, request, DEMO_EMAIL)
+}
+
+// glukitScoresForEmail is the endpoint to retrieve a list of glukitscores.
+func glukitScoresForEmail(writer http.ResponseWriter, request *http.Request, email string) {
+	context := appengine.NewContext(request)
+
+	limit := request.FormValue(QUERY_PARAM_LIMIT)
+	fromTimestamp := request.FormValue(QUERY_PARAM_FROM)
+	toTimestamp := request.FormValue(QUERY_PARAM_TO)
+
+	// The request must include at least one of from/to/limit to be considered valid
+	// as leaving it too open would could open the door for costly queries
+	if len(limit) == 0 && len(fromTimestamp) == 0 && len(toTimestamp) == 0 {
+		http.Error(writer, fmt.Sprintf("Query must specify at least one of: %s, %s or %s.", QUERY_PARAM_LIMIT, QUERY_PARAM_FROM, QUERY_PARAM_TO), 400)
+		return
+	}
+
+	var scanQuery store.GlukitScoreScanQuery
+	if len(limit) > 0 {
+		if limitValue, err := strconv.ParseInt(limit, 10, 32); err != nil {
+			http.Error(writer, fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_LIMIT, err), 400)
+			return
+		} else {
+			limitVal := int(limitValue)
+			scanQuery.Limit = &limitVal
+		}
+	}
+
+	if len(fromTimestamp) > 0 {
+		if fromValue, err := strconv.ParseInt(fromTimestamp, 10, 64); err != nil {
+			http.Error(writer, fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_FROM, err), 400)
+			return
+		} else {
+			fromTime := time.Unix(fromValue, 0)
+			scanQuery.From = &fromTime
+		}
+	}
+
+	if len(toTimestamp) > 0 {
+		if toValue, err := strconv.ParseInt(toTimestamp, 10, 64); err != nil {
+			http.Error(writer, fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_TO, err), 400)
+			return
+		} else {
+			toTime := time.Unix(toValue, 0)
+			scanQuery.To = &toTime
+		}
+	}
+
+	glukitScores, err := store.GetGlukitScores(context, email, scanQuery)
+	if err != nil {
+		util.Propagate(err)
+	}
+
+	if len(glukitScores) < 1 {
+		http.Error(writer, "No glukit scores calculated yet.", 204)
+		return
+	}
+
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	enc := json.NewEncoder(writer)
+	enc.Encode(glukitScores)
+
 }

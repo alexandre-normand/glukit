@@ -16,8 +16,12 @@ const (
 	LOW_MULTIPLIER = 1
 	// The multiplier applied to any deviation from the target, on the high spectrum (i.e. anything above 83)
 	HIGH_MULTIPLIER = 2
-	// Two full weeks of reads
-	READS_REQUIREMENT = 288 * 14
+	// Glukit score calculation period
+	GLUKIT_SCORE_PERIOD = 7
+	// One period of reads minus on day for potential data gaps
+	READS_REQUIREMENT = 288 * (GLUKIT_SCORE_PERIOD - 1)
+	// The current Glukit scoring version
+	SCORING_VERSION = 1
 )
 
 // CalculateGlukitScore computes the GlukitScore for a given user. This is done in a few steps:
@@ -26,10 +30,10 @@ const (
 //      contribution and add it to the GlukitScore.
 //   3. If we had enough reads to satisfy the requirements, we return the sum of
 //      all individual score contributions.
-func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUser) (glukitScore *model.GlukitScore, err error) {
-	// Get the last 2 weeks of data plus 2 days
-	upperBound := util.GetEndOfDayBoundaryBefore(glukitUser.MostRecentRead)
-	lowerBound := upperBound.AddDate(0, 0, -16)
+func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUser, endOfPeriod time.Time) (glukitScore *model.GlukitScore, err error) {
+	// Get the last period's worth of reads
+	upperBound := util.GetMidnightUTCBefore(endOfPeriod)
+	lowerBound := upperBound.AddDate(0, 0, -1*GLUKIT_SCORE_PERIOD)
 	score := model.UNDEFINED_SCORE_VALUE
 
 	context.Debugf("Getting reads for glukit score calculation from [%s] to [%s]", lowerBound, upperBound)
@@ -59,9 +63,11 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 		glukitScore = &model.UNDEFINED_SCORE
 	} else {
 		glukitScore = &model.GlukitScore{
-			Value:      score,
-			UpperBound: upperBound,
-			UpdatedAt:  time.Now()}
+			Value:          score,
+			LowerBound:     lowerBound,
+			UpperBound:     upperBound,
+			CalculatedOn:   time.Now(),
+			ScoringVersion: SCORING_VERSION}
 	}
 
 	return glukitScore, nil
@@ -84,6 +90,55 @@ func CalculateIndividualReadScoreWeight(context appengine.Context, read model.Gl
 // CalculateUserFacingScore maps an internal GlukitScore to a user facing value (should be between 0 and 100)
 func CalculateUserFacingScore(internal model.GlukitScore) (external int64) {
 	internalAsFloat := float64(internal.Value)
-	externalAsFloat := 100.689 + 3.8502e-6*internalAsFloat - 0.0631063*math.Sqrt(internalAsFloat-3014.77)
+	externalAsFloat := 100 + 1.043e-9*math.Pow(internalAsFloat, 2) + 6.517e-22*math.Pow(internalAsFloat, 4) - 0.0003676*internalAsFloat - 1.434e-15*math.Pow(internalAsFloat, 3)
 	return int64(externalAsFloat)
+}
+
+// CalculateGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
+func CalculateGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (batchSize int, err error) {
+	lastScoredRead := glukitUser.MostRecentScore.UpperBound
+	bestScore := glukitUser.BestScore
+	mostRecentScore := glukitUser.MostRecentScore
+	glukitScoreBatch := make([]model.GlukitScore, 0)
+
+	context.Debugf("Calculating batch of GlukitScores for user [%s] with current best of [%v] and most recent score of [%v]",
+		glukitUser.Email, glukitUser.BestScore, glukitUser.MostRecentScore)
+
+	// Calculate the GlukitScore for every period until now. This will likely go through a few calculations for which we don't have data yet but this seems like the fair
+	// price to pay for making sure we don't stop processing glukit scores because someone might have stopped using their CGM for a week or so.
+	for periodUpperBound := lastScoredRead.AddDate(0, 0, GLUKIT_SCORE_PERIOD); periodUpperBound.Before(time.Now()); periodUpperBound = periodUpperBound.AddDate(0, 0, GLUKIT_SCORE_PERIOD) {
+		glukitScore, err := CalculateGlukitScore(context, glukitUser, periodUpperBound)
+		if err != nil {
+			return 0, err
+		}
+
+		if glukitScore.IsBetterThan(glukitUser.BestScore) {
+			bestScore = *glukitScore
+		}
+
+		if glukitScore.Value != model.UNDEFINED_SCORE_VALUE {
+			if periodUpperBound.After(mostRecentScore.UpperBound) {
+				mostRecentScore = *glukitScore
+			}
+
+			glukitScoreBatch = append(glukitScoreBatch, *glukitScore)
+		}
+	}
+
+	// Store the batch
+	store.StoreGlukitScoreBatch(context, glukitUser.Email, glukitScoreBatch)
+
+	// Update the bestScore/LastScoredRead if one of them is different than what was already there
+	if bestScore != glukitUser.BestScore || mostRecentScore != glukitUser.MostRecentScore {
+		glukitUser.BestScore = bestScore
+		glukitUser.MostRecentScore = mostRecentScore
+		if _, err := store.StoreUserProfile(context, time.Now(), *glukitUser); err != nil {
+			util.Propagate(err)
+		} else {
+			context.Debugf("Updated glukit user [%s] with an improved GlukitScore of [%v] and most recent score of [%v]",
+				glukitUser.Email, bestScore, mostRecentScore)
+		}
+	}
+
+	return len(glukitScoreBatch), nil
 }
