@@ -95,9 +95,9 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 
 	lastDayOfRead := daysOfReads[len(daysOfReads)-1]
 	lastRead := lastDayOfRead.Reads[len(lastDayOfRead.Reads)-1]
-	if userProfile.MostRecentRead.Before(lastRead.GetTime()) {
+	if userProfile.MostRecentRead.GetTime().Before(lastRead.GetTime()) {
 		context.Infof("Updating most recent read date to %s", lastRead.GetTime())
-		userProfile.MostRecentRead = lastRead.GetTime()
+		userProfile.MostRecentRead = lastRead
 		_, err := StoreUserProfile(context, time.Now(), *userProfile)
 		if err != nil {
 			context.Criticalf("Error storing updated user profile [%s] with most recent read value of %s: %v", userProfileKey, userProfile.MostRecentRead, err)
@@ -335,10 +335,10 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 	}
 
 	// If the most recent read is still at the beginning on time, we know no data has been imported yet
-	if util.GLUKIT_EPOCH_TIME.Equal(userProfile.MostRecentRead) {
+	if util.GLUKIT_EPOCH_TIME.Equal(userProfile.MostRecentRead.GetTime()) {
 		return userProfile, key, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoImportedDataFound
 	} else {
-		upperBound = util.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead)
+		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(userProfile.MostRecentRead.LocalTime, userProfile.MostRecentRead.GetTime()))
 		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
 		return userProfile, key, lowerBound, upperBound, nil
 	}
@@ -404,7 +404,7 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 		return nil, nil, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoSteadySailorMatchFound
 	} else {
 		context.Warningf("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
-		upperBound = util.GetEndOfDayBoundaryBefore(sailorProfile.MostRecentRead)
+		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(sailorProfile.MostRecentRead.LocalTime, sailorProfile.MostRecentRead.GetTime()))
 		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
 		return sailorProfile, GetUserKey(context, sailorProfile.Email), lowerBound, upperBound, nil
 	}

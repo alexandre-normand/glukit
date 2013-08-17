@@ -19,11 +19,13 @@ import (
 
 const (
 	GLUKIT_BERNSTEIN_EMAIL = "dr.bernstein@glukit.com"
+	PERFECT_SCORE          = 83
 )
 
-var BERNSTEIN_EARLIEST_READ, _ = util.ParseTime("2013-06-01 12:00:00", "PST")
-var BERNSTEIN_MOST_RECENT_READ, _ = util.ParseTime("2014-03-11 12:00:00", "PST")
-var BERNSTEIN_BIRTH_DATE, _ = util.ParseTime("1934-06-17 00:00:00", "PST")
+var BERNSTEIN_EARLIEST_READ, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2013-06-01 12:00:00")
+var BERNSTEIN_MOST_RECENT_READ_TIME, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2014-03-11 12:00:00")
+var BERNSTEIN_MOST_RECENT_READ = model.GlucoseRead{BERNSTEIN_EARLIEST_READ.Format(util.TIMEFORMAT), model.Timestamp(BERNSTEIN_EARLIEST_READ.Unix()), PERFECT_SCORE}
+var BERNSTEIN_BIRTH_DATE, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "1934-06-17 00:00:00")
 
 // initializeGlukitBernstein does lazy initialization of the "perfect" glukit user.
 // It's called Glukit Bernstein because much of this comes from Dr. Berstein himself.
@@ -78,11 +80,14 @@ func generateBernsteinData(context appengine.Context) (reader io.Reader) {
 	buffer.WriteString("<GlucoseReadings>\n")
 
 	startTime := BERNSTEIN_EARLIEST_READ
-	endTime := BERNSTEIN_MOST_RECENT_READ
+	endTime := BERNSTEIN_MOST_RECENT_READ_TIME
 
-	context.Debugf("Data for bernstein from %s to %s:", util.TimeInDefaultTimezoneNoTz(startTime), util.TimeInDefaultTimezoneNoTz(endTime))
+	context.Debugf("Data for bernstein from %s to %s:", startTime.In(time.UTC).Format(util.TIMEFORMAT_NO_TZ),
+		endTime.In(time.UTC).Format(util.TIMEFORMAT_NO_TZ))
 	for currentTime := startTime; !currentTime.After(endTime); currentTime = currentTime.Add(time.Duration(5 * time.Minute)) {
-		line := fmt.Sprintf("<Glucose InternalTime=\"%s\" DisplayTime=\"%s\" Value=\"83\"/>\n", util.TimeInUTCNoTz(currentTime), util.TimeInDefaultTimezoneNoTz(currentTime))
+		line := fmt.Sprintf("<Glucose InternalTime=\"%s\" DisplayTime=\"%s\" Value=\"%d\"/>\n",
+			currentTime.In(time.UTC).Format(util.TIMEFORMAT_NO_TZ), currentTime.In(time.UTC).Format(util.TIMEFORMAT_NO_TZ),
+			PERFECT_SCORE)
 		buffer.WriteString(line)
 	}
 

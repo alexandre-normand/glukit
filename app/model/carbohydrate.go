@@ -1,7 +1,6 @@
 package model
 
 import (
-	"app/util"
 	"time"
 )
 
@@ -20,7 +19,7 @@ type DayOfCarbs struct {
 
 // GetTime gets the time of a GlucoseRead value
 func (carb Carb) GetTime() (timeValue time.Time) {
-	value, _ := util.ParseTime(carb.LocalTime, util.TIMEZONE)
+	value := time.Unix(int64(carb.Timestamp), 0)
 	return value
 }
 

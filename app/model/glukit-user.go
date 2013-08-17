@@ -14,7 +14,7 @@ type GlukitUser struct {
 	DiabetesType    string      `datastore:"diabetesType"`
 	Timezone        string      `datastore:"timezoneId"`
 	LastUpdated     time.Time   `datastore:"lastUpdated"`
-	MostRecentRead  time.Time   `datastore:"mostRecentRead"`
+	MostRecentRead  GlucoseRead `datastore:"mostRecentRead"`
 	Token           oauth.Token `datastore:"token",noindex`
 	RefreshToken    string      `datastore:"refreshToken",noindex`
 	BestScore       GlukitScore `datastore:"bestScore"`

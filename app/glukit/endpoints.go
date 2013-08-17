@@ -226,7 +226,8 @@ func glukitScoresForEmail(writer http.ResponseWriter, request *http.Request, ema
 	// The request must include at least one of from/to/limit to be considered valid
 	// as leaving it too open would could open the door for costly queries
 	if len(limit) == 0 && len(fromTimestamp) == 0 && len(toTimestamp) == 0 {
-		http.Error(writer, fmt.Sprintf("Query must specify at least one of: %s, %s or %s.", QUERY_PARAM_LIMIT, QUERY_PARAM_FROM, QUERY_PARAM_TO), 400)
+		http.Error(writer, fmt.Sprintf("Query must specify at least one of: %s, %s or %s.",
+			QUERY_PARAM_LIMIT, QUERY_PARAM_FROM, QUERY_PARAM_TO), 400)
 		return
 	}
 
