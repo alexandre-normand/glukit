@@ -93,7 +93,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{DEMO_EMAIL, "Demo", "OfMe", time.Now(), model.DIABETES_TYPE_1, "", time.Now(),
-				util.GLUKIT_EPOCH_TIME, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true})
+				model.UNDEFINED_GLUCOSE_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true})
 		if err != nil {
 			util.Propagate(err)
 		}

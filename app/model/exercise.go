@@ -1,7 +1,6 @@
 package model
 
 import (
-	"app/util"
 	"time"
 )
 
@@ -16,7 +15,7 @@ type Exercise struct {
 
 // Gets the time of the exercise
 func (exercise Exercise) GetTime() (timeValue time.Time) {
-	value, _ := util.ParseTime(exercise.LocalTime, util.TIMEZONE)
+	value := time.Unix(int64(exercise.Timestamp), 0)
 	return value
 }
 

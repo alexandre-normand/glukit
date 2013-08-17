@@ -1,7 +1,6 @@
 package model
 
 import (
-	"app/util"
 	"time"
 )
 
@@ -20,7 +19,7 @@ type DayOfInjections struct {
 
 // GetTime gets the time of an Injection value
 func (injection Injection) GetTime() (timeValue time.Time) {
-	value, _ := util.ParseTime(injection.LocalTime, util.TIMEZONE)
+	value := time.Unix(int64(injection.Timestamp), 0)
 	return value
 }
 

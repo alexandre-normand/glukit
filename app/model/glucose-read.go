@@ -20,7 +20,7 @@ type DayOfGlucoseReads struct {
 
 // GetTime gets the time of a GlucoseRead value
 func (read GlucoseRead) GetTime() (timeValue time.Time) {
-	value, _ := util.ParseTime(read.LocalTime, util.TIMEZONE)
+	value := time.Unix(int64(read.Timestamp), 0)
 	return value
 }
 
@@ -51,3 +51,5 @@ func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	}
 	return dataPoints
 }
+
+var UNDEFINED_GLUCOSE_READ = GlucoseRead{"2004-01-01 00:00:00 UTC", Timestamp(util.GLUKIT_EPOCH_TIME.Unix()), UNDEFINED_READ}
