@@ -39,4 +39,9 @@ indexes:
 - kind: GlukitUser
   properties:
   - name: diabetesType
+  - name: mostRecentScore.value
+
+- kind: GlukitUser
+  properties:
+  - name: diabetesType
   - name: score.value
