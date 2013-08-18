@@ -368,7 +368,7 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 	// It's more efficient to filter the recipient after the fact than before.
 	query := datastore.NewQuery("GlukitUser").
 		Filter("diabetesType =", recipientProfile.DiabetesType).
-		Order("score.value").Limit(5)
+		Order("mostRecentScore.value").Limit(5)
 
 	var steadySailors []model.GlukitUser
 	_, err = query.GetAll(context, &steadySailors)
