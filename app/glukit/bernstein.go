@@ -52,14 +52,11 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
 			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 		} else {
-			// Calculate Glukit Score here from the last 2 weeks of data
-			newScoreCount, err := engine.CalculateGlukitScoreBatch(context, glukitUser)
+			// Start batch calculation of the glukit scores
+			err := engine.CalculateGlukitScoreBatch(context, glukitUser)
 
 			if err != nil {
-				context.Warningf("Error calculating a new GlukitScore for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
-			} else {
-				// Store the updated GlukitScore
-				context.Debugf("Batch calculation of [%d] glukit scores complete for user [%s]", newScoreCount, GLUKIT_BERNSTEIN_EMAIL)
+				context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 			}
 		}
 	} else if err != nil {

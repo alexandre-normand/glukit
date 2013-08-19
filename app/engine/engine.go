@@ -7,6 +7,7 @@ import (
 	"app/store"
 	"app/util"
 	"appengine"
+	"appengine/taskqueue"
 	"math"
 	"time"
 )
@@ -54,7 +55,7 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 
 		context.Infof("Readcount of [%d] used for glukit score calculation of [%d]", readCount, score)
 		if readCount < READS_REQUIREMENT {
-			context.Warningf("Received only [%d] but required [%d] to calculate valid GlukitScore", readCount, READS_REQUIREMENT)
+			context.Infof("Received only [%d] but required [%d] to calculate valid GlukitScore", readCount, READS_REQUIREMENT)
 			return &model.UNDEFINED_SCORE, nil
 		}
 	}
@@ -95,50 +96,17 @@ func CalculateUserFacingScore(internal model.GlukitScore) (external int64) {
 }
 
 // CalculateGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
-func CalculateGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (batchSize int, err error) {
+func CalculateGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
 	lastScoredRead := glukitUser.MostRecentScore.UpperBound
-	bestScore := glukitUser.BestScore
-	mostRecentScore := glukitUser.MostRecentScore
-	glukitScoreBatch := make([]model.GlukitScore, 0)
 
-	context.Debugf("Calculating batch of GlukitScores for user [%s] with current best of [%v] and most recent score of [%v]",
-		glukitUser.Email, glukitUser.BestScore, glukitUser.MostRecentScore)
-
-	// Calculate the GlukitScore for every period until now. This will likely go through a few calculations for which we don't have data yet but this seems like the fair
-	// price to pay for making sure we don't stop processing glukit scores because someone might have stopped using their CGM for a week or so.
-	for periodUpperBound := lastScoredRead.AddDate(0, 0, GLUKIT_SCORE_PERIOD); periodUpperBound.Before(time.Now()); periodUpperBound = periodUpperBound.AddDate(0, 0, GLUKIT_SCORE_PERIOD) {
-		glukitScore, err := CalculateGlukitScore(context, glukitUser, periodUpperBound)
-		if err != nil {
-			return 0, err
-		}
-
-		if glukitScore.IsBetterThan(glukitUser.BestScore) {
-			bestScore = *glukitScore
-		}
-
-		if glukitScore.Value != model.UNDEFINED_SCORE_VALUE {
-			if periodUpperBound.After(mostRecentScore.UpperBound) {
-				mostRecentScore = *glukitScore
-			}
-
-			glukitScoreBatch = append(glukitScoreBatch, *glukitScore)
-		}
+	// Kick off the first chunk of glukit score calculation
+	task, err := RunGlukitScoreCalculationChunk.Task(glukitUser.Email, lastScoredRead)
+	if err != nil {
+		context.Criticalf("Couldn't schedule the next execution of runGlukitScoreCalculationChunk for user [%s]. "+
+			"This breaks batch calculation of glukit scores for that user!: %v", glukitUser.Email, err)
 	}
+	taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
+	context.Infof("Queued up first chunk of glukit score calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lastScoredRead.Format(util.TIMEFORMAT))
 
-	// Store the batch
-	store.StoreGlukitScoreBatch(context, glukitUser.Email, glukitScoreBatch)
-
-	// Update the bestScore/LastScoredRead if one of them is different than what was already there
-	if bestScore != glukitUser.BestScore || mostRecentScore != glukitUser.MostRecentScore {
-		glukitUser.BestScore = bestScore
-		glukitUser.MostRecentScore = mostRecentScore
-		if _, err := store.StoreUserProfile(context, time.Now(), *glukitUser); err != nil {
-			util.Propagate(err)
-		} else {
-			context.Debugf("Updated glukit user [%s] with an improved GlukitScore of [%v] and most recent score of [%v]",
-				glukitUser.Email, bestScore, mostRecentScore)
-		}
-	}
-
-	return len(glukitScoreBatch), nil
+	return nil
 }
