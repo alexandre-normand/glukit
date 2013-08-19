@@ -1,6 +1,7 @@
 package glukit
 
 import (
+	"app/engine"
 	"app/model"
 	"app/store"
 	"app/util"
@@ -57,7 +58,8 @@ func init() {
 	http.HandleFunc("/realuser", handleRealUser)
 	http.HandleFunc("/oauth2callback", oauthCallback)
 
-	refreshUserData = delay.Func("refreshUserData", updateUserData)
+	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
+	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
 }
 
 // landing executes the landing page template

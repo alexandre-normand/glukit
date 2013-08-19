@@ -21,12 +21,16 @@ import (
 
 var processFile = delay.Func("processSingleFile", processSingleFile)
 var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
-var refreshUserData = delay.Func("refreshUserData", func(context appengine.Context, userEmail string,
+var refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, func(context appengine.Context, userEmail string,
 	autoScheduleNextRun bool) {
-	context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that ",
-		"shows up because the function calls itself. This implementation defines the same signature as the ",
+	context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that " +
+		"shows up because the function calls itself. This implementation defines the same signature as the " +
 		"real one which we define in init() to override this implementation!")
 })
+
+const (
+	REFRESH_USER_DATA_FUNCTION_NAME = "refreshUserData"
+)
 
 // updateUserData is an async task that searches on Google Drive for dexcom files. It handles some high
 // watermark of the last import to avoid downloading already imported files (unless they've been updated).
@@ -150,11 +154,9 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", userEmail, err)
 		} else {
 			// Calculate Glukit Score batch here for the newly imported data
-			newScoreCount, err := engine.CalculateGlukitScoreBatch(context, glukitUser)
+			err := engine.CalculateGlukitScoreBatch(context, glukitUser)
 			if err != nil {
-				context.Warningf("Error calculating a new GlukitScore for [%s], this needs attention: [%v]", userEmail, err)
-			} else {
-				context.Infof("New batch of [%d] GlukitScores calculated for user [%s]", newScoreCount, userEmail)
+				context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", userEmail, err)
 			}
 		}
 	}
@@ -186,10 +188,8 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	if userProfile, err := store.GetUserProfile(context, userProfileKey); err != nil {
 		context.Warningf("Error while persisting score for %s: %v", DEMO_EMAIL, err)
 	} else {
-		if newScoreCount, err := engine.CalculateGlukitScoreBatch(context, userProfile); err != nil {
-			context.Warningf("Error while calculating score for %s: %v", DEMO_EMAIL, err)
-		} else {
-			context.Infof("Calculated and stored batch of [%d] glukit scores for glukit user [%v]", newScoreCount, userProfile)
+		if err := engine.CalculateGlukitScoreBatch(context, userProfile); err != nil {
+			context.Warningf("Error while starting batch calculation of glukit scores for %s: %v", DEMO_EMAIL, err)
 		}
 	}
 

@@ -4,3 +4,6 @@ queue:
 
 - name: refresh
   rate: 10/s
+
+- name: batch-calculation
+  rate: 60/s

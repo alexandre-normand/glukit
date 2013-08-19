@@ -403,7 +403,7 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 		context.Warningf("No steady sailor match found for user [%s] with type of diabetes [%s]", recipientEmail, recipientProfile.DiabetesType)
 		return nil, nil, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoSteadySailorMatchFound
 	} else {
-		context.Warningf("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
+		context.Infof("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
 		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(sailorProfile.MostRecentRead.LocalTime, sailorProfile.MostRecentRead.GetTime()))
 		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
 		return sailorProfile, GetUserKey(context, sailorProfile.Email), lowerBound, upperBound, nil
