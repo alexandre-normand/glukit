@@ -68,7 +68,7 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 
 	// Next update in one day
 	nextUpdate := time.Now().AddDate(0, 0, 1)
-	files, err := importer.SearchDataFiles(transport.Client(), glukitUser.LastUpdated)
+	files, err := importer.SearchDataFiles(transport.Client(), glukitUser.MostRecentRead.GetTime())
 	if err != nil {
 		context.Warningf("Error while searching for files on google drive for user [%s]: %v", userEmail, err)
 	} else {
