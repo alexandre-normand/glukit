@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+const (
+	CARB_TAG = "Carbs"
+)
+
 // Represents a carbohydrate intake
 type Carb struct {
 	LocalTime          string    `json:"label" datastore:"localtime,noindex"`
@@ -42,7 +46,7 @@ func (slice CarbSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
-			linearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Grams}
+			linearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Grams, CARB_TAG}
 		dataPoints[i] = dataPoint
 	}
 

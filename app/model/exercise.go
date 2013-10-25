@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+const (
+	EXERCISE_TAG = "Exercise"
+)
+
 // Represents an exercise event
 type Exercise struct {
 	LocalTime         string    `json:"label" datastore:"localtime,noindex"`
@@ -43,7 +47,7 @@ func (slice ExerciseSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPo
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
-			linearInterpolateY(matchingReads, slice[i].Timestamp), float32(slice[i].DurationInMinutes)}
+			linearInterpolateY(matchingReads, slice[i].Timestamp), float32(slice[i].DurationInMinutes), EXERCISE_TAG}
 		dataPoints[i] = dataPoint
 	}
 

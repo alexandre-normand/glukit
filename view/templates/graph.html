@@ -8,11 +8,10 @@
       <link type="text/css" rel="stylesheet" href="css/graph.css">
       <link type="text/css" rel="stylesheet" href="css/detail.css">
       <link type="text/css" rel="stylesheet" href="css/main.css">
-    	<script src="js/d3.v3/d3.v3.js"></script>
+    	<script src="js/d3.v3.min.js"></script>
     	<script src="js/jquery-2.0.0.min.js"></script>
-    	<script src="js/rickshaw.js"></script>
       <script type="text/javascript" src="/_ah/channel/jsapi"></script>
-      <script src="js/main.js"></script>
+      <script src="js/main.js"></script>      
   </head>
   <body class="dataPage">
 
@@ -28,8 +27,8 @@
   </ul>
   <div class="fixed"></div>
   <section class="top-bar-section">
-    <!-- Left Nav Section 
-    <ul class="left hackwhite"> 
+    <!-- Left Nav Section
+    <ul class="left hackwhite">
     </ul>
     -->
     <!-- Right Nav Section -->
@@ -71,8 +70,8 @@
           <!-- <p style="float:right; color: #404040; padding-top:6px">Welcome, Alex!</p> -->
         </div>
       </div>
-       
-      <!-- Should be generating this dynamically - not DRY as is. --> 
+
+      <!-- Should be generating this dynamically - not DRY as is. -->
       <div class="row dashboard">
         <div class="large-4 columns">
           <div class="slab">
@@ -99,8 +98,8 @@
           </div>
         </div>
       </div>
-      
-      <hr id="features">        
+
+      <hr id="features">
       <div class="row">
         <div class="large-16 columns">
           <div class="slab graph">
@@ -119,107 +118,230 @@
       </div>
       <div class="row">
         <div class="footer">
-          <div class="large-16 columns" style="height:30px">     
+          <div class="large-16 columns" style="height:30px">
           </div>
         </div>
       </div>
-    </div>    
+    </div>
   </div>
 <script>
+    var MAX_VALUE = 300;
+    var TARGET_RANGE_LOWER_BOUND = 63;
+    var TARGET_RANGE_UPPER_BOUND = 127;
+
+    var RANGES = {
+      HIGH: "HIGH",
+      NORMAL: "NORMAL",
+      LOW: "LOW"
+    }
+
     function showDataBrowser() {
     var chartNode = document.getElementById("chart");
     chartNode.innerHTML = '';
-    
-    var graph = new Rickshaw.Graph.Ajax( {
-    	element: document.getElementById("chart"),
-    	width: 800,
-    	height: 400,
-    	renderer: 'multi',
-        max: 300,
-        min: 0,        
-    	  dataURL: '/{{.PathPrefix}}data',
-        onData: function(d) {                   
-                return d.data;
-        },
-    	series: [
-            {
-                name: 'Injections',
-                color: '#4D94FF',
-                width: 2,
-                renderer: 'scatterplot'
-            }, {
-                name: 'Carbohydrates',
-                color: '#E65C5C',
-                width: 2,
-                renderer: 'scatterplot'
-            }, {
-    			      name: 'GlucoseReads',
-                color: 'steelblue',
-                width: 2,
-                renderer: 'line'
-    		},
-             // Ugly workaround because scatterplot for injections and carbs are not placed correctly unless the reads line
-             // has a scatterplot too..and we don't want to show it so we set the color to none
-               {
-                name: 'GlucoseReads',
-                color: 'none',
-                opacity: '0',
-                width: 2,
-                renderer: 'scatterplot'
-             }
-    		 ],
-    	onComplete: function(transport) {          
-          $.getJSON('/{{.PathPrefix}}steadySailor').
-          done(function(data) {                                  
-            //transport.graph.series.push({data: data.data[0].data, color: '#33AD33', name: data.name, width: '1', rendered:'line'});
-            adjustedData = data.data[0].data;
-            if (adjustedData.length > 0) {             
-              offset = adjustedData[0].x - transport.graph.series[3].data[0].x;              
-              adjustedData.forEach(function(element) {
-                element.x = element.x - offset;
-              });
-            transport.graph.series.push({data: data.data[0].data, color: '#33AD33', name: data.name, width: '1', rendered:'line'});
-            transport.graph.update();
-            }
-          }).
-          fail(function( jqxhr, textStatus, error) { 
-            console.log( "Request Failed: " + error) 
-          });
 
-    	    var x_axis = new Rickshaw.Graph.Axis.Time({
-    	          graph: transport.graph,
-    	        });
-    	    x_axis.graph.update();
+    var margin = {top: 10, right: 10, bottom: 100, left: 40},
+    margin2 = {top: 430, right: 10, bottom: 20, left: 40},
+    width = 800 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom,
+    viewfinderHeight = 500 - margin2.top - margin2.bottom;
 
-    	    var y_axis = new Rickshaw.Graph.Axis.Y( {
-    		            graph: transport.graph,
-    		            orientation: 'left',
-    		            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-    		            element: document.getElementById('y_axis'),
-    		} );
-            y_axis.graph.update();
+    // Our dates are milliseconds since epoch so that parse function
+    // just instantiates a new Date from it.
+    var parseDate = function(d) { return new Date(d) };
 
-            var hoverDetail = new Rickshaw.Graph.HoverDetail( {
-                    graph: transport.graph,
-                    formatter: function(series, x, y, formattedX, formattedY, d) {
-                            var date = '<span class="date">' + new Date(x * 1000).toTimeString() + '</span>';
-                            var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
-                            var content = null;
-                            if (series.name === "Carbohydrates" || series.name === "Injections" || series.name === "GlucoseReads") {
-                                 content = swatch + series.name + ": " + parseFloat(d.value.r) + '<br>' + date;
-                            } else {
-                                 content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
-                            }
-                            return content;
-                        },
-                    xFormatter: function(x) {
-                        return new Date(x * 1000).toTimeString();
-                    },
-                } );
-    	   }
-    } );        
+    // Define the scales
+    var x = d3.time.scale().range([0, width]),
+    x2 = d3.time.scale().range([0, width]),
+    y = d3.scale.linear().range([height, 0]),
+    y2 = d3.scale.linear().range([viewfinderHeight, 0]);
+
+
+    // Define the axes
+    var xAxis = d3.svg.axis().scale(x).orient("bottom"),
+    xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
+    yAxis = d3.svg.axis().scale(y).orient("left");
+
+    var brush = d3.svg.brush()
+    .x(x2)
+    .on("brush", brushed);
+
+    var glucoseLine = d3.svg.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return y(d.y); });
+
+      var viewfinderLine = d3.svg.line()
+      .x(function(d) { return x2(d.date); })
+      .y(function(d) { return y2(d.y); });
+
+   var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+   var focus = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var context = svg.append("g")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+   
+    focus.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+
+    focus.append("rect")
+          .attr("class", "target_range")
+          .attr("clip-path", "url(#rangeClip)")
+          .attr("width", width)
+          .attr("height", height);
+
+    focus.append("g")
+          .attr("class", "y axis")
+          .call(yAxis);
+
+    function brushed() {      
+      x.domain(brush.empty() ? x2.domain() : brush.extent());
+      focus.selectAll("path.self").attr("d", glucoseLine);
+      focus.selectAll("path.steadySailor").attr("d", glucoseLine);
+      focus.select(".x.axis").call(xAxis);
     }
-    function showDashboard()
+
+    context.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + viewfinderHeight + ")")
+          .call(xAxis2);
+
+      context.append("g")
+          .attr("class", "x brush")
+          .call(brush)
+        .selectAll("rect")
+          .attr("y", -6)
+          .attr("height", viewfinderHeight + 7);
+    
+    // That should be the lower bound of the times displayed on the graph
+    // driven by the "self" data
+    d3.json("/{{.PathPrefix}}data", function(error, data) {
+      glucoseReads = data.data[0].data;
+
+      // Trying out the grouping, it doesn't actually use any of this
+      console.log(groupEvents(data.data[1].data, 60));
+      
+      timeRangeLowerBound = glucoseReads[0].x;
+      glucoseReads.forEach(function(d) {
+        d.date = parseDate(d.x * 1000);
+      });
+    
+      x.domain(d3.extent(glucoseReads.map(function(d) { return d.date; })));
+      y.domain([0, MAX_VALUE]);
+      x2.domain(x.domain());
+      y2.domain(y.domain());
+      addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, MAX_VALUE, y);
+
+      addToGraph(focus, "self", context, glucoseReads, y, glucoseLine, viewfinderLine);    
+
+      // Add steady sailor data
+      d3.json("/{{.PathPrefix}}steadySailor", function(error, data) {
+        rawSteadySailor = data.data[0].data;
+        
+        steadySailor = rawSteadySailor
+        if (steadySailor.length > 0) {   
+          offset = steadySailor[0].x - timeRangeLowerBound;              
+          steadySailor.forEach(function(element) {
+            element.x = element.x - offset;          
+          });
+        }
+
+        steadySailor.forEach(function(d) {    
+          d.date = parseDate(d.x * 1000);     
+        });
+
+      addToGraph(focus, "steadySailor", context, steadySailor, y, glucoseLine);
+      });
+    });
+
+    }
+    
+    function addToGraph(focus, className, context, glucoseReads, y, glucoseLineFunc, viewfinderLineFunc) {      
+
+      segments = splitReadsInRangeSegments(glucoseReads);
+
+      for (var i = 0; i < segments.length; i++) {
+        var segment = segments[i];        
+        focus.append("path")
+           .attr("class", className + " " + segment.range)
+           .attr("clip-path", "url(#clip)")
+           .datum(segment.reads)
+           .attr("d", glucoseLineFunc);
+      }
+
+      if(viewfinderLineFunc != undefined) {
+         context.append("path")
+           .datum(glucoseReads)
+           .attr("d", viewfinderLineFunc);  
+      }
+         
+    }
+
+    function addTargetRangeClip(svg, canvasWidth, canvasHeight, id, lowerBound, upperBound, maxDomainValue, y) {
+      svg.append("defs").append("clipPath")
+         .attr("id", id)
+       .append("rect")
+         .attr("width", canvasWidth)
+         .attr("height", y(maxDomainValue - upperBound) - y(maxDomainValue - lowerBound))
+         .attr("y", y(upperBound));
+
+      svg.append("defs").append("clipPath")
+         .attr("id", "clip")
+       .append("rect")
+         .attr("width", canvasWidth)
+         .attr("height", canvasHeight);
+    }
+
+    function getRange(glucoseValue) {
+      if (glucoseValue > TARGET_RANGE_UPPER_BOUND) {
+        return RANGES.HIGH;
+      } else if (glucoseValue <= TARGET_RANGE_UPPER_BOUND && glucoseValue >= TARGET_RANGE_LOWER_BOUND) {
+        return RANGES.NORMAL;
+      } else if (glucoseValue < TARGET_RANGE_LOWER_BOUND) {
+        return RANGES.LOW;
+      }
+    }
+
+    function splitReadsInRangeSegments(glucoseReads) {
+      var segments = [];
+      if (glucoseReads.length > 0) {
+        previousRange = getRange(glucoseReads[0].y);
+        previousRead = glucoseReads[0];
+        var reads = [];
+        for (var i = 0; i < glucoseReads.length; i++) {
+          reads.push(previousRead);
+          currentRead = glucoseReads[i];
+          range = getRange(currentRead.y);
+
+          if (range != previousRange) {
+            reads.push(currentRead);
+            segment = new Object();
+            segment.reads = reads;
+            segment.range = previousRange;
+            segments.push(segment);
+            reads = [];
+          }
+
+          previousRange = range;
+          previousRead = currentRead;
+        }
+        if (reads.length > 0) {
+          segment = new Object();
+          segment.reads = reads;
+          segment.range = previousRange;
+          segments.push(segment);
+        }
+      }
+
+      return segments;
+    }
+
+
+function showDashboard()
     {
         var distribution = null;
         $.getJSON('/{{.PathPrefix}}dashboard', function(data) {
@@ -230,25 +352,13 @@
           $(".dailyHigh").text(data['high']);
           $(".dailyLow").text(data['low']);
 
-        }).fail(function() { 
+        }).fail(function() {
           $("div#overlay").removeClass("hidden");
-           //blurring the text behind the overlay for effect  
+           //blurring the text behind the overlay for effect
           $('.dashboard').addClass("blurryText");
             //noData();
          });
     }
-
-/* testing show an overlay with upload instructions for users with no data 
-  function noData () {
-     console.log('this is a function'); 
-     var overlay = $('<div id="overlay"><div class="row"><div class="large-16 columns noDataGroup"><h2>Uh oh! Looks like you havent uploaded any data yet.</h2>   <img src="images/surprisedglukit.png" id="nodataGlukit"></img></div></div></div>');
-      overlay.appendTo($(".belowHeader"));
-
-    //blurring the text behind the overlay for effect  
-     $('.dashboard').css({'text-shadow': '5px 5px 5px white', 'color':'transparent'});
-  }
-*/
-
 </script>
   <script>
       channel = new goog.appengine.Channel('{{.ChannelToken}}');
@@ -275,42 +385,42 @@
   ('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
   '.js><\/script>')
   </script>
-  
+
   <script src="js/foundation.min.js"></script>
   <!--
-  
+
   <script src="js/foundation/foundation.js"></script>
-  
+
   <script src="js/foundation/foundation.interchange.js"></script>
-  
+
   <script src="js/foundation/foundation.dropdown.js"></script>
-  
+
   <script src="js/foundation/foundation.placeholder.js"></script>
-  
+
   <script src="js/foundation/foundation.forms.js"></script>
-  
+
   <script src="js/foundation/foundation.alerts.js"></script>
-  
+
   <script src="js/foundation/foundation.magellan.js"></script>
-  
+
   <script src="js/foundation/foundation.reveal.js"></script>
-  
+
   <script src="js/foundation/foundation.tooltips.js"></script>
-  
+
   <script src="js/foundation/foundation.clearing.js"></script>
-  
+
   <script src="js/foundation/foundation.cookie.js"></script>
-  
+
   <script src="js/foundation/foundation.joyride.js"></script>
-  
+
   <script src="js/foundation/foundation.orbit.js"></script>
-  
+
   <script src="js/foundation/foundation.section.js"></script>
-  
+
   <script src="js/foundation/foundation.topbar.js"></script>
-  
+
   -->
-  
+
   <script>
     $(document).foundation();
   </script>

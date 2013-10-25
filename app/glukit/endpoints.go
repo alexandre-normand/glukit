@@ -134,17 +134,22 @@ func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.In
 	data := make([]DataSeries, 1)
 
 	data[0] = DataSeries{"GlucoseReads", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
+	var userEvents []model.DataPoint;
 	if injections != nil {
-		data = append(data, DataSeries{"Injections", model.InjectionSlice(injections).ToDataPointSlice(reads), "Injections"})
+		userEvents = model.MergeDataPointArrays(userEvents, model.InjectionSlice(injections).ToDataPointSlice(reads))
 	}
 
-	if carbs != nil {
-		data = append(data, DataSeries{"Carbohydrates", model.CarbSlice(carbs).ToDataPointSlice(reads), "Carbs"})
+    if carbs != nil {
+		userEvents = model.MergeDataPointArrays(userEvents, model.CarbSlice(carbs).ToDataPointSlice(reads))
 	}
 
 	if exercises != nil {
-		data = append(data, DataSeries{"Exercises", model.ExerciseSlice(exercises).ToDataPointSlice(reads), "Exercises"})
+		userEvents = model.MergeDataPointArrays(userEvents, model.ExerciseSlice(exercises).ToDataPointSlice(reads))
 	}
+
+	sort.Sort(model.DataPointSlice(userEvents))
+
+	data = append(data, DataSeries{"UserEvents", userEvents, "UserEvents"})
 
 	return data
 }

@@ -27,14 +27,6 @@ type Coordinate struct {
 	Y int `json:"y"`
 }
 
-// Represents a generic data point in time
-type DataPoint struct {
-	LocalTime string    `json:"label"`
-	Timestamp Timestamp `json:"x"`
-	Y         int       `json:"y"`
-	Value     float32   `json:"r"`
-}
-
 // Represents the logging of a file import
 type FileImportLog struct {
 	Id                string

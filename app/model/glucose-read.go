@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	GLUCOSE_READ_TAG = "GlucoseRead"
+)
+
 // GlucoseRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external
 // meter
 type GlucoseRead struct {
@@ -46,7 +50,7 @@ func (slice GlucoseReadSlice) Swap(i, j int) {
 func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp, slice[i].Value, float32(slice[i].Value)}
+		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp, slice[i].Value, float32(slice[i].Value), GLUCOSE_READ_TAG}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints

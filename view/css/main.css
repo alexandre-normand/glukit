@@ -127,4 +127,46 @@ li.navlink a:hover {
   }
 }
 
+svg {
+  font: 10px sans-serif;
+}
 
+path {
+  stroke: steelblue;
+  fill: none;
+  stroke-width: 1.5px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+.target_range {
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+  fill: #6AC25F;
+}
+
+path.LOW  {
+   stroke: #DE4F33;
+   stroke-width: 1.8px;
+}
+
+path.HIGH  {
+   stroke: #DE7123;
+   stroke-width: 1.8px;
+}
+
+.steadySailor {
+   stroke: #33ad33;
+   stroke-width: 1px;
+}
