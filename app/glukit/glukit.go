@@ -51,7 +51,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 
 	transport := new(oauth.Transport)
 	var oauthToken oauth.Token
-	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
+	glukitUser, _, _, _, err := store.GetUserData(context, user.Email, model.DEFAULT_LOOKBACK_PERIOD)
 	scheduleAutoRefresh := false
 	if err == datastore.ErrNoSuchEntity {
 		oauthToken, transport = getOauthToken(request)

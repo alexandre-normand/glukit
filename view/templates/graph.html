@@ -8,7 +8,7 @@
       <link type="text/css" rel="stylesheet" href="css/graph.css">
       <link type="text/css" rel="stylesheet" href="css/detail.css">
       <link type="text/css" rel="stylesheet" href="css/main.css">
-    	<script src="js/d3.v3.min.js"></script>
+    	<script src="js/d3.v3.js"></script>
     	<script src="js/jquery-2.0.0.min.js"></script>
       <script type="text/javascript" src="/_ah/channel/jsapi"></script>
       <script src="js/main.js"></script>      
@@ -125,9 +125,10 @@
     </div>
   </div>
 <script>
-    var MAX_VALUE = 300;
     var TARGET_RANGE_LOWER_BOUND = 63;
     var TARGET_RANGE_UPPER_BOUND = 127;
+    // Default to 5 hours 
+    var SNAP_DISTANCE_IN_MILLIS = 5 * 2700000;
 
     var RANGES = {
       HIGH: "HIGH",
@@ -161,10 +162,6 @@
     xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
     yAxis = d3.svg.axis().scale(y).orient("left");
 
-    var brush = d3.svg.brush()
-    .x(x2)
-    .on("brush", brushed);
-
     var glucoseLine = d3.svg.line()
       .x(function(d) { return x(d.date); })
       .y(function(d) { return y(d.y); });
@@ -176,67 +173,110 @@
    var svg = d3.select("#chart").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
-
-   var focus = svg.append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    var context = svg.append("g")
-    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
-   
-    focus.append("g")
-          .attr("class", "x axis")
-          .attr("transform", "translate(0," + height + ")")
-          .call(xAxis);
-
-    focus.append("rect")
-          .attr("class", "target_range")
-          .attr("clip-path", "url(#rangeClip)")
-          .attr("width", width)
-          .attr("height", height);
-
-    focus.append("g")
-          .attr("class", "y axis")
-          .call(yAxis);
-
-    function brushed() {      
-      x.domain(brush.empty() ? x2.domain() : brush.extent());
-      focus.selectAll("path.self").attr("d", glucoseLine);
-      focus.selectAll("path.steadySailor").attr("d", glucoseLine);
-      focus.select(".x.axis").call(xAxis);
-    }
-
-    context.append("g")
-          .attr("class", "x axis")
-          .attr("transform", "translate(0," + viewfinderHeight + ")")
-          .call(xAxis2);
-
-      context.append("g")
-          .attr("class", "x brush")
-          .call(brush)
-        .selectAll("rect")
-          .attr("y", -6)
-          .attr("height", viewfinderHeight + 7);
-    
+      
     // That should be the lower bound of the times displayed on the graph
     // driven by the "self" data
     d3.json("/{{.PathPrefix}}data", function(error, data) {
       glucoseReads = data.data[0].data;
 
       // Trying out the grouping, it doesn't actually use any of this
-      console.log(groupEvents(data.data[1].data, 60));
+      var userEventGroups = groupEvents(data.data[1].data, 60);
       
       timeRangeLowerBound = glucoseReads[0].x;
       glucoseReads.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
       });
     
+      var highestOnChart = d3.max(glucoseReads, function(d) { return d.y; }) + 100;
       x.domain(d3.extent(glucoseReads.map(function(d) { return d.date; })));
-      y.domain([0, MAX_VALUE]);
+      y.domain([0, highestOnChart]);
       x2.domain(x.domain());
       y2.domain(y.domain());
-      addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, MAX_VALUE, y);
+
+      var focus = svg.append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var context = svg.append("g")
+      .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+     
+      focus.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+      focus.append("rect")
+            .attr("class", "target_range")
+            .attr("clip-path", "url(#rangeClip)")
+            .attr("width", width)
+            .attr("height", height);
+
+      focus.append("g")
+            .attr("class", "y axis")
+            .call(yAxis);
+
+      context.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + viewfinderHeight + ")")
+            .call(xAxis2);
+
+      addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, highestOnChart, y);
 
       addToGraph(focus, "self", context, glucoseReads, y, glucoseLine, viewfinderLine);    
+
+      function brushed() {      
+        x.domain(brush.empty() ? x2.domain() : brush.extent());        
+        focus.selectAll("path.self").attr("d", glucoseLine);
+        focus.selectAll("path.steadySailor").attr("d", glucoseLine);
+        focus.select(".x.axis").call(xAxis);        
+      }
+
+      // snap to days if close enough
+      function snapBrush() {      
+        if (!d3.event.sourceEvent) return; // only transition after input
+        extent = brush.extent();
+        viewfinderUpperLimit = extent[1];
+
+        // We iterate from most recent since we assume that most users will look at that data more often        
+        for (var i = 0; i < snapGuides.length; i++) {
+           snap = snapGuides[i]
+           
+           diffInMillis = Math.abs(viewfinderUpperLimit - snap);
+           if (diffInMillis <= SNAP_DISTANCE_IN_MILLIS) {              
+              snapExtent = getDayRangeFromUpperBound(snap.getTime() / 1000);              
+              d3.select(this).transition()
+                .call(brush.extent(snapExtent))
+                .call(brush.event)
+                .duration(500)
+                .ease("elastic", 15, .25);  
+              return;
+           }           
+        }
+      }
+
+      mostRecentReadTimeInSeconds = glucoseReads[glucoseReads.length - 1].x;      
+      brushRange = getDayRangeFromUpperBound(mostRecentReadTimeInSeconds);
+
+      // 1 snap every day for 7 days
+      var snapGuides = getDateSnapGuides(mostRecentReadTimeInSeconds, 86400, 7); 
+      
+      var brush = d3.svg.brush()
+         .x(x2)        
+         .extent(brushRange)
+         .on("brush", brushed)
+         .on("brushend", snapBrush);
+     
+      brushElement = context.append("g");
+      brushElement.attr("class", "x brush")
+          .call(brush)
+        .selectAll("rect")
+          .attr("y", -6)
+          .attr("height", viewfinderHeight + 7);
+      
+      // Remove resize handles because we don't want to allow resizing. The brush is fixed to the length of one day
+      brushElement.selectAll(".resize").remove();
+      
+      // Call a first brushed to view the last day only 
+      brushed();
 
       // Add steady sailor data
       d3.json("/{{.PathPrefix}}steadySailor", function(error, data) {

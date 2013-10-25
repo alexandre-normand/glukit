@@ -42,19 +42,19 @@ func personalData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	mostRecentDayAsJson(writer, request, user.Email)
+	mostRecentWeekAsJson(writer, request, user.Email)
 }
 
 // demoContent renders the most recent day's worth of data as json for the demo user
 func demoContent(writer http.ResponseWriter, request *http.Request) {
-	mostRecentDayAsJson(writer, request, DEMO_EMAIL)
+	mostRecentWeekAsJson(writer, request, DEMO_EMAIL)
 }
 
-// mostRecentDayAsJson retrieves the most recent day's worth of data for the user identified by
+// mostRecentWeekAsJson retrieves the most recent day's week worth of data for the user identified by
 // the given email address and writes to the response writer as json
-func mostRecentDayAsJson(writer http.ResponseWriter, request *http.Request, email string) {
+func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
-	glukitUser, _, lowerBound, upperBound, err := store.GetUserData(context, email)
+	glukitUser, _, lowerBound, upperBound, err := store.GetUserData(context, email, time.Duration(-7 * 24) * time.Hour)
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
 		http.Error(writer, err.Error(), 204)
@@ -102,8 +102,9 @@ func demoSteadySailorData(writer http.ResponseWriter, request *http.Request) {
 // find the steady sailor and retrieve his most recent day's worth of data.
 func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request, recipientEmail string) {
 	context := appengine.NewContext(request)
-	steadySailor, _, lowerBound, upperBound, err := store.FindSteadySailor(context, recipientEmail)
+	steadySailor, _, upperBound, err := store.FindSteadySailor(context, recipientEmail)
 
+    lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
 	if err != nil && err == store.ErrNoSteadySailorMatchFound {
 		context.Debugf("No steady sailor match found for user [%s]", recipientEmail)
 		http.Error(writer, err.Error(), 204)
@@ -171,7 +172,7 @@ func demoDashboard(writer http.ResponseWriter, request *http.Request) {
 func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
 
-	userProfile, _, lowerBound, upperBound, err := store.GetUserData(context, email)
+	userProfile, _, lowerBound, upperBound, err := store.GetUserData(context, email, model.DEFAULT_LOOKBACK_PERIOD)
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
 		http.Error(writer, err.Error(), 204)

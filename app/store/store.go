@@ -325,9 +325,9 @@ func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, 
 	return fileImport, nil
 }
 
-// GetUserData returns a GlukitUser entry and the boundaries of its most recent complete day of reads. If the user doesn't have any imported data yet,
-// GetUserData returns ErrNoImportedDataFound
-func GetUserData(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
+// GetUserData returns a GlukitUser entry and the boundaries of its most recent complete reads. This is aligned to complete days, meaning that
+// it "snaps" to the last day ending at 06:00 am. If the user doesn't have any imported data yet, GetUserData returns ErrNoImportedDataFound
+func GetUserData(context appengine.Context, email string, duration time.Duration) (userProfile *model.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
 	key = GetUserKey(context, email)
 	userProfile, err = GetUserProfile(context, key)
 	if err != nil {
@@ -339,13 +339,14 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 		return userProfile, key, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoImportedDataFound
 	} else {
 		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(userProfile.MostRecentRead.LocalTime, userProfile.MostRecentRead.GetTime()))
-		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
+		//time.Duration(-24 * time.Hour)
+		lowerBound = upperBound.Add(duration)
 		return userProfile, key, lowerBound, upperBound, nil
 	}
 }
 
 // FindSteadySailor queries the datastore for others users of the same type of diabetes. It will then select the match that
-// has a top glukit score and return that user profile along with the boundaries for its most recent day of reads.
+// has a top glukit score and return that user profile along with the upper boundary for its most recent day of reads.
 // The steps involved are:
 //    - Find the user profile of the recipient
 //    - Query the data store for profile data that matches (using the type of diabetes) in ascending order of score value
@@ -353,12 +354,12 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 //       * A second time including internal users (if the first one returns no match)
 //    - Filter out the recipient profile that could be returned in the search
 //    - If match found, get the profile of the steady sailor
-func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorProfile *model.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
+func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorProfile *model.GlukitUser, key *datastore.Key, upperBound time.Time, err error) {
 	key = GetUserKey(context, recipientEmail)
 
 	recipientProfile, err := GetUserProfile(context, key)
 	if err != nil {
-		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
+		return nil, nil, util.GLUKIT_EPOCH_TIME, err
 	}
 
 	context.Debugf("Looking for other diabetes of type [%s]", recipientProfile.DiabetesType)
@@ -373,7 +374,7 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 	var steadySailors []model.GlukitUser
 	_, err = query.GetAll(context, &steadySailors)
 	if err != nil {
-		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
+		return nil, nil, util.GLUKIT_EPOCH_TIME, err
 	}
 
 	context.Debugf("Found a few unfiltered matches [%v]", steadySailors)
@@ -401,12 +402,11 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 
 	if sailorProfile == nil {
 		context.Warningf("No steady sailor match found for user [%s] with type of diabetes [%s]", recipientEmail, recipientProfile.DiabetesType)
-		return nil, nil, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoSteadySailorMatchFound
+		return nil, nil, util.GLUKIT_EPOCH_TIME, ErrNoSteadySailorMatchFound
 	} else {
 		context.Infof("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
-		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(sailorProfile.MostRecentRead.LocalTime, sailorProfile.MostRecentRead.GetTime()))
-		lowerBound = upperBound.Add(time.Duration(-24 * time.Hour))
-		return sailorProfile, GetUserKey(context, sailorProfile.Email), lowerBound, upperBound, nil
+		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(sailorProfile.MostRecentRead.LocalTime, sailorProfile.MostRecentRead.GetTime()))		
+		return sailorProfile, GetUserKey(context, sailorProfile.Email), upperBound, nil
 	}
 }
 
