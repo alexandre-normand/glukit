@@ -13,8 +13,7 @@ function groupEvents(userEvents, resolutionInMinutes) {
 		currentGroup = [];
 		for (var i = 0; i < userEvents.length; i++) {	
 
-			currentEvent = userEvents[i];
-			console.log("looking at event " + currentEvent);
+			currentEvent = userEvents[i];			
 			if (eventWithinResolution(firstEventOfGroup, currentEvent, resolutionInMinutes)) {
 				currentGroup.push(currentEvent);
 			} else {
@@ -37,4 +36,20 @@ function eventWithinResolution(first, other, resolutionInMinutes) {
 	else {
 		return false;
 	}
+}
+
+function getDateSnapGuides(upperTimestamp, intervalInSeconds, numberOfSnaps) {
+	snapGuides = [new Date(upperTimestamp * 1000)];
+	currentSnapGuide = upperTimestamp;
+	for (var i = 0; i < numberOfSnaps; i++) {
+		currentSnapGuide = currentSnapGuide - intervalInSeconds;
+		snapGuides.push(new Date(currentSnapGuide * 1000)); 
+    }
+
+    return snapGuides;
+}
+
+function getDayRangeFromUpperBound(upperTimestampInSeconds) {	
+    lowerTimestamp = upperTimestampInSeconds - 86400;
+    return [new Date(lowerTimestamp * 1000), new Date(upperTimestampInSeconds * 1000)];
 }

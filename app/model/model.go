@@ -14,6 +14,7 @@ const (
 	UNDEFINED_READ        = -1
 	EXERCISE_VALUE_FORMAT = "%d,%s"
 	UNDEFINED_SCORE_VALUE = int64(math.MaxInt64)
+	DEFAULT_LOOKBACK_PERIOD = time.Duration(-7 * 24) * time.Hour
 )
 
 // "Dynamic" constants, those should never be updated

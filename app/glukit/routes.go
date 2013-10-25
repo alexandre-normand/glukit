@@ -87,7 +87,7 @@ func oauthCallback(writer http.ResponseWriter, request *http.Request) {
 func renderDemo(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	_, key, _, _, err := store.GetUserData(context, DEMO_EMAIL)
+	_, key, _, _, err := store.GetUserData(context, DEMO_EMAIL, model.DEFAULT_LOOKBACK_PERIOD)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
 		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
@@ -144,7 +144,7 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	glukitUser, _, _, _, err := store.GetUserData(context, user.Email)
+	glukitUser, _, _, _, err := store.GetUserData(context, user.Email, model.DEFAULT_LOOKBACK_PERIOD)
 	if _, ok := err.(store.StoreError); err != nil && !ok || len(glukitUser.RefreshToken) == 0 {
 		context.Infof("Redirecting [%s], glukitUser [%v] for authorization. Error: [%v]", user.Email, glukitUser, err)
 
