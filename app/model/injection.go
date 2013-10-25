@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+const (
+	INSULIN_TAG = "Insulin"
+)
+
 // Injection represents an insulin injection
 type Injection struct {
 	LocalTime          string    `json:"label" datastore:"localtime,noindex"`
@@ -42,7 +46,7 @@ func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataP
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
-			linearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Units}
+			linearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Units, INSULIN_TAG}
 		dataPoints[i] = dataPoint
 	}
 

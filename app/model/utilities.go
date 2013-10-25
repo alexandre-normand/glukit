@@ -30,3 +30,10 @@ func linearInterpolateY(reads []GlucoseRead, timeValue Timestamp) (yValue int) {
 
 	return yValue
 }
+
+func MergeDataPointArrays(first, second []DataPoint) []DataPoint {
+	newslice := make([]DataPoint, len(first)+len(second))
+	copy(newslice, first)
+	copy(newslice[len(first):], second)
+	return newslice
+}
