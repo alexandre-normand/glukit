@@ -32,7 +32,7 @@ var BERNSTEIN_BIRTH_DATE, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "1934-06-17 00:0
 func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request) {
 	context := appengine.NewContext(reader)
 
-	_, _, _, _, err := store.GetUserData(context, GLUKIT_BERNSTEIN_EMAIL, model.DEFAULT_LOOKBACK_PERIOD)
+	_, _, _, err := store.GetUserData(context, GLUKIT_BERNSTEIN_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		context.Infof("No data found for glukit bernstein user [%s], creating it", GLUKIT_BERNSTEIN_EMAIL)
 		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}

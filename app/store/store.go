@@ -327,21 +327,19 @@ func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, 
 
 // GetUserData returns a GlukitUser entry and the boundaries of its most recent complete reads. This is aligned to complete days, meaning that
 // it "snaps" to the last day ending at 06:00 am. If the user doesn't have any imported data yet, GetUserData returns ErrNoImportedDataFound
-func GetUserData(context appengine.Context, email string, duration time.Duration) (userProfile *model.GlukitUser, key *datastore.Key, lowerBound time.Time, upperBound time.Time, err error) {
+func GetUserData(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, upperBound time.Time, err error) {
 	key = GetUserKey(context, email)
 	userProfile, err = GetUserProfile(context, key)
 	if err != nil {
-		return nil, nil, time.Unix(0, 0), time.Unix(math.MaxInt64, math.MaxInt64), err
+		return nil, nil, util.GLUKIT_EPOCH_TIME, err
 	}
 
 	// If the most recent read is still at the beginning on time, we know no data has been imported yet
 	if util.GLUKIT_EPOCH_TIME.Equal(userProfile.MostRecentRead.GetTime()) {
-		return userProfile, key, util.GLUKIT_EPOCH_TIME, util.GLUKIT_EPOCH_TIME, ErrNoImportedDataFound
+		return userProfile, key, util.GLUKIT_EPOCH_TIME, ErrNoImportedDataFound
 	} else {
 		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(userProfile.MostRecentRead.LocalTime, userProfile.MostRecentRead.GetTime()))
-		//time.Duration(-24 * time.Hour)
-		lowerBound = upperBound.Add(duration)
-		return userProfile, key, lowerBound, upperBound, nil
+		return userProfile, key, upperBound, nil
 	}
 }
 
@@ -405,7 +403,7 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 		return nil, nil, util.GLUKIT_EPOCH_TIME, ErrNoSteadySailorMatchFound
 	} else {
 		context.Infof("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
-		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(sailorProfile.MostRecentRead.LocalTime, sailorProfile.MostRecentRead.GetTime()))		
+		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(sailorProfile.MostRecentRead.LocalTime, sailorProfile.MostRecentRead.GetTime()))
 		return sailorProfile, GetUserKey(context, sailorProfile.Email), upperBound, nil
 	}
 }

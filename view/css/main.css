@@ -140,8 +140,12 @@ path {
 .axis path,
 .axis line {
   fill: none;
-  stroke: #000;
+  stroke: #B0B0B0;
   shape-rendering: crispEdges;
+}
+
+.axis text {
+  fill: #595959;
 }
 
 .brush .extent {
@@ -164,6 +168,18 @@ path.LOW  {
 path.HIGH  {
    stroke: #DE7123;
    stroke-width: 1.8px;
+}
+
+path.Insulin {
+   fill: #53D0E0;   
+   stroke-width: 0px;
+   fill-opacity: 0.75;
+}
+
+path.Carbs {
+   fill: #F7BE39;   
+   stroke-width: 0px;
+   fill-opacity: 0.75;
 }
 
 .steadySailor {

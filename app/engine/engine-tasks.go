@@ -24,7 +24,7 @@ const (
 )
 
 func RunGlukitScoreBatchCalculation(context appengine.Context, userEmail string, lowerBound time.Time) {
-	glukitUser, _, _, _, err := store.GetUserData(context, userEmail, model.DEFAULT_LOOKBACK_PERIOD)
+	glukitUser, _, _, err := store.GetUserData(context, userEmail)
 	if _, ok := err.(store.StoreError); err != nil && !ok {
 		context.Errorf("We're trying to run an batch glukit score calculation for user [%s] that doesn't exist. "+
 			"Got error: %v", userEmail, err)
