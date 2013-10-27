@@ -166,9 +166,36 @@
       .x(function(d) { return x(d.date); })
       .y(function(d) { return y(d.y); });
 
-      var viewfinderLine = d3.svg.line()
+    var viewfinderLine = d3.svg.line()
       .x(function(d) { return x2(d.date); })
       .y(function(d) { return y2(d.y); });
+
+    // Find a way to change those as the viewfinder moves
+    var userEventArc = d3.svg.arc()
+      .innerRadius(2)
+      .outerRadius(7)      
+      .startAngle(function(d)
+           {
+            switch (d.type) {
+              case "full":                 
+                return 0 * Math.PI;
+              case "left":                 
+                return 1 * Math.PI;
+              case "right":                
+                return 1 * Math.PI;
+             }                      
+           
+             })
+      .endAngle(function(d)
+           {
+           switch (d.type) {
+            case "full": 
+              return 2 * Math.PI;
+            case "left": 
+              return 2 * Math.PI;
+            case "right":
+              return 0 * Math.PI;
+          } });
 
    var svg = d3.select("#chart").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -178,10 +205,8 @@
     // driven by the "self" data
     d3.json("/{{.PathPrefix}}data", function(error, data) {
       glucoseReads = data.data[0].data;
+      userEvents = data.data[1].data;
 
-      // Trying out the grouping, it doesn't actually use any of this
-      var userEventGroups = groupEvents(data.data[1].data, 60);
-      
       timeRangeLowerBound = glucoseReads[0].x;
       glucoseReads.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
@@ -223,10 +248,32 @@
 
       addToGraph(focus, "self", context, glucoseReads, y, glucoseLine, viewfinderLine);    
 
+      // Trying out the grouping, it doesn't actually use any of this
+      userEvents.forEach(function(d) {
+        d.date = parseDate(d.x * 1000);
+      });
+      var userEventGroups = groupEvents(userEvents, 60);
+
+      // The clip path needs to be set on the group of userEvents and NOT on the individual arcs because otherwise,
+      // the arcs will get clipped before the transformation and we're never going to be able to get a full circle or 
+      // semi-circle
+      userEventsSvg = focus.append("g").attr("class", "userEvents").attr("clip-path", "url(#clip)");
+      for (var i = 0; i < userEventGroups.length; i++) {
+        markers = generateEventMarkers(userEventGroups[i]);
+        for (var j = 0; j < markers.length; j++) {          
+          userEventsSvg.append("path")
+           .attr("class", "event " + markers[j].tag)
+           .attr("transform", "translate(" + x(markers[j].date) + "," + y(markers[j].y) + ")")                      
+           .datum(markers[j])           
+           .attr("d", userEventArc);      
+         }        
+      }      
+
       function brushed() {      
         x.domain(brush.empty() ? x2.domain() : brush.extent());        
         focus.selectAll("path.self").attr("d", glucoseLine);
-        focus.selectAll("path.steadySailor").attr("d", glucoseLine);
+        focus.selectAll("path.steadySailor").attr("d", glucoseLine);         
+        focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
         focus.select(".x.axis").call(xAxis);        
       }
 
@@ -274,6 +321,8 @@
       
       // Remove resize handles because we don't want to allow resizing. The brush is fixed to the length of one day
       brushElement.selectAll(".resize").remove();
+      // Disable cross-hair cursor to avoid user overriding the brush completely
+      brushElement.selectAll(".background").style("cursor", "auto");;
       
       // Call a first brushed to view the last day only 
       brushed();
@@ -463,6 +512,6 @@ function showDashboard()
 
   <script>
     $(document).foundation();
-  </script>
+  </script>  
   </body>
 </html>

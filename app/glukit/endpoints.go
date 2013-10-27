@@ -54,7 +54,9 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 // the given email address and writes to the response writer as json
 func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
-	glukitUser, _, lowerBound, upperBound, err := store.GetUserData(context, email, time.Duration(-7 * 24) * time.Hour)
+	glukitUser, _, upperBound, err := store.GetUserData(context, email)
+	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
+
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
 		http.Error(writer, err.Error(), 204)
@@ -104,7 +106,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	context := appengine.NewContext(request)
 	steadySailor, _, upperBound, err := store.FindSteadySailor(context, recipientEmail)
 
-    lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
+	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
 	if err != nil && err == store.ErrNoSteadySailorMatchFound {
 		context.Debugf("No steady sailor match found for user [%s]", recipientEmail)
 		http.Error(writer, err.Error(), 204)
@@ -135,12 +137,12 @@ func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.In
 	data := make([]DataSeries, 1)
 
 	data[0] = DataSeries{"GlucoseReads", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
-	var userEvents []model.DataPoint;
+	var userEvents []model.DataPoint
 	if injections != nil {
 		userEvents = model.MergeDataPointArrays(userEvents, model.InjectionSlice(injections).ToDataPointSlice(reads))
 	}
 
-    if carbs != nil {
+	if carbs != nil {
 		userEvents = model.MergeDataPointArrays(userEvents, model.CarbSlice(carbs).ToDataPointSlice(reads))
 	}
 
@@ -172,7 +174,9 @@ func demoDashboard(writer http.ResponseWriter, request *http.Request) {
 func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
 
-	userProfile, _, lowerBound, upperBound, err := store.GetUserData(context, email, model.DEFAULT_LOOKBACK_PERIOD)
+	userProfile, _, upperBound, err := store.GetUserData(context, email)
+	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
+
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
 		http.Error(writer, err.Error(), 204)
