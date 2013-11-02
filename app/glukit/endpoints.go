@@ -18,10 +18,12 @@ import (
 
 // Represents a DataResponse with an array of DataSeries and some metadata
 type DataResponse struct {
-	Name      string             `json:"name"`
+	FirstName string             `json:"firstName"`
+	LastName  string             `json:"lastName"`
 	Score     *model.GlukitScore `json:"score"`
 	Data      []DataSeries       `json:"data"`
-	AvatarUrl string             `json:"avatar"`
+	Picture   string             `json:"picture"`
+	LastSync  time.Time          `json:"lastSync"`
 }
 
 // Represents a generic DataSeries structure with a series of DataPoints
@@ -83,7 +85,7 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{Name: glukitUser.FirstName, Score: &glukitUser.MostRecentScore, Data: generateDataSeriesFromData(reads, injections, carbs, exercises), AvatarUrl: ""}
+		response := DataResponse{FirstName: glukitUser.FirstName, LastName: glukitUser.LastName, Score: &glukitUser.MostRecentScore, Data: generateDataSeriesFromData(reads, injections, carbs, exercises), Picture: glukitUser.PictureUrl, LastSync: glukitUser.MostRecentRead.GetTime()}
 		writeAsJson(writer, response)
 	}
 }
@@ -121,7 +123,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{Name: steadySailor.FirstName, Score: &steadySailor.MostRecentScore, Data: generateDataSeriesFromData(reads, nil, nil, nil), AvatarUrl: ""}
+		response := DataResponse{FirstName: steadySailor.FirstName, LastName: steadySailor.LastName, Score: &steadySailor.MostRecentScore, Data: generateDataSeriesFromData(reads, nil, nil, nil), Picture: steadySailor.PictureUrl, LastSync: steadySailor.MostRecentRead.GetTime()}
 		writeAsJson(writer, response)
 	}
 }

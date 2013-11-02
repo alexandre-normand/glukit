@@ -38,7 +38,7 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
 		userProfileKey, err := store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{GLUKIT_BERNSTEIN_EMAIL, "Glukit", "Bernstein", BERNSTEIN_BIRTH_DATE, model.DIABETES_TYPE_1, "America/New_York", time.Now(),
-				BERNSTEIN_MOST_RECENT_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true})
+				BERNSTEIN_MOST_RECENT_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, ""})
 		if err != nil {
 			util.Propagate(err)
 		}
