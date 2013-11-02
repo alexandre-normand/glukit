@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"lib/drive"
 	"lib/goauth2/oauth"
+	"lib/oauth2"
 	"net/http"
 	"time"
 )
@@ -57,13 +58,15 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 		oauthToken, transport = getOauthToken(request)
 
 		context.Infof("No data found for user [%s], creating it", user.Email)
+
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when
 		// this is ready
 		// We store the refresh token separately from the rest. This token is long-lived, meaning that if
 		// we have a glukit user with no refresh token, we need to force getting a new one (which is to be avoided)
-		_, err = store.StoreUserProfile(context, time.Now(), model.GlukitUser{user.Email, "", "", time.Now(),
+		glukitUser = &model.GlukitUser{user.Email, "", "", time.Now(),
 			"", "", util.GLUKIT_EPOCH_TIME, model.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
-			model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false})
+			model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, ""}
+		_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
 		if err != nil {
 			util.Propagate(err)
 		}
@@ -100,7 +103,6 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 					"with the force approval.", user.Email)
 				oauthToken, transport = getOauthToken(request)
 				glukitUser.RefreshToken = oauthToken.RefreshToken
-				store.StoreUserProfile(context, time.Now(), *glukitUser)
 			} else {
 				transport.Token.RefreshToken = glukitUser.RefreshToken
 
@@ -110,13 +112,30 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 				context.Debugf("Storing new refreshed token [%s] in datastore...", oauthToken)
 				glukitUser.LastUpdated = time.Now()
 				glukitUser.Token = oauthToken
-				_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
-				if err != nil {
-					util.Propagate(err)
-				}
 			}
-
 		}
+	}
+
+	// Refresh and store the profile
+	if service, err := oauth2.New(transport.Client()); err != nil {
+		util.Propagate(err)
+	} else {
+		getRequest := service.Userinfo.Get()
+		if userInfo, err := getRequest.Do(); err != nil {
+			util.Propagate(err)
+
+		} else {
+			context.Infof("User profile refreshed to %v", userInfo)
+
+			glukitUser.PictureUrl = userInfo.Picture
+			glukitUser.FirstName = userInfo.Given_name
+			glukitUser.LastName = userInfo.Family_name
+		}
+	}
+
+	_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
+	if err != nil {
+		util.Propagate(err)
 	}
 
 	task, err := refreshUserData.Task(user.Email, scheduleAutoRefresh)
