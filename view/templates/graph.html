@@ -430,7 +430,7 @@
           hoverleftposition = event.clientX - containerLeftPosition;
           hoverbox.style("left",  hoverleftposition + "px" );        
           
-          hoverbox.text("Glucose " + Math.round(coordinates.y));                         
+          hoverbox.text(Math.round(coordinates.y) + " mg/dl");                         
         }, false);      
 
         chartBackground.addEventListener('mouseover', function(event) { 
