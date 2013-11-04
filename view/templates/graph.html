@@ -366,7 +366,7 @@
       addToGraph(focus, "steadySailor", context, steadySailor, y, glucoseLine);
       });           
       
-      addBackgroundAndHover(focus, glucoseReads, width, height, x, y, focusCoordinates, chartContainerElement.getBoundingClientRect().left, hoverbox, focusLine);
+      addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement.getBoundingClientRect().left, hoverbox, focusLine);
     });
 
     }
@@ -407,7 +407,7 @@
          .attr("height", canvasHeight);
     }    
 
-    function addBackgroundAndHover(focus, glucoseReads, width, height, x, y, focusCoordinates, containerLeftPosition, hoverbox, focusLine) {
+    function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, containerLeftPosition, hoverbox, focusLine) {
       // We add a background so that we have a svg area to register the mouse 
       // movement
       var background = focus.append("rect")
