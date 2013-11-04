@@ -42,7 +42,12 @@ function eventWithinResolution(first, other, resolutionInMinutes) {
 }
 
 function getDateSnapGuides(upperTimestamp, intervalInSeconds, numberOfSnaps) {
-	snapGuides = [new Date(upperTimestamp * 1000)];
+	// Round the upper snap limit to the nearest hour
+	var upperTimestamp = new Date(upperTimestamp * 1000);
+	upperTimestamp.setMinutes(upperTimestamp.getMinutes() + 30);
+	upperTimestamp.setMinutes(0);
+	snapGuides = [upperTimestamp];
+
 	currentSnapGuide = upperTimestamp;
 	for (var i = 0; i < numberOfSnaps; i++) {
 		currentSnapGuide = currentSnapGuide - intervalInSeconds;
@@ -93,4 +98,119 @@ function generateEventMarkers(userEventGroup) {
     }
     
     return parts;
+}
+
+function splitReadsInRangeSegments(glucoseReads) {
+  var segments = [];
+  if (glucoseReads.length > 0) {
+    previousRange = getRange(glucoseReads[0].y);
+    previousRead = glucoseReads[0];
+    var reads = [];
+    for (var i = 0; i < glucoseReads.length; i++) {
+      reads.push(previousRead);
+      currentRead = glucoseReads[i];
+      range = getRange(currentRead.y);
+
+      if (range != previousRange) {      	
+      	// We could interpolate a read directly on the boundary 
+      	// (we know the y value, we need to interpolate x) instead of duplicating
+      	// a read to have a continuous line that crosses the boundaries
+        reads.push(currentRead);
+        segment = new Object();
+        segment.reads = reads;
+        segment.range = previousRange;
+        segments.push(segment);
+        reads = [];
+      }
+
+      previousRange = range;
+      previousRead = currentRead;
+    }
+    if (reads.length > 0) {
+      segment = new Object();
+      segment.reads = reads;
+      segment.range = previousRange;
+      segments.push(segment);
+    }
+  }
+
+  return segments;
+}
+
+function getRange(glucoseValue) {
+  if (glucoseValue > TARGET_RANGE_UPPER_BOUND) {
+    return RANGES.HIGH;
+  } else if (glucoseValue <= TARGET_RANGE_UPPER_BOUND && glucoseValue >= TARGET_RANGE_LOWER_BOUND) {
+    return RANGES.NORMAL;
+  } else if (glucoseValue < TARGET_RANGE_LOWER_BOUND) {
+    return RANGES.LOW;
+  }
+}    
+
+/**
+ * Performs a binary search on the host array. This method can either be
+ * injected into Array.prototype or called with a specified scope like this:
+ * binaryIndexOf.call(someArray, searchElement);
+ *
+ * @param {*} searchElement The item to search for within the array.
+ * @return {Number} The index of the element which defaults to -1 when not found.
+ */
+function binaryIndexOf(searchElement) {
+	'use strict';
+	var timestamp = searchElement.getTime() / 1000;
+	var minIndex = 0;
+	var maxIndex = this.length - 1;
+	var currentIndex;
+	var currentElement;
+	var resultIndex;
+
+	while (minIndex <= maxIndex) {
+		resultIndex = currentIndex = (minIndex + maxIndex) / 2 | 0;
+		currentElement = this[currentIndex];		        
+        
+		if (currentElement.x < timestamp) {
+			minIndex = currentIndex + 1;
+		}
+		else if (currentElement.x > timestamp) {
+			maxIndex = currentIndex - 1;
+		}
+		else {
+			return currentIndex;
+		}
+	}
+
+	return ~maxIndex;
+}
+
+function millisToDate(timestamp) {
+	return new Date(timestamp);
+}
+
+function getHoverCoordinates(glucoseReads, time) {
+	var glucoseIndex = Math.abs(binaryIndexOf.call(glucoseReads, time));
+    var coordinates = new Object();
+
+	if (glucoseIndex == glucoseReads.length - 1) {
+		read = glucoseReads[glucoseReads.length - 1];
+		coordinates.x = reads.x;
+		coordinates.y = reads.y;		
+	} else {
+		coordinates.y = interpolateGlucoseRead(glucoseReads[glucoseIndex], glucoseReads[glucoseIndex + 1], time);
+		coordinates.x = time;
+	}
+
+	return coordinates;
+}
+
+function interpolateGlucoseRead(left, right, time) {
+	timestamp = time.getTime() / 1000;
+
+	// gap between the two reads
+	gap = right.x - left.x;
+
+    // Calculate interpolation weights for left/right values
+	leftWeight = (timestamp - left.x) / gap;
+	rightWeight = 1 - leftWeight;
+
+	return left.y * leftWeight + right.y * rightWeight;
 }

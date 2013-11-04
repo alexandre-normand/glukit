@@ -186,3 +186,25 @@ path.Carbs {
    stroke: #33ad33;
    stroke-width: 1px;
 }
+
+.background {  
+  fill-opacity: 0;
+  stroke-width: 0;
+}
+
+.hoverbox {
+  background-color: rgba(190, 217, 247, 0.5);
+  color: rgba(70, 175, 250, 0.8);
+  position: absolute;
+  width: 120px;  
+  top: 50px;  
+  left: 0px;
+  padding: 10px;
+  display: none;
+}
+
+.focusLine {
+  stroke-width: 0.8px;
+  stroke: #B0B0B0;
+  stroke-dasharray: 4, 2;
+}

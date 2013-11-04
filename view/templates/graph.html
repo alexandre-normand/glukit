@@ -103,15 +103,12 @@
       <div class="row">
         <div class="large-16 columns">
           <div class="slab graph">
-            <div id="chart_container">
-            <div id="y_axis"></div>
-            <div id="chart" style="clear: both"></div>
-            <div id="injections_chart" style="clear: both"></div>
-            <div id="legend_container">
-              <div id="smoother" title="Smoothing"></div>
-            <div id="legend"></div>
+            <div id="chart_container">            
+              <div id="y_axis"></div>
+              <div id="chart" style="clear: both"></div>
+              <div id="hoverbox" class="hoverbox"></div>                        
             </div>
-            <div id="slider"></div>
+            <div id="slider"></div>            
           </div>
           </div>
         </div>
@@ -155,7 +152,6 @@
     x2 = d3.time.scale().range([0, width]),
     y = d3.scale.linear().range([height, 0]),
     y2 = d3.scale.linear().range([viewfinderHeight, 0]);
-
 
     // Define the axes
     var xAxis = d3.svg.axis().scale(x).orient("bottom"),
@@ -218,7 +214,7 @@
       x2.domain(x.domain());
       y2.domain(y.domain());
 
-      var focus = svg.append("g")
+      var focus = svg.append("g")      
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
       var context = svg.append("g")
@@ -238,6 +234,30 @@
       focus.append("g")
             .attr("class", "y axis")
             .call(yAxis);
+
+      var focusLine = d3.svg.line()
+                    .x(function(d) { return x(d.x); })
+                    .y(function(d) { return d.y; })
+                    .interpolate('linear');
+
+      var focusCoordinates = [];
+      focusCoordinates[0] = new Object();
+      focusCoordinates[1] = new Object();
+      
+      focusCoordinates[0].x = 0;
+      focusCoordinates[0].y = 0;
+      focusCoordinates[1].x = 0;
+      focusCoordinates[1].y = height;
+
+      var focusLineElement = focus.append("path")
+            .attr("id", "focusLine")
+            .attr("class", "focusLine")
+            .attr("clip-path", "url(#clip)")
+            .datum(focusCoordinates)
+            .attr("d", focusLine);
+
+      var hoverbox = d3.select("#hoverbox");   
+      var chartContainerElement = d3.select("#chart_container")[0][0];   
 
       context.append("g")
             .attr("class", "x axis")
@@ -344,7 +364,9 @@
         });
 
       addToGraph(focus, "steadySailor", context, steadySailor, y, glucoseLine);
-      });
+      });           
+      
+      addBackgroundAndHover(focus, glucoseReads, width, height, x, y, focusCoordinates, chartContainerElement.getBoundingClientRect().left, hoverbox, focusLine);
     });
 
     }
@@ -383,52 +405,44 @@
        .append("rect")
          .attr("width", canvasWidth)
          .attr("height", canvasHeight);
+    }    
+
+    function addBackgroundAndHover(focus, glucoseReads, width, height, x, y, focusCoordinates, containerLeftPosition, hoverbox, focusLine) {
+      // We add a background so that we have a svg area to register the mouse 
+      // movement
+      var background = focus.append("rect")
+            .attr("id", "background")
+            .attr("class", "background")            
+            .attr("clip-path", "url(#clip)")            
+            .attr("width", width)
+            .attr("height", height);
+        chartBackground = background[0][0];
+        chartBackground.addEventListener('mousemove',function(event){
+          var rect = this.getBoundingClientRect();        
+          var left = event.clientX  - rect.left - this.clientLeft + this.scrollLeft;
+          var top = event.clientY - rect.top - this.clientTop + this.scrollTop;
+
+          var time = x.invert(left);        
+          coordinates = getHoverCoordinates(glucoseReads, time);
+          focusCoordinates[1].x = focusCoordinates[0].x = coordinates.x;
+          focus.selectAll("#focusLine").attr("d", focusLine);
+
+          hoverleftposition = event.clientX - containerLeftPosition;
+          hoverbox.style("left",  hoverleftposition + "px" );        
+          
+          hoverbox.text("Glucose " + Math.round(coordinates.y));                         
+        }, false);      
+
+        chartBackground.addEventListener('mouseover', function(event) { 
+          d3.select(".hoverbox").style("display", "block"); 
+          d3.select(".focusLine").style("display", "block"); 
+        });          
+        chartBackground.addEventListener('mouseout', function(event) { 
+          d3.select(".hoverbox").style("display", "none");
+          d3.select(".focusLine").style("display", "none");
+        } );          
+
     }
-
-    function getRange(glucoseValue) {
-      if (glucoseValue > TARGET_RANGE_UPPER_BOUND) {
-        return RANGES.HIGH;
-      } else if (glucoseValue <= TARGET_RANGE_UPPER_BOUND && glucoseValue >= TARGET_RANGE_LOWER_BOUND) {
-        return RANGES.NORMAL;
-      } else if (glucoseValue < TARGET_RANGE_LOWER_BOUND) {
-        return RANGES.LOW;
-      }
-    }
-
-    function splitReadsInRangeSegments(glucoseReads) {
-      var segments = [];
-      if (glucoseReads.length > 0) {
-        previousRange = getRange(glucoseReads[0].y);
-        previousRead = glucoseReads[0];
-        var reads = [];
-        for (var i = 0; i < glucoseReads.length; i++) {
-          reads.push(previousRead);
-          currentRead = glucoseReads[i];
-          range = getRange(currentRead.y);
-
-          if (range != previousRange) {
-            reads.push(currentRead);
-            segment = new Object();
-            segment.reads = reads;
-            segment.range = previousRange;
-            segments.push(segment);
-            reads = [];
-          }
-
-          previousRange = range;
-          previousRead = currentRead;
-        }
-        if (reads.length > 0) {
-          segment = new Object();
-          segment.reads = reads;
-          segment.range = previousRange;
-          segments.push(segment);
-        }
-      }
-
-      return segments;
-    }
-
 
 function showDashboard()
     {
