@@ -148,9 +148,11 @@ func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.In
 		userEvents = model.MergeDataPointArrays(userEvents, model.CarbSlice(carbs).ToDataPointSlice(reads))
 	}
 
-	if exercises != nil {
-		userEvents = model.MergeDataPointArrays(userEvents, model.ExerciseSlice(exercises).ToDataPointSlice(reads))
-	}
+	// TODO: clean up exercise from all the app or restore it. We won't be using it at the moment as we don't think the exercise data
+	// from the dexcom is good enough
+	// if exercises != nil {
+	// 	userEvents = model.MergeDataPointArrays(userEvents, model.ExerciseSlice(exercises).ToDataPointSlice(reads))
+	// }
 
 	sort.Sort(model.DataPointSlice(userEvents))
 
