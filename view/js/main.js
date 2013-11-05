@@ -5,23 +5,46 @@ $(document).ready(function closeMenu () {
 	});
 })
 
+function EventGroup() {
+	this.x;
+	this.includesInsulin = false;
+	this.includesFood = false;
+	this.userEvents = [];	
+}
+
+EventGroup.prototype.addEvent = function(userEvent) {
+		if (this.userEvents.length < 1) {			
+			this.date = userEvent.date;
+			this.x = userEvent.x;
+		}
+		switch (userEvent.tag) {
+          case "Insulin":                 
+            this.includesInsulin = true;
+            break;
+          case "Carbs":                 
+            this.includesFood = true;
+            break;
+        }  
+		this.userEvents.push(userEvent);
+	}
+
+EventGroup.prototype.valueOf = function() { return this.time; };
+
 function groupEvents(userEvents, resolutionInMinutes) {
 	eventGroups = [];
 	if (userEvents.length > 0) {
 		firstEventOfGroup = userEvents[0];
 		
-		currentGroup = [];
+		currentGroup = new EventGroup();
 		for (var i = 0; i < userEvents.length; i++) {	
-
-			currentEvent = userEvents[i];
-			// Add indicator to the group that the type of event is present in it
-			currentGroup[currentEvent.tag] = true;
+			currentEvent = userEvents[i];			
 
 			if (eventWithinResolution(firstEventOfGroup, currentEvent, resolutionInMinutes)) {
-				currentGroup.push(currentEvent);								
+				currentGroup.addEvent(currentEvent);								
 			} else {
 				eventGroups.push(currentGroup);
-				currentGroup = [currentEvent];
+				currentGroup = new EventGroup();
+				currentGroup.addEvent(currentEvent);
 				firstEventOfGroup = currentEvent;				
 			}
 			
@@ -68,31 +91,31 @@ function radiansFromDegree(degree) {
 
 function generateEventMarkers(userEventGroup) {
 	var parts = []
-    if (userEventGroup.hasOwnProperty("Insulin") && userEventGroup.hasOwnProperty("Carbs")) {
+    if (userEventGroup.includesFood && userEventGroup.includesInsulin) {
       left = new Object();
       left.type = "left";
       left.tag = "Carbs";
-      left.date = userEventGroup[0].date;
-      left.x = userEventGroup[0].x;
-      left.y = userEventGroup[0].y;
+      left.date = userEventGroup.date;
+      left.x = userEventGroup.userEvents[0].x;
+      left.y = userEventGroup.userEvents[0].y;
       
       parts.push(left);
 
       right = new Object();
       right.type = "right";
       right.tag = "Insulin";
-      right.date = userEventGroup[0].date;
-      right.x = userEventGroup[0].x;
-      right.y = userEventGroup[0].y;
+      right.date = userEventGroup.date;
+      right.x = userEventGroup.userEvents[0].x;
+      right.y = userEventGroup.userEvents[0].y;
 
       parts.push(right);
     } else {
       whole = new Object();
       whole.type = "full";
-      whole.tag = userEventGroup[0].tag;
-      whole.date = userEventGroup[0].date;
-      whole.x = userEventGroup[0].x;
-      whole.y = userEventGroup[0].y;
+      whole.tag = userEventGroup.userEvents[0].tag;
+      whole.date = userEventGroup.date;
+      whole.x = userEventGroup.userEvents[0].x;
+      whole.y = userEventGroup.userEvents[0].y;
 
       parts.push(whole);
     }
@@ -213,4 +236,34 @@ function interpolateGlucoseRead(left, right, time) {
 	rightWeight = 1 - leftWeight;
 
 	return left.y * leftWeight + right.y * rightWeight;
+}
+
+function isHoveringEventGroup(userEventGroup, searchElement) {
+	var timestamp = searchElement.getTime() / 1000;
+	// We consider hovering if the cursor is withing 1800 seconds (30 minutes)
+	// from the event
+	if (Math.abs(timestamp - userEventGroup.x) < 1800) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function appendUserEventsToHoverBox(hoverbox, userEventGroup) {		
+    for (var i = 0; i < userEventGroup.userEvents.length; i++) {    	      
+      userEvent = userEventGroup.userEvents[i];
+      eventTime = new Date(userEvent.x * 1000);
+
+      lineText = userEvent.value;
+      if (userEvent.tag === "Insulin") {
+      	lineText = lineText + " units";
+      } else {
+      	lineText = lineText + " grams";
+      }
+      lineText = lineText + " at " + moment(eventTime).format("HH:mm");
+      
+      hoverbox.append("p")
+        .attr("class", userEvent.tag)                
+        .text(lineText);                         
+    }
 }

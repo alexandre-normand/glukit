@@ -11,6 +11,7 @@
     	<script src="js/d3.v3.js"></script>
     	<script src="js/jquery-2.0.0.min.js"></script>
       <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+      <script src="js/moment-with-langs.min.js"></script>      
       <script src="js/main.js"></script>      
   </head>
   <body class="dataPage">
@@ -430,7 +431,22 @@
           hoverleftposition = event.clientX - chartContainerElement.getBoundingClientRect().left;
           hoverbox.style("left",  hoverleftposition + "px" );        
           
-          hoverbox.text(Math.round(coordinates.y) + " mg/dl");                         
+          // Clear previous content
+          hoverbox.text(null);
+          hoverbox.append("p")
+            .attr("class", "glucose")
+            .text(Math.round(coordinates.y) + " mg/dl");                         
+          var userEventGroupIndex = Math.abs(binaryIndexOf.call(userEventGroups, time));                    
+          window.hoverbox = hoverbox;
+
+          if (userEventGroupIndex < userEventGroups.lenght - 1 && isHoveringEventGroup(userEventGroups[userEventGroupIndex + 1], time)) {
+            userEventGroup = userEventGroups[userEventGroupIndex + 1];
+            appendUserEventsToHoverBox(hoverbox, userEventGroup);            
+          } else if (userEventGroupIndex < userEventGroups.length && isHoveringEventGroup(userEventGroups[userEventGroupIndex], time)) {
+            userEventGroup = userEventGroups[userEventGroupIndex];
+            appendUserEventsToHoverBox(hoverbox, userEventGroup);            
+          }
+          
         }, false);      
 
         chartBackground.addEventListener('mouseover', function(event) { 

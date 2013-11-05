@@ -195,23 +195,30 @@ path.Carbs {
 .hoverbox {
   background-color: rgba(190, 217, 247, 0.5);
   color: rgba(70, 175, 250, 0.8);
+  font-size: 88%;
   position: absolute;
-  width: 120px;  
+  width: 160px;  
   top: 50px;  
-  left: 0px;
-  padding: 10px;
+  left: 10px;
+  padding: 0px;
   display: none;
 }
 
-p.glucose {
+.hoverbox > p {
+  padding-left: 5px;
+  margin-top: 1px;
+  margin-bottom: 1px;  
+}
+
+p.glucose {  
   color: rgba(103, 121, 145, 0.8);
 }
 
-p.insulin {
+p.insulin {  
   color: rgba(86, 215, 232, 0.8);   
 }
 
-p.food {
+p.carbs {  
   color: rgba(255, 199, 69, 0.8);
 }
 
