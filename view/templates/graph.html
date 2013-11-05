@@ -104,9 +104,9 @@
         <div class="large-16 columns">
           <div class="slab graph">
             <div id="chart_container">            
-              <div id="y_axis"></div>
-              <div id="chart" style="clear: both"></div>
               <div id="hoverbox" class="hoverbox"></div>                        
+              <div id="y_axis"></div>
+              <div id="chart" style="clear: both"></div>              
             </div>
             <div id="slider"></div>            
           </div>
@@ -366,7 +366,7 @@
       addToGraph(focus, "steadySailor", context, steadySailor, y, glucoseLine);
       });           
       
-      addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement.getBoundingClientRect().left, hoverbox, focusLine);
+      addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine);
     });
 
     }
@@ -407,7 +407,7 @@
          .attr("height", canvasHeight);
     }    
 
-    function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, containerLeftPosition, hoverbox, focusLine) {
+    function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine) {
       // We add a background so that we have a svg area to register the mouse 
       // movement
       var background = focus.append("rect")
@@ -427,7 +427,7 @@
           focusCoordinates[1].x = focusCoordinates[0].x = coordinates.x;
           focus.selectAll("#focusLine").attr("d", focusLine);
 
-          hoverleftposition = event.clientX - containerLeftPosition;
+          hoverleftposition = event.clientX - chartContainerElement.getBoundingClientRect().left;
           hoverbox.style("left",  hoverleftposition + "px" );        
           
           hoverbox.text(Math.round(coordinates.y) + " mg/dl");                         

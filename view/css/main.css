@@ -171,13 +171,13 @@ path.HIGH  {
 }
 
 path.Insulin {
-   fill: #53D0E0;   
+   fill: rgba(86, 215, 232, 0.8);   
    stroke-width: 0px;
    fill-opacity: 0.75;
 }
 
 path.Carbs {
-   fill: #F7BE39;   
+   fill: rgba(255, 199, 69, 0.8);   
    stroke-width: 0px;
    fill-opacity: 0.75;
 }
@@ -201,6 +201,18 @@ path.Carbs {
   left: 0px;
   padding: 10px;
   display: none;
+}
+
+p.glucose {
+  color: rgba(103, 121, 145, 0.8);
+}
+
+p.insulin {
+  color: rgba(86, 215, 232, 0.8);   
+}
+
+p.food {
+  color: rgba(255, 199, 69, 0.8);
 }
 
 .focusLine {
