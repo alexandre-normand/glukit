@@ -5,7 +5,7 @@ type DataPoint struct {
 	LocalTime string    `json:"label"`
 	Timestamp Timestamp `json:"x"`
 	Y         int       `json:"y"`
-	Value     float32   `json:"r"`
+	Value     float32   `json:"value"`
 	Tag       string    `json:"tag"`
 }
 
