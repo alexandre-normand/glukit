@@ -325,7 +325,7 @@
       brushRange = getDayRangeFromUpperBound(mostRecentReadTimeInSeconds);
 
       // 1 snap every day for 7 days
-      var snapGuides = getDateSnapGuides(mostRecentReadTimeInSeconds, 86400, 7); 
+      var snapGuides = getDateSnapGuides(mostRecentReadTimeInSeconds, 86400, 7);       
       
       var brush = d3.svg.brush()
          .x(x2)        
@@ -350,21 +350,24 @@
 
       // Add steady sailor data
       d3.json("/{{.PathPrefix}}steadySailor", function(error, data) {
-        rawSteadySailor = data.data[0].data;
-        
-        steadySailor = rawSteadySailor
-        if (steadySailor.length > 0) {   
-          offset = steadySailor[0].x - timeRangeLowerBound;              
-          steadySailor.forEach(function(element) {
-            element.x = element.x - offset;          
+        if (data != undefined) {
+          rawSteadySailor = data.data[0].data;
+          
+          steadySailor = rawSteadySailor
+          if (steadySailor.length > 0) {   
+            offset = steadySailor[0].x - timeRangeLowerBound;              
+            steadySailor.forEach(function(element) {
+              element.x = element.x - offset;          
+            });
+          }
+
+          steadySailor.forEach(function(d) {    
+            d.date = parseDate(d.x * 1000);     
           });
+
+          addToGraph(focus, "steadySailor", context, steadySailor, y, glucoseLine);  
         }
-
-        steadySailor.forEach(function(d) {    
-          d.date = parseDate(d.x * 1000);     
-        });
-
-      addToGraph(focus, "steadySailor", context, steadySailor, y, glucoseLine);
+        
       });           
       
       addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine);
@@ -424,8 +427,10 @@
           var top = event.clientY - rect.top - this.clientTop + this.scrollTop;
 
           var time = x.invert(left);        
+          
           coordinates = getHoverCoordinates(glucoseReads, time);
           focusCoordinates[1].x = focusCoordinates[0].x = coordinates.x;
+
           focus.selectAll("#focusLine").attr("d", focusLine);
 
           hoverleftposition = event.clientX - chartContainerElement.getBoundingClientRect().left;
@@ -438,15 +443,24 @@
             .text(Math.round(coordinates.y) + " mg/dl");                         
           var userEventGroupIndex = Math.abs(binaryIndexOf.call(userEventGroups, time));                    
           window.hoverbox = hoverbox;
-
-          if (userEventGroupIndex < userEventGroups.lenght - 1 && isHoveringEventGroup(userEventGroups[userEventGroupIndex + 1], time)) {
-            userEventGroup = userEventGroups[userEventGroupIndex + 1];
-            appendUserEventsToHoverBox(hoverbox, userEventGroup);            
-          } else if (userEventGroupIndex < userEventGroups.length && isHoveringEventGroup(userEventGroups[userEventGroupIndex], time)) {
-            userEventGroup = userEventGroups[userEventGroupIndex];
-            appendUserEventsToHoverBox(hoverbox, userEventGroup);            
-          }
           
+          // We beyond the last event group, check if the last is close enough
+          if (userEventGroupIndex >= userEventGroups.length) {
+            if (isHoveringEventGroup(userEventGroups[userEventGroups.length - 1], time)) {
+              userEventGroup = userEventGroups[userEventGroups.length - 1];            
+              appendUserEventsToHoverBox(hoverbox, userEventGroup); 
+            }           
+          }
+          // Look for the event after the current position to see if it's close enough
+          else if (isHoveringEventGroup(userEventGroups[userEventGroupIndex], time)) {
+              userEventGroup = userEventGroups[userEventGroupIndex];            
+              appendUserEventsToHoverBox(hoverbox, userEventGroup);            
+            } 
+          // Look to see if the one prior is close enough
+          else if (userEventGroupIndex > 0 && isHoveringEventGroup(userEventGroups[userEventGroupIndex - 1], time)) {
+              userEventGroup = userEventGroups[userEventGroupIndex - 1];            
+              appendUserEventsToHoverBox(hoverbox, userEventGroup);            
+          }
         }, false);      
 
         chartBackground.addEventListener('mouseover', function(event) { 
