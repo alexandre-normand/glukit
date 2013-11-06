@@ -73,8 +73,8 @@ function getDateSnapGuides(upperTimestamp, intervalInSeconds, numberOfSnaps) {
 
 	currentSnapGuide = upperTimestamp;
 	for (var i = 0; i < numberOfSnaps; i++) {
-		currentSnapGuide = currentSnapGuide - intervalInSeconds;
-		snapGuides.push(new Date(currentSnapGuide * 1000)); 
+		currentSnapGuide = moment(currentSnapGuide).subtract('seconds', intervalInSeconds);
+		snapGuides.push(currentSnapGuide.toDate()); 
     }
 
     return snapGuides;
@@ -212,13 +212,13 @@ function millisToDate(timestamp) {
 function getHoverCoordinates(glucoseReads, time) {
 	var glucoseIndex = Math.abs(binaryIndexOf.call(glucoseReads, time));
     var coordinates = new Object();
-
-	if (glucoseIndex == glucoseReads.length - 1) {
+    
+	if (glucoseIndex >= glucoseReads.length - 1) {
 		read = glucoseReads[glucoseReads.length - 1];
-		coordinates.x = reads.x;
-		coordinates.y = reads.y;		
+		coordinates.x = glucoseReads[glucoseIndex].x;
+		coordinates.y = glucoseReads[glucoseIndex].y;		
 	} else {
-		coordinates.y = interpolateGlucoseRead(glucoseReads[glucoseIndex], glucoseReads[glucoseIndex + 1], time);
+		coordinates.y = interpolateGlucoseRead(glucoseReads[glucoseIndex - 1], glucoseReads[glucoseIndex], time);
 		coordinates.x = time;
 	}
 
@@ -240,9 +240,11 @@ function interpolateGlucoseRead(left, right, time) {
 
 function isHoveringEventGroup(userEventGroup, searchElement) {
 	var timestamp = searchElement.getTime() / 1000;
-	// We consider hovering if the cursor is withing 1800 seconds (30 minutes)
+	
+	// We consider hovering if the cursor is withing 780 seconds (13 minutes)
 	// from the event
-	if (Math.abs(timestamp - userEventGroup.x) < 1800) {
+	distanceInSeconds = Math.abs(timestamp - userEventGroup.x);	
+	if (distanceInSeconds <= 780) { 
 		return true;
 	} else {
 		return false;
