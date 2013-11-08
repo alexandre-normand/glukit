@@ -343,7 +343,8 @@
       // Remove resize handles because we don't want to allow resizing. The brush is fixed to the length of one day
       brushElement.selectAll(".resize").remove();
       // Disable cross-hair cursor to avoid user overriding the brush completely
-      brushElement.selectAll(".background").style("cursor", "auto");;
+      brushElement.selectAll(".extent").style("pointer-events", "all");
+      brushElement.selectAll(".background").style("pointer-events", "none");
       
       // Call a first brushed to view the last day only 
       brushed();
