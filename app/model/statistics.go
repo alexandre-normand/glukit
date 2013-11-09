@@ -1,5 +1,9 @@
 package model
 
+import (
+	"time"
+)
+
 // Type for a slice of GlucoseReads with comparison based on value rather than time. It is used as read statistics.
 type ReadStatsSlice []GlucoseRead
 
@@ -21,11 +25,16 @@ func (slice ReadStatsSlice) Swap(i, j int) {
 
 // Represents the structure of the dashboard data for a user
 type DashboardData struct {
-	Average float64 `json:"average"`
-	Median  float64 `json:"median"`
-	High    float64 `json:"high"`
-	Low     float64 `json:"low"`
-	Score   int64   `json:"score"`
+	FirstName    string      `json:"firstName"`
+	LastName     string      `json:"lastName"`
+	Picture      string      `json:"picture"`
+	LastSync     time.Time   `json:"lastSync"`
+	Average      float64     `json:"average"`
+	Median       float64     `json:"median"`
+	High         float64     `json:"high"`
+	Low          float64     `json:"low"`
+	Score        int64       `json:"score"`
+	ScoreDetails GlukitScore `json:"scoreDetails"`
 }
 
 type CoordinateSlice []Coordinate
