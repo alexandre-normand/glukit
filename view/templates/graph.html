@@ -266,9 +266,9 @@
             .call(xAxis2);
 
       addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, highestOnChart, y);
-
-      addToGraph(focus, "self", context, glucoseReads, y, glucoseLine, viewfinderLine);    
-
+      var segments = splitReadsInRangeSegments(glucoseReads);
+      addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);    
+      window.segments = segments;
       // Trying out the grouping, it doesn't actually use any of this
       userEvents.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
@@ -296,6 +296,16 @@
         focus.selectAll("path.steadySailor").attr("d", glucoseLine);         
         focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
         focus.select(".x.axis").call(xAxis);        
+
+        extent = brush.extent();
+        viewfinderUpperLimit = extent[1];
+        viewfinderLowerLimit = extent[0];
+        //console.log("limits are " + viewfinderLowerLimit + ", " + viewfinderUpperLimit);
+        
+        rangeAggregate = getRangeAggregate(segments, viewfinderLowerLimit, viewfinderUpperLimit);
+        console.log("Percentage in low: " + rangeAggregate.lowTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+        console.log("Percentage in normal: " + rangeAggregate.normalTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+        console.log("Percentage in high: " + rangeAggregate.highTimeInMinutes / rangeAggregate.getTotalTime() * 100);
       }
 
       // snap to days if close enough
@@ -366,7 +376,8 @@
             d.date = parseDate(d.x * 1000);     
           });
 
-          addToGraph(focus, "steadySailor", context, steadySailor, y, glucoseLine);  
+          sailorSegments = splitReadsInRangeSegments(steadySailor);
+          addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine);  
         }
         
       });           
@@ -376,10 +387,7 @@
 
     }
     
-    function addToGraph(focus, className, context, glucoseReads, y, glucoseLineFunc, viewfinderLineFunc) {      
-
-      segments = splitReadsInRangeSegments(glucoseReads);
-
+    function addToGraph(focus, className, context, segments, glucoseReads, y, glucoseLineFunc, viewfinderLineFunc) {      
       for (var i = 0; i < segments.length; i++) {
         var segment = segments[i];        
         focus.append("path")
