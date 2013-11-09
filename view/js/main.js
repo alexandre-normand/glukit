@@ -160,6 +160,72 @@ function splitReadsInRangeSegments(glucoseReads) {
   return segments;
 }
 
+// Find the last segment that ends after the given time
+function getFirstSegmentEndingAfter(segments, time, startIndex) {
+	for (var i = startIndex; i < segments.length; i++) {
+ 		segmentReads = segments[i].reads;
+  		if (segmentReads[segmentReads.length - 1].date >= time) {
+    		return i;
+    	}
+	}	
+
+	return segments.length - 1;
+}
+
+function RangeAggregate() {
+	this.normalTimeInMinutes = 0;
+	this.lowTimeInMinutes = 0;
+	this.highTimeInMinutes = 0;
+}
+
+RangeAggregate.prototype.getTotalTime = function() { return this.normalTimeInMinutes + this.lowTimeInMinutes + this.highTimeInMinutes; };
+
+// Sums up the time in minutes spent in in each range
+function getRangeAggregate(segments, lowerBound, upperBound) {
+	firstSegmentIndex = getFirstSegmentEndingAfter(segments, viewfinderLowerLimit, 0);
+    lastSegmentIndex = getFirstSegmentEndingAfter(segments, viewfinderUpperLimit, firstSegmentIndex);    
+
+    rangeAggregate = new RangeAggregate();
+    
+    // Calculate the slice of the first segment that we should be considering
+    segmentReads = segments[firstSegmentIndex].reads;
+    endOfFirstSegment = moment.unix(segmentReads[segmentReads.length - 1].x);
+    durationInMinutes = endOfFirstSegment.diff(moment(lowerBound), 'minutes');    
+
+    rangeAggregate = addRangeToAggregate(segments[firstSegmentIndex].range, durationInMinutes, rangeAggregate);
+    
+    for (var i = firstSegmentIndex + 1; i < lastSegmentIndex; i++) {
+		segmentReads = segments[i].reads;
+	    endOfSegment = moment.unix(segmentReads[segmentReads.length - 1].x);
+	    durationInMinutes = endOfSegment.diff(moment.unix(segmentReads[0].x), 'minutes');	    
+	    
+	    rangeAggregate = addRangeToAggregate(segments[i].range, durationInMinutes, rangeAggregate);	        	
+    }
+
+    // Calculate the slice of the last segment
+    segmentReads = segments[lastSegmentIndex].reads;        
+    durationInMinutes = moment(upperBound).diff(moment.unix(segmentReads[0].x), 'minutes');	
+
+	rangeAggregate = addRangeToAggregate(segments[lastSegmentIndex].range, durationInMinutes, rangeAggregate);	        	    
+    
+    return rangeAggregate;
+}
+
+function addRangeToAggregate(range, durationInMinutes, aggregate) {
+	switch (range) {
+    	case RANGES.NORMAL:
+    		aggregate.normalTimeInMinutes = aggregate.normalTimeInMinutes + durationInMinutes;
+    		break;
+    	case RANGES.HIGH:
+    		aggregate.highTimeInMinutes = aggregate.highTimeInMinutes + durationInMinutes;
+    		break;
+    	case RANGES.LOW:
+    		aggregate.lowTimeInMinutes = aggregate.lowTimeInMinutes + durationInMinutes;
+    		break;
+    }
+    return aggregate;
+}
+
 function getRange(glucoseValue) {
   if (glucoseValue > TARGET_RANGE_UPPER_BOUND) {
     return RANGES.HIGH;
