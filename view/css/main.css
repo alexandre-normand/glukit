@@ -227,3 +227,7 @@ p.carbs {
   stroke: #B0B0B0;
   stroke-dasharray: 4, 2;
 }
+
+.night {
+  fill: rgba(44, 51, 89, 0.5);
+}
