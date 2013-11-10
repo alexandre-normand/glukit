@@ -178,7 +178,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 	context := appengine.NewContext(request)
 
 	userProfile, _, upperBound, err := store.GetUserData(context, email)
-	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
+	lowerBound := upperBound.Add(time.Duration(-1*24) * time.Hour)
 
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
