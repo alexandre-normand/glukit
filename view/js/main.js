@@ -277,12 +277,12 @@ function millisToDate(timestamp) {
 
 function getHoverCoordinates(glucoseReads, time) {
 	var glucoseIndex = Math.abs(binaryIndexOf.call(glucoseReads, time));
-    var coordinates = new Object();
+  var coordinates = new Object();
     
 	if (glucoseIndex >= glucoseReads.length - 1) {
 		read = glucoseReads[glucoseReads.length - 1];
-		coordinates.x = glucoseReads[glucoseIndex].x;
-		coordinates.y = glucoseReads[glucoseIndex].y;		
+		coordinates.x = glucoseReads[glucoseReads.length - 1].x;
+		coordinates.y = glucoseReads[glucoseReads.length - 1].y;		
 	} else {
 		coordinates.y = interpolateGlucoseRead(glucoseReads[glucoseIndex - 1], glucoseReads[glucoseIndex], time);
 		coordinates.x = time;
