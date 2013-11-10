@@ -291,6 +291,39 @@ function getHoverCoordinates(glucoseReads, time) {
 	return coordinates;
 }
 
+function DateRange() {
+  this.start;
+  this.end;  
+}
+
+
+function getNightsDateRangesForTimeWindow(lowerBound, upperBound) {
+  nights = [];
+  // Start from the end of the range.
+  nightRange = getNightEndingAt(upperBound);
+
+  nights.push(nightRange);
+  while (nightRange.end >= lowerBound) {
+    currentNightEnd = moment(nightRange.end).subtract('days', 1).toDate();
+    nightRange = getNightEndingAt(currentNightEnd);
+    nights.push(nightRange);
+  }
+  
+  return nights;
+}
+
+function getNightEndingAt(endOfNight) {
+  nightRange = new DateRange();
+  nightRange.end = endOfNight;
+  nightRange.end.setMinutes(30);
+  nightRange.end.setHours(6);
+  nightRange.end.setMilliseconds(0);
+  nightRange.end.setSeconds(0);
+  window.nightRange = nightRange;  
+
+  nightRange.start = moment(nightRange.end).subtract('hours', 8).toDate();
+  return nightRange;
+}
 function interpolateGlucoseRead(left, right, time) {
 	timestamp = time.getTime() / 1000;
 

@@ -266,6 +266,18 @@
             .call(xAxis2);
 
       addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, highestOnChart, y);
+
+      nights = getNightsDateRangesForTimeWindow(moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
+      // TODO: figure out how this works to display the bar for the nights at the bottom of the graph
+      // focus.append("rect")      
+      //    .data(nights)
+      //    .attr("class", "timeofday night")
+      //    .attr("clip-path", "url(#clip)")
+      //    .attr("width", function(d) { return 40;})
+      //    .attr("height", 5)
+      //    .attr("x", function(d) { x(d.start);})
+      //    .attr("y", height - 5);
+
       var segments = splitReadsInRangeSegments(glucoseReads);
       addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);    
       window.segments = segments;
