@@ -8,6 +8,7 @@
       <link type="text/css" rel="stylesheet" href="css/graph.css">
       <link type="text/css" rel="stylesheet" href="css/detail.css">
       <link type="text/css" rel="stylesheet" href="css/main.css">
+      <link type="text/css" rel="stylesheet" href="css/foundation_icons_general/stylesheets/general_foundicons.css">
     	<script src="js/d3.v3.js"></script>
     	<script src="js/jquery-2.0.0.min.js"></script>
       <script type="text/javascript" src="/_ah/channel/jsapi"></script>
@@ -34,6 +35,7 @@
     -->
     <!-- Right Nav Section -->
     <ul class="right">
+    <!--
      <li class="divider"></li>
       <li class="active navlink"><a href="#">How you're doing</a></li>
       <li class="divider "></li>
@@ -42,9 +44,13 @@
       <li class="active navlink"><a href="#">Explore</a></li>
       <li class="divider"></li>
       <li class="divider hide-for-small"></li>
+  -->
+
+
       <li class="has-form">
         <a class="button" href="index.html" style="color:white !important">Sign out</a>
       </li>
+
       <!-- <li class="active hackwhite has-dropdown"><img src="img/settings-cog.png"></li> -->
       <li class="divider"></li>
     </ul>
@@ -65,42 +71,96 @@
 
 <div class="row belowHeader" style="overflow:hidden; padding-top:4px">
     <div class="large-16 columns">
-      <div class="row">
-        <div class="large-16 columns">
-          <h3 class="datepicker" style="color:#888"><img src="images/back-arrow.png">           Friday, July 26th 2013</h3>
-          <!-- <p style="float:right; color: #404040; padding-top:6px">Welcome, Alex!</p> -->
+     <div class="row belowHeader" style="overflow:hidden; padding-top:44px">
+    <div class="large-16 columns">
+
+      <div class="row dashboard" style="padding-bottom: 0px">
+        <div class="large-2 columns">
+          <div class="">
+            <img src="images/alex-normand.png">
+          </div>
         </div>
+
+        <div class="large-6 columns">
+            <h1 class="profile"><small class="firstName"></small><small class="lastName"></small></h1><h1 class="profile"></h1>
+            <h5 class="profile"><small>Glukit user since Feb 1, 2013</small></h5>
+            <br>
+            <h3 class="profile"><small>Last sync</small></h3>
+            <h5 class="profile"><small class="lastSync"></small></h5>
+        </div>
+        
+        <div class="large-3 columns">
+            <div class="circleSlab" id="advanced">
+              <div class="insights glukitScore circle" style="padding-top:24%"></div>
+            </div>
+        </div>
+       
+        <div class="large-5 columns">
+          <div class="">
+            <h1 style="padding-top:8%"><small>Glukit Score</small></h1>
+            <!-- change this date range to the date range returned -->
+            <h5 class="profile"><small>Oct. 14th - Oct 21st</small></h5>
+          </div>
+        </div>
+       
       </div>
 
-      <!-- Should be generating this dynamically - not DRY as is. -->
+      <hr id="features"> 
+     
+
+
       <div class="row dashboard">
-        <div class="large-4 columns">
-          <div class="slab">
-            <div class="insights glukitScore"></div>
-            <h5>Glukit score</h5>
-          </div>
-        </div>
-        <div class="large-4 columns">
-          <div class="slab">
-            <div class="insights dailyAverage"></div>
-            <h5>Daily average</h5>
-          </div>
-        </div>
-        <div class="large-4 columns">
-          <div class="slab">
-            <div class="insights dailyHigh"></div>
-            <h5>Daily high</h5>
-          </div>
-        </div>
-        <div class="large-4 columns">
-          <div class="slab">
-            <div class="insights dailyLow"></div>
-            <h5>Daily low</h5>
-          </div>
-        </div>
-      </div>
+  
 
-      <hr id="features">
+<!-- testing -->
+<div class="row">
+  <div class="small-4 columns"><h3><small>How you're doing</small></h3></div>
+</div>
+<div class="row">
+  <div class="large-16 columns">
+    <div class="small-4 columns rangeSelection" id="inRange">
+      <h5><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range</h5>
+    </div>
+    <div class="small-4 columns rangeSelection" id="below">
+      <h5><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range</h5>
+    </div>
+    <div class="small-4 columns rangeSelection" id="above">
+      <h5><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range</h5>
+    </div>
+  </div>
+  <div class="large-16 columns">
+    <div class="small-4 columns"><h5></h5></div>
+    <div class="small-4 columns rangeSelection" id="inTargetPercentage"><h5></h5></div>
+    <div class="small-4 columns rangeSelection"><h5 id="belowTargetPercentage"></h5></div>
+    <div class="small-4 columns rangeSelection" id="aboveTargetPercentage"><h5></h5></div>
+  </div>
+
+</div>
+
+
+<!-- hide checkboxes for now 
+        <div class="large-3 columns">
+          <div class="rangeSlab">
+              <label for="checkbox1">
+                <input type="checkbox" id="checkbox1" style="display: none;">
+                <span class="custom checkbox"></span> Events
+              </label>
+              <label for="checkbox2">
+                <input type="checkbox" id="checkbox2" style="">
+                <span class="custom checkbox"></span> Insulin
+              </label>
+              <label for="checkbox2">
+                <input type="checkbox" id="checkbox2" style="">
+                <span class="custom checkbox"></span> Food
+              </label>
+          </div>
+        </div>
+
+-->
+
+
+      </div>
+    <hr id="features">
       <div class="row">
         <div class="large-16 columns">
           <div class="slab graph">
@@ -498,13 +558,14 @@
 function showDashboard()
     {
         var distribution = null;
-        $.getJSON('/{{.PathPrefix}}dashboard', function(data) {
+        $.getJSON('/{{.PathPrefix}}data', function(data) {
 
-          //hooking up the endpoint to be displayed in the dashboard
-          $(".glukitScore").text(data['score']);
-          $(".dailyAverage").text(data['median']); //need to change this to average (round existing avg value)
-          $(".dailyHigh").text(data['high']);
-          $(".dailyLow").text(data['low']);
+          //display user information
+          $(".firstName").text(data.firstName);
+          $(".lastName").text(data.lastName);
+          $(".glukitScore").text(data.score.Value);
+          $(".lastSync").text(data.lastSync);
+          $(".profilePic").text(data.picture);
 
         }).fail(function() {
           $("div#overlay").removeClass("hidden");
@@ -513,6 +574,43 @@ function showDashboard()
             //noData();
          });
     }
+function highlightLines() {
+
+
+    $('#inRange').click(function(){
+        $('.NORMAL').css("stroke", "red");
+        $('.LOW').css("stroke", "grey");
+        $('.HIGH').css("stroke", "grey");
+
+        //add a class of 'active' to the element clicked on
+        toggleElements();
+    });
+
+
+    $('#below').click(function(){
+        $('.NORMAL').css("stroke", "grey");
+        $('.LOW').css("stroke", "red");
+        $('.HIGH').css("stroke", "grey");
+
+        toggleElements();
+    });
+
+    $('#above').click(function(){
+        $('.NORMAL').css("stroke", "grey");
+        $('.LOW').css("stroke", "grey");
+        $('.HIGH').css("stroke", "red");
+
+        toggleElements();
+    });
+
+
+    function toggleElements(){
+      //check all of the elements with class rangeX, if it has a class 
+    }
+
+  }
+
+
 </script>
   <script>
       channel = new goog.appengine.Channel('{{.ChannelToken}}');
@@ -521,6 +619,8 @@ function showDashboard()
         console.log("connected");
         showDataBrowser();
         showDashboard();
+        highlightLines();
+
       };
       socket.onmessage = function(message) {
         console.log("onMessage: " + message.data);

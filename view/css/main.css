@@ -1,3 +1,24 @@
+/* Header */
+
+.rangeSelection {
+  cursor: pointer;
+  background-color: #22C0E6;
+}
+
+.circle
+{
+  width:100px;
+  height:100px;
+  border-radius:20px;
+  line-height:50%;
+  text-align:center;
+  background:#eee;
+}
+
+.profile{
+  margin-bottom: 5% !important;
+}
+
 /* Data graph */
 #chart_container {
   position: relative;
@@ -47,12 +68,12 @@ li.navlink a:hover {
 
 
 .slab {
-  background-color: #f6f8f8;
-  padding:20px;
-  box-shadow: 2px 2px 6px #E5E5E4;
+  background-color: #fff;
+  /* padding:20px;
+  box-shadow: 2px 2px 6px #E5E5E4; */
 }
 .graph{
-  height: 500px;
+  height: 600px;
 }
 .footer {
  width: 100%;
