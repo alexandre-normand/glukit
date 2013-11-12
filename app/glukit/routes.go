@@ -23,6 +23,7 @@ var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.ht
 
 const (
 	DEMO_PATH_PREFIX = "demo."
+	DEMO_PICTURE_URL = "http://farm8.staticflickr.com/7389/10813078553_ab4e1397f4_b_d.jpg"
 )
 
 // Some variables that are used during rendering of templates
@@ -95,7 +96,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		// getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{DEMO_EMAIL, "Demo", "OfMe", time.Now(), model.DIABETES_TYPE_1, "", time.Now(),
-				model.UNDEFINED_GLUCOSE_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, ""})
+				model.UNDEFINED_GLUCOSE_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, DEMO_PICTURE_URL})
 		if err != nil {
 			util.Propagate(err)
 		}
