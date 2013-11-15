@@ -75,9 +75,7 @@
 
       <div class="row dashboard" style="padding-bottom: 0px">
         <div class="large-2 columns">
-          <div class="">
-            <img src="images/alex-normand.png" id="profilePic">
-          </div>
+          <div id="profilePic"></div>
         </div>
 
         <div class="large-8 columns">
@@ -112,7 +110,27 @@
 <div class="row">
   <div class="small-4 columns"><h4>How you're doing</h4></div>
 </div>
+
+
 <div class="row">
+ 
+  <div class="large-16 columns">
+    <div class="rangeSelection" id="inRange">
+      <h5 id="inTargetRangeText"><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range&nbsp;<span id="normalRangePercentage" style="display:none"></span></h5>
+    </div>
+    <div class="rangeSelection" id="below">
+      <h5 id="belowTargetRangeText"><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range&nbsp;<span id="lowRangePercentage" style="display:none"></span></h5>
+    </div>
+    <div class="rangeSelection" id="above">
+      <h5 id="aboveTargetRangeText"><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range&nbsp;<span id="highRangePercentage" style="display:none"></span></h5>
+    </div>
+  </div>
+  
+</div>
+
+<!--
+<div class="row">
+ 
   <div class="large-16 columns">
     <div class="small-4 columns rangeSelection" id="inRange">
       <h5><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range </h5>
@@ -135,7 +153,7 @@
   </div>
   
 </div>
-
+-->
 
 <!-- hide checkboxes for now 
         <div class="large-3 columns">
@@ -569,12 +587,18 @@ function showProfile()
         var distribution = null;
         $.getJSON('/{{.PathPrefix}}dashboard', function(dashboard) {
 
+          var profilePicture = dashboard.picture;
           var firstName = dashboard.firstName;
           var lastName = dashboard.lastName;
           var glukitScore = dashboard.score;
           var lastSync = dashboard.lastSync;
           var lowerBound = dashboard.scoreDetails.LowerBound;
           var upperBound = dashboard.scoreDetails.UpperBound;
+
+          var img = document.createElement("img");
+          img.src = profilePicture;
+          var src = document.getElementById("profilePic");
+          src.appendChild(img);
 
           document.getElementById('userName').innerHTML = firstName + " " +lastName;
           document.getElementById('lastSync').innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").format('LL');
@@ -600,14 +624,21 @@ function highlightLines() {
       $("#normalRangePercentage").show();
       $("#lowRangePercentage").hide();
       $("#highRangePercentage").hide();
+      
+      //change the color of the text to white and the background to pink
+      $("#inTargetRangeText").css("color", "#fff");
+      $("#inRange").css("background", "#9e2064");
+      
+      //reset the other div colors
+      $("#belowTargetRangeText").css("color", "#404041");
+      $("#below").css("background", "#eee");
+      $("#aboveTargetRangeText").css("color", "#404041");
+      $("#above").css("background", "#eee");
+
 
       $("#below").show();
       $("#above").show();
-      $("#inRange").hide();
 
-      $("#aboveHidden").hide();
-      $("#belowHidden").hide();
-      $("#normalHidden").show();
 
       $('.NORMAL').css("stroke", "#414042");
       $('.LOW').css("stroke", "#d1d3d4");
@@ -615,39 +646,48 @@ function highlightLines() {
     });
 
     $("#below").click(function(){
-
-      $("#below").hide();
       $("#above").show();
       $("#inRange").show();
 
-      $("#aboveHidden").hide();
-      $("#belowHidden").show();
-      $("#normalHidden").hide();
+      //change colors of selected div
+      $("#belowTargetRangeText").css("color", "#fff");
+      $("#below").css("background", "#9e2064");
 
+      //reset the other div colors
+      $("#inTargetRangeText").css("color", "#404041");
+      $("#inRange").css("background", "#eee");
+      $("#aboveTargetRangeText").css("color", "#404041");
+      $("#above").css("background", "#eee");
+
+      //show and hide percentages
       $("#normalRangePercentage").hide();
       $("#lowRangePercentage").show();
       $("#highRangePercentage").hide();
 
+      //Highlight relevant pieces of the graph
       $('.NORMAL').css("stroke", "#d1d3d4");
       $('.LOW').css("stroke", "#414042");
       $('.HIGH').css("stroke", "#d1d3d4");
     });
 
     $("#above").click(function(){
-            //experiment
-      $("#aboveHidden").css("background", "#9e2064");
-      $("#above").hide();
+
+      //change colors of selected div
+      $("#above").css("background", "#9e2064");
+      $("#aboveTargetRangeText").css("color", "#fff");
+      
+      //reset colors of other divs
+      $("#below").css("background", "#eee");
+      $("#belowTargetRangeText").css("color", "#404041");
+      $("#inRange").css("background", "#eee");
+      $("#inTargetRangeText").css("color", "#404041");
+
       $("#below").show();
       $("#inRange").show();
-
-      $("#aboveHidden").show();
-      $("#belowHidden").hide();
-      $("#normalHidden").hide();
 
       $("#normalRangePercentage").hide();
       $("#lowRangePercentage").hide();
       $("#highRangePercentage").show();
-
 
       $('.NORMAL').css("stroke", "#d1d3d4");
       $('.LOW').css("stroke", "#d1d3d4");
@@ -671,8 +711,6 @@ function highlightLines() {
       };
       socket.onmessage = function(message) {
         console.log("onMessage: " + message.data);
-        showDataBrowser();
-        showProfile();
       };
       socket.onerror = function() {
         console.log("error");
