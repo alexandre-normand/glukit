@@ -106,8 +106,7 @@
         <div class="large-16 columns">
           <div class="slab graph">
             <div id="chart_container">            
-              <div id="hoverbox" class="hoverbox"></div>                        
-              <div id="y_axis"></div>
+              <div id="hoverbox" class="hoverbox"></div>                                     
               <div id="chart" style="clear: both"></div>              
             </div>
             <div id="slider"></div>            
@@ -270,8 +269,32 @@
       addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, highestOnChart, y);
 
       var dayBoundaries = getDayBoundaries(glucoseReads[0].x, glucoseReads[glucoseReads.length - 1].x);
-      var nights = getNightsDateRangesForTimeWindow(moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
+      var dayBoundaryGroup = focus.append("g").attr("id", "dayBoundaries");
+      dayBoundaryGroup.selectAll(".dayBoundary")
+          .data(dayBoundaries)
+          .enter()
+          .append("text")
+          .attr("class", "dayBoundary")
+          .attr("clip-path", "url(#clip)")
+          .text(function(d) { return moment(d).format("dddd, Do");})
+          .attr("y", "20")
+          .attr("x", function(d) { return x(d); });
 
+
+      var nights = getNightsDateRangesForTimeWindow(moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
+      var timebar = focus.append("g")
+          .attr("id", "timebar");                  
+      timebar                  
+          .selectAll(".night")
+          .data(nights)         
+          .enter()
+          .append("rect")               
+          .attr("class", "night")         
+          .attr("clip-path", "url(#clip)")
+          .attr("width", function(d) { return x(d.end) - x(d.start);})
+          .attr("height", 5)
+          .attr("x", function(d) { return x(d.start);})
+          .attr("y", height - 5);
       
       var segments = splitReadsInRangeSegments(glucoseReads);
       addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);    
@@ -302,29 +325,14 @@
         focus.selectAll("path.self").attr("d", glucoseLine);
         focus.selectAll("path.steadySailor").attr("d", glucoseLine);         
                 
-        focus.selectAll("#dayBoundaries")
-          .data(dayBoundaries)
-          .enter()
-          .append("text")
-          .attr("class", "dayBoundary")
-          .attr("clip-path", "url(#clip)")
-          .text(function(d) { return moment(d).format("dddd, Do");})
-          .attr("y", "20")
+        dayBoundaryGroup.selectAll(".dayBoundary")
           .attr("x", function(d) { return x(d); });
-
-        focus.append("g")
-          .attr("id", "timebar")                  
-          .selectAll("#night")
-          .data(nights)         
-          .enter()
-          .append("rect")               
-          .attr("class", "night")         
-          .attr("clip-path", "url(#clip)")
+      
+        timebar                  
+          .selectAll(".night")
           .attr("width", function(d) { return x(d.end) - x(d.start);})
-          .attr("height", 5)
-          .attr("x", function(d) { return x(d.start);})
-          .attr("y", height - 5);
-        
+          .attr("x", function(d) { return x(d.start);});
+
         focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
         focus.select(".x.axis").call(xAxis);                
 
@@ -367,7 +375,7 @@
 
       // 1 snap every day for 7 days
       var snapGuides = getDateSnapGuides(mostRecentReadTimeInSeconds, 86400, 7); 
-      window.snaps = snapGuides;      
+      
       
       var brush = d3.svg.brush()
          .x(x2)        
