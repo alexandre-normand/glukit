@@ -7,13 +7,16 @@
   border-color: #fff;
   padding: 6px;
   padding-left: 20px;
+  padding-right: 20px;
   padding-top: 14px;
+  float:left;
+  min-width: 300px;
 }
 
 .rangeSelection:hover, .rangeSelection:hover h5 {
   cursor: pointer;
-  background-color: #9e2064;
-  color:#fff;
+  background-color: #9e2064 !important;
+  color:#fff !important;
 }
 
 .circle
@@ -31,7 +34,8 @@
 }
 
 #profilePic {
-  max-width: 120% !important;
+  max-width: 250% !important;
+  min-width: 120% !important;
 }
 /* Data graph */
 #chart_container {
@@ -167,7 +171,7 @@ svg {
 }
 
 path {
-  stroke: steelblue;
+  stroke: grey;
   fill: none;
   stroke-width: 1.5px;
 }
@@ -190,7 +194,7 @@ path {
 }
 
 .target_range {
-  fill-opacity: .125;
+  fill-opacity: .05;
   shape-rendering: crispEdges;
   fill: #6AC25F;
 }
