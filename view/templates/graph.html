@@ -9,6 +9,7 @@
       <link type="text/css" rel="stylesheet" href="css/detail.css">
       <link type="text/css" rel="stylesheet" href="css/main.css">
     	<script src="js/d3.v3.js"></script>
+      <script src="js/d3-transform.js"></script>
     	<script src="js/jquery-2.0.0.min.js"></script>
       <script type="text/javascript" src="/_ah/channel/jsapi"></script>
       <script src="js/moment-with-langs.min.js"></script>      
@@ -215,7 +216,8 @@
       x2.domain(x.domain());
       y2.domain(y.domain());
 
-      var focus = svg.append("g")      
+      var focus = svg.append("g")   
+      .attr("id", "mainContainer")     
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
       var context = svg.append("g")
@@ -267,20 +269,37 @@
 
       addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, highestOnChart, y);
 
+      var dayBoundaries = getDayBoundaries(glucoseReads[0].x, glucoseReads[glucoseReads.length - 1].x);
+
+      // focus.selectAll("#dayBoundaries")
+      //   .data(dayBoundaries)
+      //   .enter()
+      //   .append("text")
+      //   .attr("class", "dayBoundary")
+      //   .attr("clip-path", "url(#clip)")
+      //   .text(function(d) { return moment(d).format("dddd, Do");})
+      //   .attr("y", "20")
+      //   .attr("x", function(d) { console.log("putting " + d + " at " + x(d)); return x(d); });
+
       nights = getNightsDateRangesForTimeWindow(moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
+
       // TODO: figure out how this works to display the bar for the nights at the bottom of the graph
-      // focus.append("rect")      
-      //    .data(nights)
-      //    .attr("class", "timeofday night")
+      // focus.append("g")
+      //    .attr("id", "timebar")                  
+      //    .selectAll("#night")
+      //    .data(nights)         
+      //    .enter()
+      //    .append("rect")               
+      //    .attr("class", "night")         
       //    .attr("clip-path", "url(#clip)")
-      //    .attr("width", function(d) { return 40;})
+      //    .attr("width", function(d) { return x(d.end) - x(d.start);})
       //    .attr("height", 5)
-      //    .attr("x", function(d) { x(d.start);})
+      //    .attr("x", function(d) { console.log("marker starting at " + d.start); return x(d.start);})
       //    .attr("y", height - 5);
 
       var segments = splitReadsInRangeSegments(glucoseReads);
       addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);    
-      window.segments = segments;
+      
       // Trying out the grouping, it doesn't actually use any of this
       userEvents.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
@@ -301,13 +320,17 @@
            .attr("d", userEventArc);      
          }        
       }      
-
+      
       function brushed() {      
         x.domain(brush.empty() ? x2.domain() : brush.extent());        
         focus.selectAll("path.self").attr("d", glucoseLine);
         focus.selectAll("path.steadySailor").attr("d", glucoseLine);         
+        
+        //focus.selectAll("#night").attr("d", nights);
+        //focus.selectAll("#dayBoundary").data(dayBoundaries).enter();
+        
         focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
-        focus.select(".x.axis").call(xAxis);        
+        focus.select(".x.axis").call(xAxis);                
 
         extent = brush.extent();
         viewfinderUpperLimit = extent[1];
@@ -315,9 +338,9 @@
         //console.log("limits are " + viewfinderLowerLimit + ", " + viewfinderUpperLimit);
         
         rangeAggregate = getRangeAggregate(segments, viewfinderLowerLimit, viewfinderUpperLimit);
-        console.log("Percentage in low: " + rangeAggregate.lowTimeInMinutes / rangeAggregate.getTotalTime() * 100);
-        console.log("Percentage in normal: " + rangeAggregate.normalTimeInMinutes / rangeAggregate.getTotalTime() * 100);
-        console.log("Percentage in high: " + rangeAggregate.highTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+        // console.log("Percentage in low: " + rangeAggregate.lowTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+        // console.log("Percentage in normal: " + rangeAggregate.normalTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+        // console.log("Percentage in high: " + rangeAggregate.highTimeInMinutes / rangeAggregate.getTotalTime() * 100);
       }
 
       // snap to days if close enough
@@ -347,7 +370,8 @@
       brushRange = getDayRangeFromUpperBound(mostRecentReadTimeInSeconds);
 
       // 1 snap every day for 7 days
-      var snapGuides = getDateSnapGuides(mostRecentReadTimeInSeconds, 86400, 7);       
+      var snapGuides = getDateSnapGuides(mostRecentReadTimeInSeconds, 86400, 7); 
+      window.snaps = snapGuides;      
       
       var brush = d3.svg.brush()
          .x(x2)        
@@ -462,8 +486,7 @@
           hoverbox.append("p")
             .attr("class", "glucose")
             .text(Math.round(coordinates.y) + " mg/dl");                         
-          var userEventGroupIndex = Math.abs(binaryIndexOf.call(userEventGroups, time));                    
-          window.hoverbox = hoverbox;
+          var userEventGroupIndex = Math.abs(binaryIndexOf.call(userEventGroups, time));                              
           
           // We beyond the last event group, check if the last is close enough
           if (userEventGroupIndex >= userEventGroups.length) {
