@@ -270,33 +270,9 @@
       addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, highestOnChart, y);
 
       var dayBoundaries = getDayBoundaries(glucoseReads[0].x, glucoseReads[glucoseReads.length - 1].x);
+      var nights = getNightsDateRangesForTimeWindow(moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
 
-      // focus.selectAll("#dayBoundaries")
-      //   .data(dayBoundaries)
-      //   .enter()
-      //   .append("text")
-      //   .attr("class", "dayBoundary")
-      //   .attr("clip-path", "url(#clip)")
-      //   .text(function(d) { return moment(d).format("dddd, Do");})
-      //   .attr("y", "20")
-      //   .attr("x", function(d) { console.log("putting " + d + " at " + x(d)); return x(d); });
-
-      nights = getNightsDateRangesForTimeWindow(moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
-
-      // TODO: figure out how this works to display the bar for the nights at the bottom of the graph
-      // focus.append("g")
-      //    .attr("id", "timebar")                  
-      //    .selectAll("#night")
-      //    .data(nights)         
-      //    .enter()
-      //    .append("rect")               
-      //    .attr("class", "night")         
-      //    .attr("clip-path", "url(#clip)")
-      //    .attr("width", function(d) { return x(d.end) - x(d.start);})
-      //    .attr("height", 5)
-      //    .attr("x", function(d) { console.log("marker starting at " + d.start); return x(d.start);})
-      //    .attr("y", height - 5);
-
+      
       var segments = splitReadsInRangeSegments(glucoseReads);
       addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);    
       
@@ -325,9 +301,29 @@
         x.domain(brush.empty() ? x2.domain() : brush.extent());        
         focus.selectAll("path.self").attr("d", glucoseLine);
         focus.selectAll("path.steadySailor").attr("d", glucoseLine);         
-        
-        //focus.selectAll("#night").attr("d", nights);
-        //focus.selectAll("#dayBoundary").data(dayBoundaries).enter();
+                
+        focus.selectAll("#dayBoundaries")
+          .data(dayBoundaries)
+          .enter()
+          .append("text")
+          .attr("class", "dayBoundary")
+          .attr("clip-path", "url(#clip)")
+          .text(function(d) { return moment(d).format("dddd, Do");})
+          .attr("y", "20")
+          .attr("x", function(d) { return x(d); });
+
+        focus.append("g")
+          .attr("id", "timebar")                  
+          .selectAll("#night")
+          .data(nights)         
+          .enter()
+          .append("rect")               
+          .attr("class", "night")         
+          .attr("clip-path", "url(#clip)")
+          .attr("width", function(d) { return x(d.end) - x(d.start);})
+          .attr("height", 5)
+          .attr("x", function(d) { return x(d.start);})
+          .attr("y", height - 5);
         
         focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
         focus.select(".x.axis").call(xAxis);                
