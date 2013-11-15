@@ -77,7 +77,7 @@ function getDateSnapGuides(upperTimestamp, intervalInSeconds, numberOfSnaps) {
 		snapGuides.push(currentSnapGuide.toDate()); 
     }
 
-    return snapGuides;
+  return snapGuides;
 }
 
 function getDayRangeFromUpperBound(upperTimestampInSeconds) {	
@@ -367,4 +367,23 @@ function appendUserEventsToHoverBox(hoverbox, userEventGroup) {
         .attr("class", userEvent.tag)                
         .text(lineText);                         
     }
+}
+
+function getDayBoundaries(lowerTimestamp, upperTimestamp) {
+  // Round the upper snap limit to the nearest day
+  var upperTime = new Date(upperTimestamp * 1000);
+  var lowerTime = new Date(lowerTimestamp * 1000);
+  upperTime.setMinutes(0);
+  upperTime.setHours(0);
+  upperTime.setSeconds(0);
+  upperTime.setMilliseconds(0); 
+  dayBoundaries = [upperTime];
+
+  currentSnapGuide = upperTime;
+  while (currentSnapGuide > lowerTime) {
+    currentSnapGuide = moment(currentSnapGuide).subtract('days', 1);
+    dayBoundaries.push(currentSnapGuide.toDate()); 
+  } 
+
+  return dayBoundaries;
 }
