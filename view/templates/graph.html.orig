@@ -400,17 +400,29 @@
       function brushed() {      
         x.domain(brush.empty() ? x2.domain() : brush.extent());        
         focus.selectAll("path.self").attr("d", glucoseLine);
+<<<<<<< HEAD
+        focus.selectAll("path.steadySailor").attr("d", glucoseLine);         
+                
+        dayBoundaryGroup.selectAll(".dayBoundary")
+=======
 
         // focus.selectAll("path.steadySailor").attr("d", glucoseLine);                   
         focus.selectAll("#dayBoundaries")
-        dayBoundaryGroup.selectAll(".dayBoundary")
+          .data(dayBoundaries)
+          .enter()
+          .append("text")
+          .attr("class", "dayBoundary")
+          .attr("clip-path", "url(#clip)")
+          .text(function(d) { return moment(d).format("dddd, Do");})
+          .attr("y", "20")
+>>>>>>> 9417f2be2dbb2db7500ef9c3537965f2b34787e7
           .attr("x", function(d) { return x(d); });
-
+      
         timebar                  
           .selectAll(".night")
           .attr("width", function(d) { return x(d.end) - x(d.start);})
           .attr("x", function(d) { return x(d.start);});
-        
+
         focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
         focus.select(".x.axis").call(xAxis);                
 
