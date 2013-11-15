@@ -1,3 +1,42 @@
+/* Header */
+
+.rangeSelection {
+  cursor: pointer;
+  background-color: #eee;
+  border-style: solid;
+  border-color: #fff;
+  padding: 6px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 14px;
+  float:left;
+  min-width: 300px;
+}
+
+.rangeSelection:hover, .rangeSelection:hover h5 {
+  cursor: pointer;
+  background-color: #9e2064 !important;
+  color:#fff !important;
+}
+
+.circle
+{
+  width:110px;
+  height:110px;
+  border-radius:100px;
+  line-height:170%;
+  text-align:center;
+  background:#eee;
+}
+
+.profile{
+  margin-bottom: 2% !important;
+}
+
+#profilePic {
+  max-width: 250% !important;
+  min-width: 120% !important;
+}
 /* Data graph */
 #chart_container {
   position: relative;
@@ -47,12 +86,12 @@ li.navlink a:hover {
 
 
 .slab {
-  background-color: #f6f8f8;
-  padding:20px;
-  box-shadow: 2px 2px 6px #E5E5E4;
+  background-color: #fff;
+  /* padding:20px;
+  box-shadow: 2px 2px 6px #E5E5E4; */
 }
 .graph{
-  height: 500px;
+  height: 600px;
 }
 .footer {
  width: 100%;
@@ -132,7 +171,7 @@ svg {
 }
 
 path {
-  stroke: steelblue;
+  stroke: grey;
   fill: none;
   stroke-width: 1.5px;
 }
@@ -155,7 +194,7 @@ path {
 }
 
 .target_range {
-  fill-opacity: .125;
+  fill-opacity: .05;
   shape-rendering: crispEdges;
   fill: #6AC25F;
 }
