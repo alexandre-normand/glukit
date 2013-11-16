@@ -33,7 +33,7 @@ type DashboardData struct {
 	Median       float64     `json:"median"`
 	High         float64     `json:"high"`
 	Low          float64     `json:"low"`
-	Score        int64       `json:"score"`
+	Score        *int64      `json:"score"`
 	ScoreDetails GlukitScore `json:"scoreDetails"`
 	JoinedOn     time.Time   `json:"joinedOn"`
 }
