@@ -196,29 +196,17 @@ path {
 .target_range {
   fill-opacity: .05;
   shape-rendering: crispEdges;
-  fill: #6AC25F;
-}
-
-path.LOW  {
-   stroke: #DE4F33;
-   stroke-width: 1.8px;
-}
-
-path.HIGH  {
-   stroke: #DE7123;
-   stroke-width: 1.8px;
+  fill: #2390de;
 }
 
 path.Insulin {
-   fill: rgba(86, 215, 232, 0.8);   
+   fill: rgba(86, 215, 232, 1);   
    stroke-width: 0px;
-   fill-opacity: 0.75;
 }
 
 path.Carbs {
-   fill: rgba(255, 199, 69, 0.8);   
+   fill: rgba(255, 199, 69, 1);   
    stroke-width: 0px;
-   fill-opacity: 0.75;
 }
 
 .steadySailor {
@@ -232,7 +220,7 @@ path.Carbs {
 }
 
 .hoverbox {
-  background-color: rgba(190, 217, 247, 0.5);
+  background-color: rgba(190, 217, 247, 0.1);
   color: rgba(70, 175, 250, 0.8);
   font-size: 88%;
   position: absolute;
@@ -254,11 +242,11 @@ p.glucose {
 }
 
 p.insulin {  
-  color: rgba(86, 215, 232, 0.8);   
+  color: rgba(86, 215, 232, 1);   
 }
 
 p.carbs {  
-  color: rgba(255, 199, 69, 0.8);
+  color: rgba(255, 199, 69, 1);
 }
 
 .focusLine {

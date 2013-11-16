@@ -246,7 +246,7 @@
 
     // Find a way to change those as the viewfinder moves
     var userEventArc = d3.svg.arc()
-      .innerRadius(2)
+      .innerRadius(0)
       .outerRadius(7)      
       .startAngle(function(d)
            {
@@ -665,9 +665,9 @@ function highlightLines() {
       $("#above").show();
 
 
-      $('.NORMAL').css("stroke", "#414042");
-      $('.LOW').css("stroke", "#d1d3d4");
-      $('.HIGH').css("stroke", "#d1d3d4");
+      $('.NORMAL').css("stroke", "#2390de");
+      $('.LOW').css("stroke", "#ddd");
+      $('.HIGH').css("stroke", "#ddd");
     });
 
     $("#below").click(function(){
@@ -690,9 +690,9 @@ function highlightLines() {
       $("#highRangePercentage").hide();
 
       //Highlight relevant pieces of the graph
-      $('.NORMAL').css("stroke", "#d1d3d4");
-      $('.LOW').css("stroke", "#414042");
-      $('.HIGH').css("stroke", "#d1d3d4");
+      $('.NORMAL').css("stroke", "#ddd");
+      $('.LOW').css("stroke", "#de2333");
+      $('.HIGH').css("stroke", "#ddd");
     });
 
     $("#above").click(function(){
@@ -714,9 +714,9 @@ function highlightLines() {
       $("#lowRangePercentage").hide();
       $("#highRangePercentage").show();
 
-      $('.NORMAL').css("stroke", "#d1d3d4");
-      $('.LOW').css("stroke", "#d1d3d4");
-      $('.HIGH').css("stroke", "#414042");
+      $('.NORMAL').css("stroke", "#ddd");
+      $('.LOW').css("stroke", "#ddd");
+      $('.HIGH').css("stroke", "#de2333");
 
     });
 
