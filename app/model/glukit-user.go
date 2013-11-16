@@ -21,6 +21,7 @@ type GlukitUser struct {
 	MostRecentScore GlukitScore `datastore:"mostRecentScore"`
 	Internal        bool        `datastore:"internal"`
 	PictureUrl      string      `datastore:"pictureUrl"`
+	AccountCreated  time.Time   `datastore:"joinedOn"`
 }
 
 // Represents a GlukitScore value, the lower and upper bounds

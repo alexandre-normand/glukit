@@ -81,7 +81,7 @@
 
         <div class="large-8 columns">
             <h3 class="profile" id="userName"></h3>
-            <h5 class="profile"><small>Glukit user since Feb 1, 2013</small></h5>
+            <h5 class="profile"><small id="since"></small></h5>
             <h5 class="profile">Last sync</h5>
             <h5 class="profile"><small id="lastSync"></small></h5>
         </div>
@@ -480,8 +480,9 @@
       brushElement.selectAll(".extent").style("pointer-events", "all");
       brushElement.selectAll(".background").style("pointer-events", "none");
       
-      // Call a first brushed to view the last day only 
+      // Call a first brushed to view the last day only       
       brushed();
+      toggleNormalRange();
 
       // Add steady sailor data
       d3.json("/{{.PathPrefix}}steadySailor", function(error, data) {
@@ -496,10 +497,6 @@
             });
           }
 
-         /* steadySailor.forEach(function(d) {    
-            d.date = parseDate(d.x * 1000);     
-          });
-          */
           sailorSegments = splitReadsInRangeSegments(steadySailor);
           addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine);  
         }
@@ -619,6 +616,7 @@ function showProfile()
           var lastSync = dashboard.lastSync;
           var lowerBound = dashboard.scoreDetails.LowerBound;
           var upperBound = dashboard.scoreDetails.UpperBound;
+          var joinedOn = dashboard.joinedOn;
 
           var img = document.createElement("img");
           img.src = profilePicture;
@@ -629,9 +627,7 @@ function showProfile()
           document.getElementById('lastSync').innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").format('LL');
           document.getElementById('glukitScore').innerHTML = glukitScore;
           document.getElementById('glukitScoreDates').innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');
-            console.log(lowerBound);
-            console.log(moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ"));
-
+          document.getElementById('since').innerHTML = "Glukit user since " + moment(joinedOn, "YYYY-MM-DDHH:mm:ssZ").format('LL');
 
         }).fail(function() {
           $("div#overlay").removeClass("hidden");
@@ -641,34 +637,34 @@ function showProfile()
          });
     }
 
+function toggleNormalRange() {
+    $("#normalRangePercentage").show();
+    $("#lowRangePercentage").hide();
+    $("#highRangePercentage").hide();
+    
+    //change the color of the text to white and the background to pink
+    $("#inTargetRangeText").css("color", "#fff");
+    $("#inRange").css("background", "#9e2064");
+    
+    //reset the other div colors
+    $("#belowTargetRangeText").css("color", "#404041");
+    $("#below").css("background", "#eee");
+    $("#aboveTargetRangeText").css("color", "#404041");
+    $("#above").css("background", "#eee");
 
+
+    $("#below").show();
+    $("#above").show();
+
+
+    $('.NORMAL').css("stroke", "#2390de");
+    $('.LOW').css("stroke", "#ddd");
+    $('.HIGH').css("stroke", "#ddd");
+}
 
 function highlightLines() {
 
-    $("#inRange").click(function(){
-      $("#normalRangePercentage").show();
-      $("#lowRangePercentage").hide();
-      $("#highRangePercentage").hide();
-      
-      //change the color of the text to white and the background to pink
-      $("#inTargetRangeText").css("color", "#fff");
-      $("#inRange").css("background", "#9e2064");
-      
-      //reset the other div colors
-      $("#belowTargetRangeText").css("color", "#404041");
-      $("#below").css("background", "#eee");
-      $("#aboveTargetRangeText").css("color", "#404041");
-      $("#above").css("background", "#eee");
-
-
-      $("#below").show();
-      $("#above").show();
-
-
-      $('.NORMAL').css("stroke", "#2390de");
-      $('.LOW').css("stroke", "#ddd");
-      $('.HIGH').css("stroke", "#ddd");
-    });
+    $("#inRange").click(toggleNormalRange);
 
     $("#below").click(function(){
       $("#above").show();

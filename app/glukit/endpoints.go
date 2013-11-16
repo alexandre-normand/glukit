@@ -215,6 +215,7 @@ func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request,
 		dashboardData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
 		dashboardData.Score = engine.CalculateUserFacingScore(userProfile.MostRecentScore)
 		dashboardData.ScoreDetails = userProfile.MostRecentScore
+		dashboardData.JoinedOn = userProfile.AccountCreated
 		context.Debugf("Calculated user score of [%d] from internal score of [%d]", dashboardData.Score, userProfile.MostRecentScore.Value)
 	}
 
