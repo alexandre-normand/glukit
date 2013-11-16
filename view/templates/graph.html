@@ -624,7 +624,7 @@ function showProfile()
           src.appendChild(img);
 
           document.getElementById('userName').innerHTML = firstName + " " +lastName;
-          document.getElementById('lastSync').innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").format('LL');
+          document.getElementById('lastSync').innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();
           document.getElementById('glukitScore').innerHTML = glukitScore;
           document.getElementById('glukitScoreDates').innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');
           document.getElementById('since').innerHTML = "Glukit user since " + moment(joinedOn, "YYYY-MM-DDHH:mm:ssZ").format('LL');
