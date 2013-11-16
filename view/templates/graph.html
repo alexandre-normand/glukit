@@ -18,47 +18,6 @@
   </head>
   <body class="dataPage">
 
-<div class="sticky">
-  <nav class="top-bar dataPage-topbar mainDataPage">
-    <ul class="title-area">
-    <!-- Title Area -->
-      <li class="name">
-      <h1><a href="index.html"><img src="images/glukit.png" id="droplet"></a></h1>
-      </li>
-    <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-  </ul>
-  <div class="fixed"></div>
-  <section class="top-bar-section">
-    <!-- Left Nav Section
-    <ul class="left hackwhite">
-    </ul>
-    -->
-    <!-- Right Nav Section -->
-    <ul class="right">
-    <!--
-     <li class="divider"></li>
-      <li class="active navlink"><a href="#">How you're doing</a></li>
-      <li class="divider "></li>
-      <li class="active navlink"><a href="#">Compare</a></li>
-      <li class="divider"></li>
-      <li class="active navlink"><a href="#">Explore</a></li>
-      <li class="divider"></li>
-      <li class="divider hide-for-small"></li>
-  -->
-
-
-      <li class="has-form">
-        <a class="button" href="index.html" style="color:white !important">Sign out</a>
-      </li>
-
-      <!-- <li class="active hackwhite has-dropdown"><img src="img/settings-cog.png"></li> -->
-      <li class="divider"></li>
-    </ul>
-  </section>
-</div>
-</nav>
-</div>
-
 <!-- Overlay if user hasn't imported data yet. NOT YET STYLED - NEED TO FIX! -->
   <div id="overlay" class="hidden">
     <div class="row">
@@ -625,7 +584,11 @@ function showProfile()
 
           document.getElementById('userName').innerHTML = firstName + " " +lastName;
           document.getElementById('lastSync').innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();
-          document.getElementById('glukitScore').innerHTML = glukitScore;
+          if (glukitScore == null) {
+            document.getElementById('glukitScore').innerHTML = "?";
+          } else {
+            document.getElementById('glukitScore').innerHTML = glukitScore;
+          }          
           document.getElementById('glukitScoreDates').innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');
           document.getElementById('since').innerHTML = "Glukit user since " + moment(joinedOn, "YYYY-MM-DDHH:mm:ssZ").format('LL');
 

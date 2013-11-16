@@ -26,7 +26,7 @@ const (
 )
 
 // CalculateGlukitScore computes the GlukitScore for a given user. This is done in a few steps:
-//   1. Get the latest 16 days of reads
+//   1. Get the latest GLUKIT_SCORE_PERIOD days of reads
 //   2. For the most recent reads up to READS_REQUIREMENT, calculate the individual score
 //      contribution and add it to the GlukitScore.
 //   3. If we had enough reads to satisfy the requirements, we return the sum of
@@ -89,10 +89,15 @@ func CalculateIndividualReadScoreWeight(context appengine.Context, read model.Gl
 }
 
 // CalculateUserFacingScore maps an internal GlukitScore to a user facing value (should be between 0 and 100)
-func CalculateUserFacingScore(internal model.GlukitScore) (external int64) {
-	internalAsFloat := float64(internal.Value)
-	externalAsFloat := 100 + 1.043e-9*math.Pow(internalAsFloat, 2) + 6.517e-22*math.Pow(internalAsFloat, 4) - 0.0003676*internalAsFloat - 1.434e-15*math.Pow(internalAsFloat, 3)
-	return int64(externalAsFloat)
+func CalculateUserFacingScore(internal model.GlukitScore) (external *int64) {
+	if internal.Value == model.UNDEFINED_SCORE_VALUE {
+		return nil
+	} else {
+		internalAsFloat := float64(internal.Value)
+		externalAsFloat := 100 + 1.043e-9*math.Pow(internalAsFloat, 2) + 6.517e-22*math.Pow(internalAsFloat, 4) - 0.0003676*internalAsFloat - 1.434e-15*math.Pow(internalAsFloat, 3)
+		externalAsInt := int64(externalAsFloat)
+		return &externalAsInt
+	}
 }
 
 // CalculateGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
