@@ -35,6 +35,7 @@ type DashboardData struct {
 	Low          float64     `json:"low"`
 	Score        int64       `json:"score"`
 	ScoreDetails GlukitScore `json:"scoreDetails"`
+	JoinedOn     time.Time   `json:"joinedOn"`
 }
 
 type CoordinateSlice []Coordinate
