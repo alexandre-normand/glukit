@@ -1,19 +1,14 @@
 package model
 
-import (
-	"time"
-)
-
 const (
 	INSULIN_TAG = "Insulin"
 )
 
 // Injection represents an insulin injection
 type Injection struct {
-	LocalTime          string    `json:"label" datastore:"localtime,noindex"`
-	Timestamp          Timestamp `json:"x" datastore:"timestamp"`
-	Units              float32   `json:"units" datastore:"units,noindex"`
-	ReferenceReadValue int       `json:"y" datastore:"referenceReadValue,noindex"`
+	Timestamp
+	Units              float32 `json:"units" datastore:"units,noindex"`
+	ReferenceReadValue int     `json:"y" datastore:"referenceReadValue,noindex"`
 }
 
 // This holds an array of injections for a whole day
@@ -21,31 +16,26 @@ type DayOfInjections struct {
 	Injections []Injection
 }
 
-// GetTime gets the time of an Injection value
-func (injection Injection) GetTime() (timeValue time.Time) {
-	value := time.Unix(int64(injection.Timestamp), 0)
-	return value
-}
-
 type InjectionSlice []Injection
 
-func (slice InjectionSlice) Len() int {
-	return len(slice)
-}
+// ToTimestampSlice converts an InjectionSlice into a generic TimestampSlice
+func (slice InjectionSlice) ToTimestampSlice() (timestamps TimestampSlice) {
+	timestamps = make([]Timestamp, len(slice))
 
-func (slice InjectionSlice) Less(i, j int) bool {
-	return slice[i].Timestamp < slice[j].Timestamp
-}
+	for i := range slice {
+		timestamp := slice[i].Timestamp
+		timestamps[i] = timestamp
+	}
 
-func (slice InjectionSlice) Swap(i, j int) {
-	slice[i], slice[j] = slice[j], slice[i]
+	return timestamps
 }
 
 // ToDataPointSlice converts an InjectionSlice into a generic DataPoint array
 func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
+
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
+		dataPoint := DataPoint{slice[i].Timestamp.LocalTime, slice[i].Timestamp.EpochTime,
 			linearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Units, INSULIN_TAG}
 		dataPoints[i] = dataPoint
 	}

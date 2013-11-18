@@ -24,7 +24,7 @@ const (
 
 var BERNSTEIN_EARLIEST_READ, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2013-06-01 12:00:00")
 var BERNSTEIN_MOST_RECENT_READ_TIME, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2014-03-11 12:00:00")
-var BERNSTEIN_MOST_RECENT_READ = model.GlucoseRead{BERNSTEIN_EARLIEST_READ.Format(util.TIMEFORMAT), model.Timestamp(BERNSTEIN_EARLIEST_READ.Unix()), PERFECT_SCORE}
+var BERNSTEIN_MOST_RECENT_READ = model.GlucoseRead{model.Timestamp{BERNSTEIN_EARLIEST_READ.Format(util.TIMEFORMAT), BERNSTEIN_EARLIEST_READ.Unix()}, PERFECT_SCORE}
 var BERNSTEIN_BIRTH_DATE, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "1934-06-17 00:00:00")
 
 // initializeGlukitBernstein does lazy initialization of the "perfect" glukit user.

@@ -36,15 +36,16 @@ function groupEvents(userEvents, resolutionInMinutes) {
 		firstEventOfGroup = userEvents[0];
 		
 		currentGroup = new EventGroup();
+    eventGroups.push(currentGroup);
 		for (var i = 0; i < userEvents.length; i++) {	
 			currentEvent = userEvents[i];			
 
 			if (eventWithinResolution(firstEventOfGroup, currentEvent, resolutionInMinutes)) {
 				currentGroup.addEvent(currentEvent);								
-			} else {
-				eventGroups.push(currentGroup);
+			} else {				
 				currentGroup = new EventGroup();
 				currentGroup.addEvent(currentEvent);
+        eventGroups.push(currentGroup);
 				firstEventOfGroup = currentEvent;				
 			}
 			
