@@ -2767,7 +2767,7 @@ form.custom {
   background-color: #F2F2F2;
   height:64px; 
   padding:0px; 
-  box-shadow: 0 0 16px #888;
+  /* box-shadow: 0 0 16px #888; */
   margin-bottom: 1.875em; }
   .top-bar ul {
     margin-bottom: 0;
