@@ -1,26 +1,15 @@
 package model
 
-import (
-	"time"
-)
-
 const (
 	EXERCISE_TAG = "Exercise"
 )
 
 // Represents an exercise event
 type Exercise struct {
-	LocalTime         string    `json:"label" datastore:"localtime,noindex"`
-	Timestamp         Timestamp `json:"unixtime" datastore:"timestamp"`
-	DurationInMinutes int       `json:"duration" datastore:"duration,noindex"`
+	Timestamp
+	DurationInMinutes int `json:"duration" datastore:"duration,noindex"`
 	// One of: light, medium, heavy
 	Intensity string `json:"intensity" datastore:"intensity,noindex"`
-}
-
-// Gets the time of the exercise
-func (exercise Exercise) GetTime() (timeValue time.Time) {
-	value := time.Unix(int64(exercise.Timestamp), 0)
-	return value
 }
 
 // This holds an array of exercise events for a whole day
@@ -30,23 +19,23 @@ type DayOfExercises struct {
 
 type ExerciseSlice []Exercise
 
-func (slice ExerciseSlice) Len() int {
-	return len(slice)
-}
+// ToTimestampSlice converts a ExerciseSlice into a generic TimestampSlice array
+func (slice ExerciseSlice) ToTimestampSlice() (timestamps TimestampSlice) {
+	timestamps = make([]Timestamp, len(slice))
 
-func (slice ExerciseSlice) Less(i, j int) bool {
-	return slice[i].Timestamp < slice[j].Timestamp
-}
+	for i := range slice {
+		timestamp := slice[i].Timestamp
+		timestamps[i] = timestamp
+	}
 
-func (slice ExerciseSlice) Swap(i, j int) {
-	slice[i], slice[j] = slice[j], slice[i]
+	return timestamps
 }
 
 // ToDataPointSlice converts an ExerciseSlice into a generic DataPoint array
 func (slice ExerciseSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].LocalTime, slice[i].Timestamp,
+		dataPoint := DataPoint{slice[i].Timestamp.LocalTime, slice[i].Timestamp.EpochTime,
 			linearInterpolateY(matchingReads, slice[i].Timestamp), float32(slice[i].DurationInMinutes), EXERCISE_TAG}
 		dataPoints[i] = dataPoint
 	}

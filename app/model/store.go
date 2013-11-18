@@ -34,7 +34,7 @@ func (dayOfReads *DayOfGlucoseReads) Load(channel <-chan datastore.Property) err
 			value := int(columnValue.(int64))
 
 			localTime := readTime.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			read := GlucoseRead{localTime, Timestamp(readTime.Unix()), value}
+			read := GlucoseRead{Timestamp{localTime, readTime.Unix()}, value}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -52,10 +52,10 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 		return nil
 	}
 	reads := dayOfReads.Reads
-	startTimestamp := int64(reads[0].Timestamp)
+	startTimestamp := int64(reads[0].Timestamp.EpochTime)
 	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := reads[0].LocalTime
-	endTimestamp := int64(reads[size-1].Timestamp)
+	startTimeLocal := reads[0].Timestamp.LocalTime
+	endTimestamp := int64(reads[size-1].Timestamp.EpochTime)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
@@ -72,7 +72,7 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 	}
 
 	for i := range reads {
-		readTimestamp := int64(reads[i].Timestamp)
+		readTimestamp := int64(reads[i].Timestamp.EpochTime)
 		readOffset := readTimestamp - startTimestamp
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
@@ -111,7 +111,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 			value := float32(columnValue.(float64))
 
 			localTime := timestamp.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			injection := Injection{localTime, Timestamp(timestamp.Unix()), value, UNDEFINED_READ}
+			injection := Injection{Timestamp{localTime, timestamp.Unix()}, value, UNDEFINED_READ}
 			dayOfInjections.Injections = append(dayOfInjections.Injections, injection)
 		}
 	}
@@ -129,10 +129,10 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 		return nil
 	}
 	injections := dayOfInjections.Injections
-	startTimestamp := int64(injections[0].Timestamp)
+	startTimestamp := int64(injections[0].Timestamp.EpochTime)
 	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := injections[0].LocalTime
-	endTimestamp := int64(injections[size-1].Timestamp)
+	startTimeLocal := injections[0].Timestamp.LocalTime
+	endTimestamp := int64(injections[size-1].Timestamp.EpochTime)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
@@ -149,7 +149,7 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 	}
 
 	for i := range injections {
-		timestamp := int64(injections[i].Timestamp)
+		timestamp := int64(injections[i].Timestamp.EpochTime)
 		offset := timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
@@ -189,7 +189,7 @@ func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
 			value := float32(columnValue.(float64))
 
 			localTime := timestamp.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			carb := Carb{localTime, Timestamp(timestamp.Unix()), value, UNDEFINED_READ}
+			carb := Carb{Timestamp{localTime, timestamp.Unix()}, value, UNDEFINED_READ}
 			dayOfCarbs.Carbs = append(dayOfCarbs.Carbs, carb)
 		}
 	}
@@ -207,10 +207,10 @@ func (dayOfCarbs *DayOfCarbs) Save(channel chan<- datastore.Property) error {
 		return nil
 	}
 	carbs := dayOfCarbs.Carbs
-	startTimestamp := int64(carbs[0].Timestamp)
+	startTimestamp := int64(carbs[0].Timestamp.EpochTime)
 	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := carbs[0].LocalTime
-	endTimestamp := int64(carbs[size-1].Timestamp)
+	startTimeLocal := carbs[0].Timestamp.LocalTime
+	endTimestamp := int64(carbs[size-1].Timestamp.EpochTime)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
@@ -227,7 +227,7 @@ func (dayOfCarbs *DayOfCarbs) Save(channel chan<- datastore.Property) error {
 	}
 
 	for i := range carbs {
-		timestamp := int64(carbs[i].Timestamp)
+		timestamp := int64(carbs[i].Timestamp.EpochTime)
 		offset := timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
@@ -269,7 +269,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 			fmt.Sscanf(value, EXERCISE_VALUE_FORMAT, &duration, &intensity)
 
 			localTime := timestamp.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			exercise := Exercise{localTime, Timestamp(timestamp.Unix()), duration, intensity}
+			exercise := Exercise{Timestamp{localTime, timestamp.Unix()}, duration, intensity}
 			dayOfExercises.Exercises = append(dayOfExercises.Exercises, exercise)
 		}
 	}
@@ -287,10 +287,10 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 		return nil
 	}
 	exercises := dayOfExercises.Exercises
-	startTimestamp := int64(exercises[0].Timestamp)
+	startTimestamp := int64(exercises[0].Timestamp.EpochTime)
 	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := exercises[0].LocalTime
-	endTimestamp := int64(exercises[size-1].Timestamp)
+	startTimeLocal := exercises[0].Timestamp.LocalTime
+	endTimestamp := int64(exercises[size-1].Timestamp.EpochTime)
 	endTime := time.Unix(endTimestamp, 0)
 
 	channel <- datastore.Property{
@@ -307,7 +307,7 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 	}
 
 	for i := range exercises {
-		timestamp := int64(exercises[i].Timestamp)
+		timestamp := int64(exercises[i].Timestamp.EpochTime)
 		offset := timestamp - startTimestamp
 		// We need to store two values so we use a string and format each value inside of a single cell value
 		channel <- datastore.Property{

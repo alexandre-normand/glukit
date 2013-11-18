@@ -381,8 +381,9 @@
       userEvents.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
       });
+      window.userEvents = userEvents;
       var userEventGroups = groupEvents(userEvents, 60);
-
+      window.userEventGroups = userEventGroups;
       // The clip path needs to be set on the group of userEvents and NOT on the individual arcs because otherwise,
       // the arcs will get clipped before the transformation and we're never going to be able to get a full circle or 
       // semi-circle

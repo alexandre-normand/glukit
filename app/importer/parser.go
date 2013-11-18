@@ -70,7 +70,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
 				if read.Value > 0 {
-					glucoseRead := model.GlucoseRead{read.DisplayTime, model.Timestamp(util.GetTimeInSeconds(read.InternalTime)), read.Value}
+					glucoseRead := model.GlucoseRead{model.Timestamp{read.DisplayTime, util.GetTimeInSeconds(read.InternalTime)}, read.Value}
 
 					// Skip all reads that are not after the last import's last read time
 					if glucoseRead.GetTime().After(startTime) {
@@ -111,7 +111,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 					if event.EventType == "Carbs" {
 						var carbQuantityInGrams int
 						fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
-						carb := model.Carb{event.EventTime, model.Timestamp(internalEventTime), float32(carbQuantityInGrams), model.UNDEFINED_READ}
+						carb := model.Carb{model.Timestamp{event.EventTime, internalEventTime}, float32(carbQuantityInGrams), model.UNDEFINED_READ}
 
 						if !carb.GetTime().After(startTime) {
 							context.Debugf("Skipping already imported carb dated [%s]", carb.GetTime().Format(util.TIMEFORMAT))
@@ -148,7 +148,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						if err != nil {
 							util.Propagate(err)
 						}
-						injection := model.Injection{event.EventTime, model.Timestamp(internalEventTime), float32(insulinUnits), model.UNDEFINED_READ}
+						injection := model.Injection{model.Timestamp{event.EventTime, internalEventTime}, float32(insulinUnits), model.UNDEFINED_READ}
 						if !injection.GetTime().After(startTime) {
 							context.Debugf("Skipping already imported injection dated [%s]", injection.GetTime().Format(util.TIMEFORMAT))
 						} else {
@@ -182,7 +182,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						var duration int
 						var intensity string
 						fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
-						exercise := model.Exercise{event.EventTime, model.Timestamp(internalEventTime), duration, intensity}
+						exercise := model.Exercise{model.Timestamp{event.EventTime, internalEventTime}, duration, intensity}
 
 						if !exercise.GetTime().After(startTime) {
 							context.Debugf("Skipping already imported exercise dated [%s]", exercise.GetTime().Format(util.TIMEFORMAT))

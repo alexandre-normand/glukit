@@ -7,7 +7,7 @@ func linearInterpolateY(reads []GlucoseRead, timeValue Timestamp) (yValue int) {
 	upperIndex := len(reads) - 1
 
 	for i := range reads {
-		if reads[i].Timestamp > timeValue {
+		if reads[i].Timestamp.EpochTime > timeValue.EpochTime {
 			upperIndex = i
 			break
 		}
@@ -25,7 +25,7 @@ func linearInterpolateY(reads []GlucoseRead, timeValue Timestamp) (yValue int) {
 	lowerYValue := reads[lowerIndex].Value
 	upperYValue := reads[upperIndex].Value
 
-	relativeTimePosition := float32((timeValue - lowerTimeValue)) / float32((upperTimeValue - lowerTimeValue))
+	relativeTimePosition := float32((timeValue.EpochTime - lowerTimeValue.EpochTime)) / float32((upperTimeValue.EpochTime - lowerTimeValue.EpochTime))
 	yValue = int(relativeTimePosition*float32(upperYValue-lowerYValue) + float32(lowerYValue))
 
 	return yValue

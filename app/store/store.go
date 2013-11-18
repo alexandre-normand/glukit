@@ -76,7 +76,7 @@ func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile 
 func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []model.DayOfGlucoseReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfReads))
 	for i := range daysOfReads {
-		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", int64(daysOfReads[i].Reads[0].Timestamp), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", daysOfReads[i].Reads[0].Timestamp.EpochTime, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of reads", len(elementKeys), len(daysOfReads))
@@ -130,7 +130,9 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 		count = len(daysOfReads.Reads)
 	}
 
-	filteredReads := filterReads(daysOfReads.Reads, lowerBound, upperBound)
+	readSlice := model.GlucoseReadSlice(daysOfReads.Reads)
+	startIndex, endIndex := readSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	filteredReads := daysOfReads.Reads[startIndex : endIndex+1]
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -146,7 +148,7 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfInjections))
 	for i := range daysOfInjections {
-		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", int64(daysOfInjections[i].Injections[0].Timestamp), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", daysOfInjections[i].Injections[0].Timestamp.EpochTime, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of injections", len(elementKeys), len(daysOfInjections))
@@ -181,7 +183,9 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 		count = len(daysOfInjections.Injections)
 	}
 
-	filteredInjections := filterInjections(daysOfInjections.Injections, lowerBound, upperBound)
+	injectionSlice := model.InjectionSlice(daysOfInjections.Injections)
+	startIndex, endIndex := injectionSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	filteredInjections := daysOfInjections.Injections[startIndex : endIndex+1]
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -197,7 +201,7 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []model.DayOfCarbs) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfCarbs))
 	for i := range daysOfCarbs {
-		elementKeys[i] = datastore.NewKey(context, "DayOfCarbs", "", int64(daysOfCarbs[i].Carbs[0].Timestamp), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfCarbs", "", daysOfCarbs[i].Carbs[0].Timestamp.EpochTime, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of carbs", len(elementKeys), len(daysOfCarbs))
@@ -233,7 +237,9 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 	}
 
 	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(daysOfCarbs.Carbs), daysOfCarbs.Carbs)
-	filteredCarbs := filterCarbs(daysOfCarbs.Carbs, lowerBound, upperBound)
+	carbSlice := model.CarbSlice(daysOfCarbs.Carbs)
+	startIndex, endIndex := carbSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	filteredCarbs := daysOfCarbs.Carbs[startIndex : endIndex+1]
 	context.Debugf("Finished filterting with %d carbs", len(filteredCarbs))
 
 	if err != datastore.Done {
@@ -250,7 +256,7 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfExercises))
 	for i := range daysOfExercises {
-		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", int64(daysOfExercises[i].Exercises[0].Timestamp), userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", daysOfExercises[i].Exercises[0].Timestamp.EpochTime, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of exercises", len(elementKeys), len(daysOfExercises))
@@ -285,7 +291,9 @@ func GetExercises(context appengine.Context, email string, lowerBound time.Time,
 		count = len(daysOfExercises.Exercises)
 	}
 
-	filteredExercises := filterExercises(daysOfExercises.Exercises, lowerBound, upperBound)
+	exerciseSlice := model.ExerciseSlice(daysOfExercises.Exercises)
+	startIndex, endIndex := exerciseSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	filteredExercises := daysOfExercises.Exercises[startIndex : endIndex+1]
 
 	if err != datastore.Done {
 		util.Propagate(err)

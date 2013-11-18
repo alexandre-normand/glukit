@@ -2,11 +2,11 @@ package model
 
 // Represents a generic data point in time
 type DataPoint struct {
-	LocalTime string    `json:"label"`
-	Timestamp Timestamp `json:"x"`
-	Y         int       `json:"y"`
-	Value     float32   `json:"value"`
-	Tag       string    `json:"tag"`
+	LocalTime string  `json:"label"`
+	EpochTime int64   `json:"x"`
+	Y         int     `json:"y"`
+	Value     float32 `json:"value"`
+	Tag       string  `json:"tag"`
 }
 
 type DataPointSlice []DataPoint
@@ -16,7 +16,7 @@ func (slice DataPointSlice) Len() int {
 }
 
 func (slice DataPointSlice) Less(i, j int) bool {
-	return slice[i].Timestamp < slice[j].Timestamp
+	return slice[i].EpochTime < slice[j].EpochTime
 }
 
 func (slice DataPointSlice) Swap(i, j int) {
