@@ -31,10 +31,20 @@ func (slice TimestampSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-// filter filters out any value that is outside of the lower and upper bounds. The two bounds are inclusive.
-func (slice TimestampSlice) Filter(lowerBound, upperBound time.Time) (startIndex, endIndex int) {
+func (slice TimestampSlice) GetEpochTime(i int) (epochTime int64) {
+	return slice[i].EpochTime
+}
+
+type Interface interface {
+	sort.Interface
+	GetEpochTime(i int) (epochTime int64)
+}
+
+// filter filters out any value that is outside of the lower and upper bounds. The two bounds are inclusive and the returned
+// indexes are inclusive too.
+func GetBoundariesOfElementsInRange(slice Interface, lowerBound, upperBound time.Time) (startIndex, endIndex int) {
 	// Nothing to sort, return immediately
-	if len(slice) == 0 {
+	if slice.Len() == 0 {
 		return 0, slice.Len() - 1
 	}
 
@@ -47,7 +57,7 @@ func (slice TimestampSlice) Filter(lowerBound, upperBound time.Time) (startIndex
 	sort.Sort(slice)
 
 	for i := arraySize - 1; i > 0; i-- {
-		elementTime := time.Unix(slice[i].EpochTime, 0)
+		elementTime := time.Unix(slice.GetEpochTime(i), 0)
 		if !elementTime.After(upperBound) {
 			endIndex = i
 			break
@@ -55,7 +65,7 @@ func (slice TimestampSlice) Filter(lowerBound, upperBound time.Time) (startIndex
 	}
 
 	for i := 0; i < arraySize; i++ {
-		elementTime := time.Unix(slice[i].EpochTime, 0)
+		elementTime := time.Unix(slice.GetEpochTime(i), 0)
 		if !elementTime.Before(lowerBound) {
 			startIndex = i
 			break

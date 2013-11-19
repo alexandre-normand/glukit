@@ -131,7 +131,7 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 	}
 
 	readSlice := model.GlucoseReadSlice(daysOfReads.Reads)
-	startIndex, endIndex := readSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	startIndex, endIndex := model.GetBoundariesOfElementsInRange(readSlice, lowerBound, upperBound)
 	filteredReads := daysOfReads.Reads[startIndex : endIndex+1]
 
 	if err != datastore.Done {
@@ -184,7 +184,7 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 	}
 
 	injectionSlice := model.InjectionSlice(daysOfInjections.Injections)
-	startIndex, endIndex := injectionSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	startIndex, endIndex := model.GetBoundariesOfElementsInRange(injectionSlice, lowerBound, upperBound)
 	filteredInjections := daysOfInjections.Injections[startIndex : endIndex+1]
 
 	if err != datastore.Done {
@@ -238,7 +238,7 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 
 	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(daysOfCarbs.Carbs), daysOfCarbs.Carbs)
 	carbSlice := model.CarbSlice(daysOfCarbs.Carbs)
-	startIndex, endIndex := carbSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	startIndex, endIndex := model.GetBoundariesOfElementsInRange(carbSlice, lowerBound, upperBound)
 	filteredCarbs := daysOfCarbs.Carbs[startIndex : endIndex+1]
 	context.Debugf("Finished filterting with %d carbs", len(filteredCarbs))
 
@@ -292,7 +292,7 @@ func GetExercises(context appengine.Context, email string, lowerBound time.Time,
 	}
 
 	exerciseSlice := model.ExerciseSlice(daysOfExercises.Exercises)
-	startIndex, endIndex := exerciseSlice.ToTimestampSlice().Filter(lowerBound, upperBound)
+	startIndex, endIndex := model.GetBoundariesOfElementsInRange(exerciseSlice, lowerBound, upperBound)
 	filteredExercises := daysOfExercises.Exercises[startIndex : endIndex+1]
 
 	if err != datastore.Done {

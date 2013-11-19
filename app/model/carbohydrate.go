@@ -18,16 +18,20 @@ type DayOfCarbs struct {
 
 type CarbSlice []Carb
 
-// ToTimestampSlice converts a CarbSlice into a generic TimestampSlice array
-func (slice CarbSlice) ToTimestampSlice() (timestamps TimestampSlice) {
-	timestamps = make([]Timestamp, len(slice))
+func (slice CarbSlice) Len() int {
+	return len(slice)
+}
 
-	for i := range slice {
-		timestamp := slice[i].Timestamp
-		timestamps[i] = timestamp
-	}
+func (slice CarbSlice) Less(i, j int) bool {
+	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+}
 
-	return timestamps
+func (slice CarbSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice CarbSlice) GetEpochTime(i int) (epochTime int64) {
+	return slice[i].Timestamp.EpochTime
 }
 
 // ToDataPointSlice converts an CarbSlice into a generic DataPoint array
