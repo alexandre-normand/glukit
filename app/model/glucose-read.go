@@ -25,20 +25,24 @@ type DayOfGlucoseReads struct {
 // }
 type GlucoseReadSlice []GlucoseRead
 
+func (slice GlucoseReadSlice) Len() int {
+	return len(slice)
+}
+
+func (slice GlucoseReadSlice) Less(i, j int) bool {
+	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+}
+
+func (slice GlucoseReadSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
 func (slice GlucoseReadSlice) Get(i int) float64 {
 	return float64(slice[i].Value)
 }
 
-// ToTimestampSlice converts a GlucoseReadSlice into a generic TimestampSlice
-func (slice GlucoseReadSlice) ToTimestampSlice() (timestamps TimestampSlice) {
-	timestamps = make([]Timestamp, len(slice))
-
-	for i := range slice {
-		timestamp := slice[i].Timestamp
-		timestamps[i] = timestamp
-	}
-
-	return timestamps
+func (slice GlucoseReadSlice) GetEpochTime(i int) (epochTime int64) {
+	return slice[i].Timestamp.EpochTime
 }
 
 // ToDataPointSlice converts a GlucoseReadSlice into a generic DataPoint array

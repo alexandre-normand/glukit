@@ -18,16 +18,20 @@ type DayOfInjections struct {
 
 type InjectionSlice []Injection
 
-// ToTimestampSlice converts an InjectionSlice into a generic TimestampSlice
-func (slice InjectionSlice) ToTimestampSlice() (timestamps TimestampSlice) {
-	timestamps = make([]Timestamp, len(slice))
+func (slice InjectionSlice) Len() int {
+	return len(slice)
+}
 
-	for i := range slice {
-		timestamp := slice[i].Timestamp
-		timestamps[i] = timestamp
-	}
+func (slice InjectionSlice) Less(i, j int) bool {
+	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+}
 
-	return timestamps
+func (slice InjectionSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice InjectionSlice) GetEpochTime(i int) (epochTime int64) {
+	return slice[i].EpochTime
 }
 
 // ToDataPointSlice converts an InjectionSlice into a generic DataPoint array

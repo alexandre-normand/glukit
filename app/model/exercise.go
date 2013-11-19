@@ -19,16 +19,20 @@ type DayOfExercises struct {
 
 type ExerciseSlice []Exercise
 
-// ToTimestampSlice converts a ExerciseSlice into a generic TimestampSlice array
-func (slice ExerciseSlice) ToTimestampSlice() (timestamps TimestampSlice) {
-	timestamps = make([]Timestamp, len(slice))
+func (slice ExerciseSlice) Len() int {
+	return len(slice)
+}
 
-	for i := range slice {
-		timestamp := slice[i].Timestamp
-		timestamps[i] = timestamp
-	}
+func (slice ExerciseSlice) Less(i, j int) bool {
+	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+}
 
-	return timestamps
+func (slice ExerciseSlice) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice ExerciseSlice) GetEpochTime(i int) (epochTime int64) {
+	return slice[i].Timestamp.EpochTime
 }
 
 // ToDataPointSlice converts an ExerciseSlice into a generic DataPoint array
