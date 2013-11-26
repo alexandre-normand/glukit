@@ -19,6 +19,9 @@ const (
 	TIMEZONE = "PST"
 	// Timezone for Dexcom interval time values
 	INTERNAL_TIMEZONE = "GMT"
+
+	// Let's make days end at 18h00
+	HOUR_OF_END_OF_DAY = 18
 )
 
 // Beginning of time should be unix epoch 0 but, to optimize some processing
@@ -49,12 +52,12 @@ func GetTimeInSeconds(timeValue string) (value int64) {
 // July 17th 06h00. If the time is July 17th 05h00 PST, the boundary returned is July 16th 06h00.
 // Very important: The timeValue's location must be accurate!
 func GetEndOfDayBoundaryBefore(timeValue time.Time) (latestEndOfDayBoundary time.Time) {
-	if timeValue.Hour() < 6 {
+	if timeValue.Hour() < HOUR_OF_END_OF_DAY {
 		// Rewind by one more day
 		previousDay := timeValue.Add(time.Duration(-24 * time.Hour))
-		latestEndOfDayBoundary = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 6, 0, 0, 0, timeValue.Location())
+		latestEndOfDayBoundary = time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), HOUR_OF_END_OF_DAY, 0, 0, 0, timeValue.Location())
 	} else {
-		latestEndOfDayBoundary = time.Date(timeValue.Year(), timeValue.Month(), timeValue.Day(), 6, 0, 0, 0, timeValue.Location())
+		latestEndOfDayBoundary = time.Date(timeValue.Year(), timeValue.Month(), timeValue.Day(), HOUR_OF_END_OF_DAY, 0, 0, 0, timeValue.Location())
 	}
 
 	return latestEndOfDayBoundary
