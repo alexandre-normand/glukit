@@ -65,18 +65,17 @@ function eventWithinResolution(first, other, resolutionInMinutes) {
 	}
 }
 
-function getDateSnapGuides(upperTimestamp, intervalInSeconds, numberOfSnaps) {
-	// Round the upper snap limit to the nearest hour
-	var upperTimestamp = new Date(upperTimestamp * 1000);
-	upperTimestamp.setMinutes(upperTimestamp.getMinutes() + 30);
-	upperTimestamp.setMinutes(0);
-	snapGuides = [upperTimestamp];
+function getDateSnapGuides(lowerTimestamp, upperTimestamp) {
+	// Approximate first snap boundary to the oldest full hour	
+	lowerTimestamp.setMinutes(lowerTimestamp.getMinutes() + 55);
+	lowerTimestamp.setMinutes(0);
+	snapGuides = [lowerTimestamp];
 
-	currentSnapGuide = upperTimestamp;
-	for (var i = 0; i < numberOfSnaps; i++) {
-		currentSnapGuide = moment(currentSnapGuide).subtract('seconds', intervalInSeconds);
+	currentSnapGuide = lowerTimestamp;
+	while (currentSnapGuide < upperTimestamp) {
+		currentSnapGuide = moment(currentSnapGuide).add('day', 1);
 		snapGuides.push(currentSnapGuide.toDate()); 
-    }
+  }
 
   return snapGuides;
 }

@@ -64,19 +64,19 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
+		reads, err := store.GetGlucoseReads(context, email, lowerBound, time.Now())
 		if err != nil {
 			util.Propagate(err)
 		}
-		injections, err := store.GetInjections(context, email, lowerBound, upperBound)
+		injections, err := store.GetInjections(context, email, lowerBound, time.Now())
 		if err != nil {
 			util.Propagate(err)
 		}
-		carbs, err := store.GetCarbs(context, email, lowerBound, upperBound)
+		carbs, err := store.GetCarbs(context, email, lowerBound, time.Now())
 		if err != nil {
 			util.Propagate(err)
 		}
-		exercises, err := store.GetExercises(context, email, lowerBound, upperBound)
+		exercises, err := store.GetExercises(context, email, lowerBound, time.Now())
 		if err != nil {
 			util.Propagate(err)
 		}
@@ -114,7 +114,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		reads, err := store.GetGlucoseReads(context, steadySailor.Email, lowerBound, upperBound)
+		reads, err := store.GetGlucoseReads(context, steadySailor.Email, lowerBound, time.Now())
 		if err != nil {
 			util.Propagate(err)
 		}
@@ -186,7 +186,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
+		reads, err := store.GetGlucoseReads(context, email, lowerBound, time.Now())
 		if err != nil {
 			util.Propagate(err)
 		}
