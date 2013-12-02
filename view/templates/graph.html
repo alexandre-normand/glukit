@@ -444,13 +444,12 @@
            snap = snapGuides[i]
            
            diffInMillis = Math.abs(viewfinderUpperLimit - snap);
-           if (diffInMillis <= SNAP_DISTANCE_IN_MILLIS) {              
+           if (diffInMillis <= SNAP_DISTANCE_IN_MILLIS) {                            
               snapExtent = getDayRangeFromUpperBound(snap.getTime() / 1000);              
               d3.select(this).transition()
                 .call(brush.extent(snapExtent))
                 .call(brush.event)
-                .duration(500)
-                .ease("elastic", 15, .25);  
+                .duration(500); 
               return;
            }           
         }
@@ -460,8 +459,7 @@
       brushRange = getDayRangeFromUpperBound(mostRecentReadTimeInSeconds);
 
       // 1 snap every day for 7 days
-      var snapGuides = getDateSnapGuides(mostRecentReadTimeInSeconds, 86400, 7); 
-      
+      var snapGuides = getDateSnapGuides(moment.unix(glucoseReads[0].x).toDate(), moment.unix(mostRecentReadTimeInSeconds).toDate()); 
       
       var brush = d3.svg.brush()
          .x(x2)        
