@@ -182,8 +182,8 @@ RangeAggregate.prototype.getTotalTime = function() { return this.normalTimeInMin
 
 // Sums up the time in minutes spent in in each range
 function getRangeAggregate(segments, lowerBound, upperBound) {
-	firstSegmentIndex = getFirstSegmentEndingAfter(segments, viewfinderLowerLimit, 0);
-    lastSegmentIndex = getFirstSegmentEndingAfter(segments, viewfinderUpperLimit, firstSegmentIndex);    
+	firstSegmentIndex = getFirstSegmentEndingAfter(segments, lowerBound, 0);
+    lastSegmentIndex = getFirstSegmentEndingAfter(segments, upperBound, firstSegmentIndex);    
 
     rangeAggregate = new RangeAggregate();
     

@@ -4,8 +4,9 @@
     <meta name="viewport" content="width=device-width" />
     <title>Glukit</title>
     <link rel="stylesheet" href="css/foundation.css" />
-    <script src="js/vendor/custom.modernizr.js"></script>
+    <script src="js/vendor/custom.modernizr.js"></script>            
       <link type="text/css" rel="stylesheet" href="css/main.css">
+      <link type="text/css" rel="stylesheet" href="css/report.css">      
       <link type="text/css" rel="stylesheet" href="css/foundation_icons_general/stylesheets/general_foundicons.css">
     	<script src="js/d3.v3.js"></script>
       <script src="js/d3-transform.js"></script>
@@ -31,35 +32,14 @@
     <ul class="title-area">
     <!-- Title Area -->
       <li class="name">
-      <h1><a href="index.html"><img src="images/glukit.png" id="droplet"></a></h1>
+      <h1><img src="images/glukit.png" id="droplet" style="margin-left: 30px;"></h1>
       </li>
     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
   </ul>
   <div class="fixed"></div>
   <section class="top-bar-section">
-    <!-- Left Nav Section
-    <ul class="left hackwhite">
-    </ul>
-    -->
     <!-- Right Nav Section -->
     <ul class="right">
-    <!--
-     <li class="divider"></li>
-      <li class="active navlink"><a href="#">How you're doing</a></li>
-      <li class="divider "></li>
-      <li class="active navlink"><a href="#">Compare</a></li>
-      <li class="divider"></li>
-      <li class="active navlink"><a href="#">Explore</a></li>
-      <li class="divider"></li>
-      <li class="divider hide-for-small"></li>
-       <li class="has-form">
-        <a class="button" href="index.html" style="color:white !important">Sign out</a>
-      </li>
-  -->
-
-
-     
-
       <!-- <li class="active hackwhite has-dropdown"><img src="img/settings-cog.png"></li> -->
       <li class="divider"></li>
     </ul>
@@ -73,16 +53,16 @@
      <div class="row belowHeader" style="overflow:hidden">
     <div class="large-16 columns">
 
-      <div class="row dashboard" style="padding-bottom: 0px">
+      <div class="row dashboard profile" style="padding-bottom: 0px">
         <div class="large-2 columns">
           <div id="profilePic"></div>
         </div>
 
         <div class="large-8 columns">
-            <h3 class="profile" id="userName"></h3>
-            <h5 class="profile"><small id="since"></small></h5>
-            <h5 class="profile">Last sync</h5>
-            <h5 class="profile"><small id="lastSync"></small></h5>
+            <h3 id="userName"></h3>
+            <h5 ><small id="since"></small></h5>
+            <h5 >Last sync</h5>
+            <h5 ><small id="lastSync"></small></h5>
         </div>
         
         <div class="large-2 columns">
@@ -94,95 +74,15 @@
         <div class="large-4 columns">
             <h3 style="padding-top:8%">Glukit Score</h3>
             <!-- change this date range to the date range returned -->
-            <h5 class="profile"><small id="glukitScoreDates"></small></h5>
+            <h5><small id="glukitScoreDates"></small></h5>
         </div>
        
       </div>
-
-      <hr id="features"> 
-     
-
-
-      <div class="row dashboard">
-  
-
-<!-- testing -->
-<div class="row">
-  <div class="small-4 columns"><h4>How you're doing</h4></div>
-</div>
-
-
-<div class="row">
- 
-  <div class="large-16 columns">
-    <div class="rangeSelection" id="inRange">
-      <h5 id="inTargetRangeText"><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range&nbsp;<span id="normalRangePercentage" style="display:none"></span></h5>
-    </div>
-    <div class="rangeSelection" id="below">
-      <h5 id="belowTargetRangeText"><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range&nbsp;<span id="lowRangePercentage" style="display:none"></span></h5>
-    </div>
-    <div class="rangeSelection" id="above">
-      <h5 id="aboveTargetRangeText"><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range&nbsp;<span id="highRangePercentage" style="display:none"></span></h5>
-    </div>
-  </div>
-  
-</div>
-
-<!--
-<div class="row">
- 
-  <div class="large-16 columns">
-    <div class="small-4 columns rangeSelection" id="inRange">
-      <h5><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range </h5>
-    </div>
-    <div class="small-8 columns rangeSelection" id="normalHidden" style="display:none">
-      <h5><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range <span id="normalRangePercentage" style="display:none"></span></h5>
-    </div>
-    <div class="small-4 columns rangeSelection" id="below">
-      <h5><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range</h5>
-    </div>
-    <div class="small-8 columns rangeSelection" id="belowHidden" style="display:none">
-      <h5><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range <span id="lowRangePercentage" style="display:none"></span></h5>
-    </div>
-    <div class="small-4 columns rangeSelection" id="above">
-      <h5><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range </h5>
-    </div>
-    <div class="small-8 columns rangeSelection" id="aboveHidden" style="display:none">
-      <h5><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range <span id="highRangePercentage" style="display:none"></span></h5>
-    </div>
-  </div>
-  
-</div>
--->
-
-<!-- hide checkboxes for now 
-        <div class="large-3 columns">
-          <div class="rangeSlab">
-              <label for="checkbox1">
-                <input type="checkbox" id="checkbox1" style="display: none;">
-                <span class="custom checkbox"></span> Events
-              </label>
-              <label for="checkbox2">
-                <input type="checkbox" id="checkbox2" style="">
-                <span class="custom checkbox"></span> Insulin
-              </label>
-              <label for="checkbox2">
-                <input type="checkbox" id="checkbox2" style="">
-                <span class="custom checkbox"></span> Food
-              </label>
-          </div>
-        </div>
-
--->
-
-
-      </div>
-    <hr id="features">
+    
       <div class="row">
         <div class="large-16 columns">
           <div class="slab graph">
-            <div id="chart_container">            
-              <div id="hoverbox" class="hoverbox"></div>                                     
+            <div id="chart_container">                                                               
               <div id="chart" style="clear: both"></div>              
             </div>
             <div id="slider"></div>            
@@ -214,11 +114,9 @@
     var chartNode = document.getElementById("chart");
     chartNode.innerHTML = '';
 
-    var margin = {top: 10, right: 10, bottom: 100, left: 40},
-    margin2 = {top: 430, right: 10, bottom: 20, left: 40},
-    width = 800 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    viewfinderHeight = 500 - margin2.top - margin2.bottom;
+    var margin = {top: 30, right: 10, bottom: 100, left: 40},    
+    width = 780 - margin.left - margin.right,
+    height = 640 - margin.top - margin.bottom;    
 
     // Our dates are milliseconds since epoch so that parse function
     // just instantiates a new Date from it.
@@ -226,22 +124,15 @@
 
     // Define the scales
     var x = d3.time.scale().range([0, width]),
-    x2 = d3.time.scale().range([0, width]),
-    y = d3.scale.linear().range([height, 0]),
-    y2 = d3.scale.linear().range([viewfinderHeight, 0]);
+    y = d3.scale.linear().range([height, 0]);
 
     // Define the axes
-    var xAxis = d3.svg.axis().scale(x).orient("bottom"),
-    xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
+    var xAxis = d3.svg.axis().scale(x).orient("bottom"),    
     yAxis = d3.svg.axis().scale(y).orient("left");
 
     var glucoseLine = d3.svg.line()
       .x(function(d) { return x(d.date); })
       .y(function(d) { return y(d.y); });
-
-    var viewfinderLine = d3.svg.line()
-      .x(function(d) { return x2(d.date); })
-      .y(function(d) { return y2(d.y); });
 
     // Find a way to change those as the viewfinder moves
     var userEventArc = d3.svg.arc()
@@ -270,34 +161,62 @@
               return 0 * Math.PI;
           } });
 
-   var svg = d3.select("#chart").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom);
-      
+    var chartContainer = d3.select("#chart");
+
     // That should be the lower bound of the times displayed on the graph
     // driven by the "self" data
     d3.json("/{{.PathPrefix}}data", function(error, data) {
-      glucoseReads = data.data[0].data;
-      userEvents = data.data[1].data;
+      globalGlucoseReads = data.data[0].data;
+      globalUserEvents = data.data[1].data;
+      //var highestOnChart = d3.max(globalGlucoseReads, function(d) { return d.y; }) + 100;
+      var highestOnChart = 250;
 
-      timeRangeLowerBound = glucoseReads[0].x;
-      glucoseReads.forEach(function(d) {
+      // 1 snap every day for 7 days
+      console.log("Preparing report from " + moment.unix(globalGlucoseReads[0].x).toDate() + " to " + moment.unix(globalGlucoseReads[0].x).add('days', 7).toDate());
+      var daysOfData = getDayBoundaries(globalGlucoseReads[0].x, moment.unix(globalGlucoseReads[0].x).add('days', 7).unix()); 
+      console.log("Preparing report for " + daysOfData);
+      for (var dayIndex = 0; dayIndex < daysOfData.length - 2; dayIndex++) {
+        console.log("Preparing day ending " + daysOfData[dayIndex]);
+
+        glucoseReads = globalGlucoseReads.slice(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex]), binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex + 1]))
+        userEvents = globalUserEvents.slice(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex]), binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex + 1]))
+
+        timeRangeLowerBound = glucoseReads[0].x;
+        glucoseReads.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
       });
     
-      var highestOnChart = d3.max(glucoseReads, function(d) { return d.y; }) + 100;
+      
       x.domain(d3.extent(glucoseReads.map(function(d) { return d.date; })));
-      y.domain([0, highestOnChart]);
-      x2.domain(x.domain());
-      y2.domain(y.domain());
+      y.domain([0, highestOnChart]);            
+
+      var segments = splitReadsInRangeSegments(glucoseReads);
+      rangeAggregate = getRangeAggregate(segments, moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
+
+      var lowRangePercentage = Math.floor(rangeAggregate.lowTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+      var highRangePercentage = Math.floor(rangeAggregate.highTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+      var normalRangePercentage = Math.floor(rangeAggregate.normalTimeInMinutes / rangeAggregate.getTotalTime() * 100);
+
+      chartContainer.append("h3").text(moment(daysOfData[dayIndex]).format("dddd, Do"));
+      if (normalRangePercentage > 0) {
+        chartContainer.append("div").text("Normal " + normalRangePercentage + "% of the time").attr("class", "smallLabel");  
+      }
+      if (lowRangePercentage > 0) {
+        chartContainer.append("div").text("Low " + lowRangePercentage + "% of the time").attr("class", "smallLabel");  
+      }
+      if (highRangePercentage > 0) {
+        chartContainer.append("div").text("High " + highRangePercentage + "% of the time").attr("class", "smallLabel");  
+      }
+      
+
+      var svg = chartContainer.append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
 
       var focus = svg.append("g")   
       .attr("id", "mainContainer")     
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-      var context = svg.append("g")
-      .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
-     
+      
       focus.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
@@ -337,25 +256,7 @@
       var hoverbox = d3.select("#hoverbox");   
       var chartContainerElement = d3.select("#chart_container")[0][0];   
 
-      context.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + viewfinderHeight + ")")
-            .call(xAxis2);
-
       addTargetRangeClip(svg, width, height, "rangeClip", TARGET_RANGE_LOWER_BOUND, TARGET_RANGE_UPPER_BOUND, highestOnChart, y);
-
-      var dayBoundaries = getDayBoundaries(glucoseReads[0].x, glucoseReads[glucoseReads.length - 1].x);
-      var dayBoundaryGroup = focus.append("g").attr("id", "dayBoundaries");
-      dayBoundaryGroup.selectAll(".dayBoundary")
-          .data(dayBoundaries)
-          .enter()
-          .append("text")
-          .attr("class", "dayBoundary")
-          .attr("clip-path", "url(#clip)")
-          .text(function(d) { return moment(d).format("dddd, Do");})
-          .attr("y", "20")
-          .attr("x", function(d) { return x(d); });
-
 
       var nights = getNightsDateRangesForTimeWindow(moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
       var timebar = focus.append("g")
@@ -371,9 +272,8 @@
           .attr("height", 5)
           .attr("x", function(d) { return x(d.start);})
           .attr("y", height - 5);
-      
-      var segments = splitReadsInRangeSegments(glucoseReads);
-      addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);    
+            
+      addToGraph(focus, "self", segments, glucoseReads, y, glucoseLine);    
       
       // Trying out the grouping, it doesn't actually use any of this
       userEvents.forEach(function(d) {
@@ -397,15 +297,9 @@
          }        
       }      
       
-      function brushed() {      
-        x.domain(brush.empty() ? x2.domain() : brush.extent());        
+      function brushed() {              
         focus.selectAll("path.self").attr("d", glucoseLine);
-
-        // focus.selectAll("path.steadySailor").attr("d", glucoseLine);                   
-        focus.selectAll("#dayBoundaries")
-        dayBoundaryGroup.selectAll(".dayBoundary")
-          .attr("x", function(d) { return x(d); });
-
+        
         timebar                  
           .selectAll(".night")
           .attr("width", function(d) { return x(d.end) - x(d.start);})
@@ -413,44 +307,6 @@
         
         focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
         focus.select(".x.axis").call(xAxis);                
-
-        extent = brush.extent();
-        viewfinderUpperLimit = extent[1];
-        viewfinderLowerLimit = extent[0];
-        //console.log("limits are " + viewfinderLowerLimit + ", " + viewfinderUpperLimit);
-        
-        rangeAggregate = getRangeAggregate(segments, viewfinderLowerLimit, viewfinderUpperLimit);
-
-        var lowRangePercentage = Math.floor(rangeAggregate.lowTimeInMinutes / rangeAggregate.getTotalTime() * 100);
-        var highRangePercentage = Math.floor(rangeAggregate.highTimeInMinutes / rangeAggregate.getTotalTime() * 100);
-        var normalRangePercentage = Math.floor(rangeAggregate.normalTimeInMinutes / rangeAggregate.getTotalTime() * 100);
-
-        $("#lowRangePercentage").text(lowRangePercentage + "% of the time");
-        $("#normalRangePercentage").text(normalRangePercentage + "% of the time");
-        $("#highRangePercentage").text(highRangePercentage + "% of the time");
-
-      }
-
-      // snap to days if close enough
-      function snapBrush() {      
-        if (!d3.event.sourceEvent) return; // only transition after input
-        extent = brush.extent();
-        viewfinderUpperLimit = extent[1];
-
-        // We iterate from most recent since we assume that most users will look at that data more often        
-        for (var i = 0; i < snapGuides.length; i++) {
-           snap = snapGuides[i]
-           
-           diffInMillis = Math.abs(viewfinderUpperLimit - snap);
-           if (diffInMillis <= SNAP_DISTANCE_IN_MILLIS) {                            
-              snapExtent = getDayRangeFromUpperBound(snap.getTime() / 1000);              
-              d3.select(this).transition()
-                .call(brush.extent(snapExtent))
-                .call(brush.event)
-                .duration(500); 
-              return;
-           }           
-        }
       }
 
       mostRecentReadTimeInSeconds = glucoseReads[glucoseReads.length - 1].x;      
@@ -459,54 +315,14 @@
       // 1 snap every day for 7 days
       var snapGuides = getDateSnapGuides(moment.unix(glucoseReads[0].x).toDate(), moment.unix(mostRecentReadTimeInSeconds).toDate()); 
       
-      var brush = d3.svg.brush()
-         .x(x2)        
-         .extent(brushRange)
-         .on("brush", brushed)
-         .on("brushend", snapBrush);
-     
-      brushElement = context.append("g");
-      brushElement.attr("class", "x brush")
-          .call(brush)
-        .selectAll("rect")
-          .attr("y", -6)
-          .attr("height", viewfinderHeight + 7);
-      
-      // Remove resize handles because we don't want to allow resizing. The brush is fixed to the length of one day
-      brushElement.selectAll(".resize").remove();
-      // Disable cross-hair cursor to avoid user overriding the brush completely
-      brushElement.selectAll(".extent").style("pointer-events", "all");
-      brushElement.selectAll(".background").style("pointer-events", "none");
-      
       // Call a first brushed to view the last day only       
       brushed();
-      toggleNormalRange();
-
-      // Add steady sailor data
-      d3.json("/{{.PathPrefix}}steadySailor", function(error, data) {
-        if (data != undefined) {
-          rawSteadySailor = data.data[0].data;
-          
-          steadySailor = rawSteadySailor
-          if (steadySailor.length > 0) {   
-            offset = steadySailor[0].x - timeRangeLowerBound;              
-            steadySailor.forEach(function(element) {
-              element.x = element.x - offset;          
-            });
-          }
-
-          sailorSegments = splitReadsInRangeSegments(steadySailor);
-          addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine);  
-        }
-        
-      });           
-      
-      addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine);
-    });
+    }});
 
     }
     
-    function addToGraph(focus, className, context, segments, glucoseReads, y, glucoseLineFunc, viewfinderLineFunc) {      
+    
+    function addToGraph(focus, className, segments, glucoseReads, y, glucoseLineFunc) {      
       for (var i = 0; i < segments.length; i++) {
         var segment = segments[i];        
         focus.append("path")
@@ -514,14 +330,7 @@
            .attr("clip-path", "url(#clip)")
            .datum(segment.reads)
            .attr("d", glucoseLineFunc);
-      }
-
-      if(viewfinderLineFunc != undefined) {
-         context.append("path")
-           .datum(glucoseReads)
-           .attr("d", viewfinderLineFunc);  
-      }
-         
+      }  
     }
 
     function addTargetRangeClip(svg, canvasWidth, canvasHeight, id, lowerBound, upperBound, maxDomainValue, y) {
@@ -639,150 +448,101 @@ function showProfile()
          });
     }
 
-function toggleNormalRange() {
-    $("#normalRangePercentage").show();
-    $("#lowRangePercentage").hide();
-    $("#highRangePercentage").hide();
+// function toggleNormalRange() {
+//     $("#normalRangePercentage").show();
+//     $("#lowRangePercentage").hide();
+//     $("#highRangePercentage").hide();
     
-    //change the color of the text to white and the background to pink
-    $("#inTargetRangeText").css("color", "#fff");
-    $("#inRange").css("background", "#9e2064");
+//     //change the color of the text to white and the background to pink
+//     $("#inTargetRangeText").css("color", "#fff");
+//     $("#inRange").css("background", "#9e2064");
     
-    //reset the other div colors
-    $("#belowTargetRangeText").css("color", "#404041");
-    $("#below").css("background", "#eee");
-    $("#aboveTargetRangeText").css("color", "#404041");
-    $("#above").css("background", "#eee");
+//     //reset the other div colors
+//     $("#belowTargetRangeText").css("color", "#404041");
+//     $("#below").css("background", "#eee");
+//     $("#aboveTargetRangeText").css("color", "#404041");
+//     $("#above").css("background", "#eee");
 
 
-    $("#below").show();
-    $("#above").show();
+//     $("#below").show();
+//     $("#above").show();
 
 
-    $('.NORMAL').css("stroke", "#2390de");
-    $('.LOW').css("stroke", "#ddd");
-    $('.HIGH').css("stroke", "#ddd");
-}
+//     $('.NORMAL').css("stroke", "#2390de");
+//     $('.LOW').css("stroke", "#ddd");
+//     $('.HIGH').css("stroke", "#ddd");
+// }
 
-function highlightLines() {
+// function highlightLines() {
 
-    $("#inRange").click(toggleNormalRange);
+//     $("#inRange").click(toggleNormalRange);
 
-    $("#below").click(function(){
-      $("#above").show();
-      $("#inRange").show();
+//     $("#below").click(function(){
+//       $("#above").show();
+//       $("#inRange").show();
 
-      //change colors of selected div
-      $("#belowTargetRangeText").css("color", "#fff");
-      $("#below").css("background", "#9e2064");
+//       //change colors of selected div
+//       $("#belowTargetRangeText").css("color", "#fff");
+//       $("#below").css("background", "#9e2064");
 
-      //reset the other div colors
-      $("#inTargetRangeText").css("color", "#404041");
-      $("#inRange").css("background", "#eee");
-      $("#aboveTargetRangeText").css("color", "#404041");
-      $("#above").css("background", "#eee");
+//       //reset the other div colors
+//       $("#inTargetRangeText").css("color", "#404041");
+//       $("#inRange").css("background", "#eee");
+//       $("#aboveTargetRangeText").css("color", "#404041");
+//       $("#above").css("background", "#eee");
 
-      //show and hide percentages
-      $("#normalRangePercentage").hide();
-      $("#lowRangePercentage").show();
-      $("#highRangePercentage").hide();
+//       //show and hide percentages
+//       $("#normalRangePercentage").hide();
+//       $("#lowRangePercentage").show();
+//       $("#highRangePercentage").hide();
 
-      //Highlight relevant pieces of the graph
-      $('.NORMAL').css("stroke", "#ddd");
-      $('.LOW').css("stroke", "#de2333");
-      $('.HIGH').css("stroke", "#ddd");
-    });
+//       //Highlight relevant pieces of the graph
+//       $('.NORMAL').css("stroke", "#ddd");
+//       $('.LOW').css("stroke", "#de2333");
+//       $('.HIGH').css("stroke", "#ddd");
+//     });
 
-    $("#above").click(function(){
+//     $("#above").click(function(){
 
-      //change colors of selected div
-      $("#above").css("background", "#9e2064");
-      $("#aboveTargetRangeText").css("color", "#fff");
+//       //change colors of selected div
+//       $("#above").css("background", "#9e2064");
+//       $("#aboveTargetRangeText").css("color", "#fff");
       
-      //reset colors of other divs
-      $("#below").css("background", "#eee");
-      $("#belowTargetRangeText").css("color", "#404041");
-      $("#inRange").css("background", "#eee");
-      $("#inTargetRangeText").css("color", "#404041");
+//       //reset colors of other divs
+//       $("#below").css("background", "#eee");
+//       $("#belowTargetRangeText").css("color", "#404041");
+//       $("#inRange").css("background", "#eee");
+//       $("#inTargetRangeText").css("color", "#404041");
 
-      $("#below").show();
-      $("#inRange").show();
+//       $("#below").show();
+//       $("#inRange").show();
 
-      $("#normalRangePercentage").hide();
-      $("#lowRangePercentage").hide();
-      $("#highRangePercentage").show();
+//       $("#normalRangePercentage").hide();
+//       $("#lowRangePercentage").hide();
+//       $("#highRangePercentage").show();
 
-      $('.NORMAL').css("stroke", "#ddd");
-      $('.LOW').css("stroke", "#ddd");
-      $('.HIGH').css("stroke", "#de2333");
+//       $('.NORMAL').css("stroke", "#ddd");
+//       $('.LOW').css("stroke", "#ddd");
+//       $('.HIGH').css("stroke", "#de2333");
 
-    });
+//     });
 
-  }
+//   }
 
 
-</script>
-  <script>
-      channel = new goog.appengine.Channel('{{.ChannelToken}}');
-      socket = channel.open();
-      socket.onopen = function() {
-        console.log("connected");
-        showDataBrowser();
-        showProfile();
-        highlightLines();
-
-      };
-      socket.onmessage = function(message) {
-        console.log("onMessage: " + message.data);
-      };
-      socket.onerror = function() {
-        console.log("error");
-      };
-      socket.onclose = function() {
-        console.log("close");
-      };
-    </script>
+</script>  
       <script>
   document.write('<script src=' +
   ('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
   '.js><\/script>')
+  showDataBrowser();
+  showProfile();
+  //highlightLines();
+
   </script>
 
   <script src="js/foundation.min.js"></script>
-  <!--
-
-  <script src="js/foundation/foundation.js"></script>
-
-  <script src="js/foundation/foundation.interchange.js"></script>
-
-  <script src="js/foundation/foundation.dropdown.js"></script>
-
-  <script src="js/foundation/foundation.placeholder.js"></script>
-
-  <script src="js/foundation/foundation.forms.js"></script>
-
-  <script src="js/foundation/foundation.alerts.js"></script>
-
-  <script src="js/foundation/foundation.magellan.js"></script>
-
-  <script src="js/foundation/foundation.reveal.js"></script>
-
-  <script src="js/foundation/foundation.tooltips.js"></script>
-
-  <script src="js/foundation/foundation.clearing.js"></script>
-
-  <script src="js/foundation/foundation.cookie.js"></script>
-
-  <script src="js/foundation/foundation.joyride.js"></script>
-
-  <script src="js/foundation/foundation.orbit.js"></script>
-
-  <script src="js/foundation/foundation.section.js"></script>
-
-  <script src="js/foundation/foundation.topbar.js"></script>
-
-  -->
-
+  
   <script>
     $(document).foundation();
   </script>  
