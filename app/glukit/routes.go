@@ -18,6 +18,7 @@ import (
 )
 
 var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html"))
+var reportTemplate = template.Must(template.ParseFiles("view/templates/report.html"))
 var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
 
@@ -51,6 +52,8 @@ func init() {
 	// "main"-page for both demo and real users
 	http.HandleFunc("/demo", renderDemo)
 	http.HandleFunc("/graph", renderRealUser)
+	http.HandleFunc("/"+DEMO_PATH_PREFIX+"report", demoReport)
+	http.HandleFunc("/report", report)
 
 	// Static pages
 	http.HandleFunc("/", landing)
@@ -120,6 +123,30 @@ func renderRealUser(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 	render(user.Email, "", w, request)
+}
+
+// report executes the report page template
+func demoReport(w http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+
+	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none"}
+
+	if err := reportTemplate.Execute(w, renderVariables); err != nil {
+		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// report executes the report page template
+func report(w http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+
+	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none"}
+
+	if err := reportTemplate.Execute(w, renderVariables); err != nil {
+		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // render executed the graph page template

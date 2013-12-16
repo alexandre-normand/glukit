@@ -1,0 +1,29 @@
+.HIGH {
+	stroke: #de2333;
+}
+
+.NORMAL {
+	stroke: #2390de;
+}
+
+.LOW {
+	stroke: #de2333;
+}
+
+.graph{
+  height: 4400px;
+}
+
+.smallLabel {
+	margin-left: 1em;
+	font-size: 80%;
+}
+
+.profile{
+  margin-bottom: 2% !important;  
+}
+
+#profilePic {
+  max-width: 100px !important;
+  min-width: 100px !important;
+}
