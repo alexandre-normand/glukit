@@ -11,7 +11,7 @@
 }
 
 .graph{
-  height: 4400px;
+  height: 4850px;
 }
 
 .smallLabel {
@@ -26,4 +26,26 @@
 #profilePic {
   max-width: 100px !important;
   min-width: 100px !important;
+}
+
+.hoverbox {
+	display: block;
+}
+
+text.insulin {  
+  fill: rgba(86, 215, 232, 1);   
+}
+
+text.carbs {  
+  fill: rgba(255, 199, 69, 1);
+}
+
+.insights {
+  color:#52C0E6;
+  font-weight:bold;
+  font-size: 4em;}
+.datepicker{
+  padding-bottom: 20px;
+  display: block;
+  float: left;
 }

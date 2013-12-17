@@ -10,10 +10,11 @@ function EventGroup() {
 	this.includesInsulin = false;
 	this.includesFood = false;
 	this.userEvents = [];	
+  this.date;
 }
 
 EventGroup.prototype.addEvent = function(userEvent) {
-		if (this.userEvents.length < 1) {			
+		if (this.userEvents.length < 1) {		      
 			this.date = userEvent.date;
 			this.x = userEvent.x;
 		}
