@@ -82,6 +82,7 @@
       <div class="row">
         <div class="large-16 columns">
           <div class="slab graph">
+            <div id="hoverbox" class="hoverbox"></div>      
             <div id="chart_container">                                                               
               <div id="chart" style="clear: both"></div>              
             </div>
@@ -115,8 +116,8 @@
     chartNode.innerHTML = '';
 
     var margin = {top: 30, right: 10, bottom: 100, left: 40},    
-    width = 780 - margin.left - margin.right,
-    height = 640 - margin.top - margin.bottom;    
+    width = 800 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;    
 
     // Our dates are milliseconds since epoch so that parse function
     // just instantiates a new Date from it.
@@ -127,7 +128,7 @@
     y = d3.scale.linear().range([height, 0]);
 
     // Define the axes
-    var xAxis = d3.svg.axis().scale(x).orient("bottom"),    
+    var xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(d3.time.format("%-I %p")),    
     yAxis = d3.svg.axis().scale(y).orient("left");
 
     var glucoseLine = d3.svg.line()
@@ -168,21 +169,30 @@
     d3.json("/{{.PathPrefix}}data", function(error, data) {
       globalGlucoseReads = data.data[0].data;
       globalUserEvents = data.data[1].data;
-      //var highestOnChart = d3.max(globalGlucoseReads, function(d) { return d.y; }) + 100;
-      var highestOnChart = 250;
+      var highestOnChart = d3.max(globalGlucoseReads, function(d) { return d.y; });
+      //var highestOnChart = 250;
 
-      // 1 snap every day for 7 days
-      console.log("Preparing report from " + moment.unix(globalGlucoseReads[0].x).toDate() + " to " + moment.unix(globalGlucoseReads[0].x).add('days', 7).toDate());
+      // 1 snap every day for 7 days      
       var daysOfData = getDayBoundaries(globalGlucoseReads[0].x, moment.unix(globalGlucoseReads[0].x).add('days', 7).unix()); 
-      console.log("Preparing report for " + daysOfData);
-      for (var dayIndex = 0; dayIndex < daysOfData.length - 2; dayIndex++) {
-        console.log("Preparing day ending " + daysOfData[dayIndex]);
+      
 
-        glucoseReads = globalGlucoseReads.slice(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex]), binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex + 1]))
-        userEvents = globalUserEvents.slice(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex]), binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex + 1]))
-
+      for (var dayIndex = 0; dayIndex < daysOfData.length - 1; dayIndex++) {
+        if (dayIndex < daysOfData.length - 2) {
+          glucoseSliceEnd = binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex + 1]);
+          userEventsSliceEnd = binaryIndexOf.call(globalUserEvents, daysOfData[dayIndex + 1]);          
+        } else {
+          glucoseSliceEnd = globalGlucoseReads.length;
+          userEventsSliceEnd = globalUserEvents.length;          
+        }
+        
+        glucoseReads = globalGlucoseReads.slice(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex]), glucoseSliceEnd);        
+        userEvents = globalUserEvents.slice(binaryIndexOf.call(globalUserEvents, daysOfData[dayIndex]), userEventsSliceEnd);                
         timeRangeLowerBound = glucoseReads[0].x;
         glucoseReads.forEach(function(d) {
+        d.date = parseDate(d.x * 1000);
+      });
+
+        userEvents.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
       });
     
@@ -275,26 +285,42 @@
             
       addToGraph(focus, "self", segments, glucoseReads, y, glucoseLine);    
       
-      // Trying out the grouping, it doesn't actually use any of this
-      userEvents.forEach(function(d) {
-        d.date = parseDate(d.x * 1000);
-      });
-      window.userEvents = userEvents;
-      var userEventGroups = groupEvents(userEvents, 60);
-      window.userEventGroups = userEventGroups;
+      var userEventGroups = groupEvents(userEvents, 60);      
+      
       // The clip path needs to be set on the group of userEvents and NOT on the individual arcs because otherwise,
       // the arcs will get clipped before the transformation and we're never going to be able to get a full circle or 
       // semi-circle
       userEventsSvg = focus.append("g").attr("class", "userEvents").attr("clip-path", "url(#clip)");
       for (var i = 0; i < userEventGroups.length; i++) {
-        markers = generateEventMarkers(userEventGroups[i]);
+        markers = generateEventMarkers(userEventGroups[i]);                        
         for (var j = 0; j < markers.length; j++) {          
           userEventsSvg.append("path")
            .attr("class", "event " + markers[j].tag)
            .attr("transform", "translate(" + x(markers[j].date) + "," + y(markers[j].y) + ")")                      
            .datum(markers[j])           
            .attr("d", userEventArc);      
+
+           for (var u = 0; u < userEventGroups[i].userEvents.length; u++) {            
+              userEvent = userEventGroups[i].userEvents[u];
+              eventTime = new Date(userEvent.x * 1000);
+
+              lineText = userEvent.value;
+              if (userEvent.tag === "Insulin") {
+                lineText = lineText + " units";
+              } else {
+                lineText = lineText + " grams";
+              }
+              lineText = lineText + " at " + moment(eventTime).format("HH:mm");
+              
+              userEventsSvg.append("text")
+                .attr("class", userEvent.tag)                
+                .attr("x", x(markers[j].date))
+                .attr("y", y(markers[j].y - u * 5.5 - 7.5))
+                .text(lineText);                         
+            }
          }        
+
+         
       }      
       
       function brushed() {              
@@ -305,7 +331,7 @@
           .attr("width", function(d) { return x(d.end) - x(d.start);})
           .attr("x", function(d) { return x(d.start);});
         
-        focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
+        //focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
         focus.select(".x.axis").call(xAxis);                
       }
 
@@ -348,6 +374,7 @@
          .attr("height", canvasHeight);
     }    
 
+    
     function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine) {
       // We add a background so that we have a svg area to register the mouse 
       // movement
@@ -447,88 +474,6 @@ function showProfile()
             //noData();
          });
     }
-
-// function toggleNormalRange() {
-//     $("#normalRangePercentage").show();
-//     $("#lowRangePercentage").hide();
-//     $("#highRangePercentage").hide();
-    
-//     //change the color of the text to white and the background to pink
-//     $("#inTargetRangeText").css("color", "#fff");
-//     $("#inRange").css("background", "#9e2064");
-    
-//     //reset the other div colors
-//     $("#belowTargetRangeText").css("color", "#404041");
-//     $("#below").css("background", "#eee");
-//     $("#aboveTargetRangeText").css("color", "#404041");
-//     $("#above").css("background", "#eee");
-
-
-//     $("#below").show();
-//     $("#above").show();
-
-
-//     $('.NORMAL').css("stroke", "#2390de");
-//     $('.LOW').css("stroke", "#ddd");
-//     $('.HIGH').css("stroke", "#ddd");
-// }
-
-// function highlightLines() {
-
-//     $("#inRange").click(toggleNormalRange);
-
-//     $("#below").click(function(){
-//       $("#above").show();
-//       $("#inRange").show();
-
-//       //change colors of selected div
-//       $("#belowTargetRangeText").css("color", "#fff");
-//       $("#below").css("background", "#9e2064");
-
-//       //reset the other div colors
-//       $("#inTargetRangeText").css("color", "#404041");
-//       $("#inRange").css("background", "#eee");
-//       $("#aboveTargetRangeText").css("color", "#404041");
-//       $("#above").css("background", "#eee");
-
-//       //show and hide percentages
-//       $("#normalRangePercentage").hide();
-//       $("#lowRangePercentage").show();
-//       $("#highRangePercentage").hide();
-
-//       //Highlight relevant pieces of the graph
-//       $('.NORMAL').css("stroke", "#ddd");
-//       $('.LOW').css("stroke", "#de2333");
-//       $('.HIGH').css("stroke", "#ddd");
-//     });
-
-//     $("#above").click(function(){
-
-//       //change colors of selected div
-//       $("#above").css("background", "#9e2064");
-//       $("#aboveTargetRangeText").css("color", "#fff");
-      
-//       //reset colors of other divs
-//       $("#below").css("background", "#eee");
-//       $("#belowTargetRangeText").css("color", "#404041");
-//       $("#inRange").css("background", "#eee");
-//       $("#inTargetRangeText").css("color", "#404041");
-
-//       $("#below").show();
-//       $("#inRange").show();
-
-//       $("#normalRangePercentage").hide();
-//       $("#lowRangePercentage").hide();
-//       $("#highRangePercentage").show();
-
-//       $('.NORMAL').css("stroke", "#ddd");
-//       $('.LOW').css("stroke", "#ddd");
-//       $('.HIGH').css("stroke", "#de2333");
-
-//     });
-
-//   }
-
 
 </script>  
       <script>
