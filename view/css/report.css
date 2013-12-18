@@ -21,11 +21,58 @@
 
 .profile{
   margin-bottom: 2% !important;  
+  margin-left: 80px;
+  margin-right: auto;
+  width: 800px;
+  height: 700px;  
 }
 
-#profilePic {
-  max-width: 100px !important;
-  min-width: 100px !important;
+.cloud {
+	width: 350px; height: 120px;
+	
+	background: #9DCFF2;
+	color: #1E6496;
+	padding-left: 10px;
+	
+	border-radius: 100px;
+	-webkit-border-radius: 100px;
+	-moz-border-radius: 100px;
+	
+	position: relative;
+	margin: 120px auto 20px;
+}
+
+.cloud:after, .cloud:before {
+	content: '';
+	position: absolute;
+	background: #9DCFF2;
+	z-index: -1
+}
+
+.cloud:after {
+	width: 100px; height: 100px;
+	top: -50px; left: 60px;
+	
+	border-radius: 100px;
+	-webkit-border-radius: 100px;
+	-moz-border-radius: 100px;
+}
+
+.cloud:before {
+	width: 180px; height: 180px;
+	top: -90px; right: 50px;
+	
+	border-radius: 200px;
+	-webkit-border-radius: 200px;
+	-moz-border-radius: 200px;
+}
+
+.profilePic {
+  padding-left: 12px;
+  padding-top: 10px;
+  float: left;
+  max-width: 80px !important;
+  min-width: 80px !important;
 }
 
 .hoverbox {
@@ -43,9 +90,31 @@ text.carbs {
 .insights {
   color:#52C0E6;
   font-weight:bold;
-  font-size: 4em;}
+  font-size: 4em;
+}
+
 .datepicker{
   padding-bottom: 20px;
   display: block;
   float: left;
+}
+
+.circle {
+	width: 80px;
+	height: 80px;
+	line-height: 120%;
+	vertical-align: middle;
+}
+.glukitScore { 
+	float: right;	
+	padding-right: 20px;
+	margin-top: -60px;	
+	font-weight:bold;
+    font-size: 4em;
+}
+
+.centeredLabel { 
+	font-size: 80%;
+	padding-top: 15px;
+	text-align: center;
 }
