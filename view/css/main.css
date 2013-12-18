@@ -139,7 +139,7 @@ li.navlink a:hover {
 
 
 /* Styles for screens that are atleast 768px; */
-@media only screen, print and (min-width: 768px) {
+@media only screen and (min-width: 768px) {
 .insights {
   color:#52C0E6;
   font-weight:bold;
@@ -152,7 +152,7 @@ li.navlink a:hover {
   }
 
 /* Styles for screens that are less than 768px; */
-@media only screen, print and (max-width: 768px) {
+@media only screen and (max-width: 768px) {
 .insights {
   color:#52C0E6;
   font-weight:bold;
