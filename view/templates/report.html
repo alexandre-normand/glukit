@@ -27,58 +27,16 @@
     </div>
   </div>
 
-<div>
-  <nav class="top-bar dataPage-topbar mainDataPage">
-    <ul class="title-area">
-    <!-- Title Area -->
-      <li class="name">
-      <h1><img src="images/glukit.png" id="droplet" style="margin-left: 30px;"></h1>
-      </li>
-    <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-  </ul>
-  <div class="fixed"></div>
-  <section class="top-bar-section">
-    <!-- Right Nav Section -->
-    <ul class="right">
-      <!-- <li class="active hackwhite has-dropdown"><img src="img/settings-cog.png"></li> -->
-      <li class="divider"></li>
-    </ul>
-  </section>
-</div>
-</nav>
-</div>
-
-<div class="row belowHeader" style="overflow:hidden; padding-top:4px">
-    <div class="large-16 columns">
-     <div class="row belowHeader" style="overflow:hidden">
-    <div class="large-16 columns">
-
-      <div class="row dashboard profile" style="padding-bottom: 0px">
-        <div class="large-2 columns">
-          <div id="profilePic"></div>
-        </div>
-
-        <div class="large-8 columns">
-            <h3 id="userName"></h3>
-            <h5 ><small id="since"></small></h5>
-            <h5 >Last sync</h5>
-            <h5 ><small id="lastSync"></small></h5>
-        </div>
-        
-        <div class="large-2 columns">
-            <div class="circleSlab" id="advanced">
-              <div class="insights circle" id="glukitScore"></div>
+<div class="profile" style="overflow:hidden; padding-top:24px">
+    <div style="padding-bottom: 0px">
+        <div class="profile">
+          </span></span>                        
+              <div class="cloud"><img src="images/glukit.png" id="droplet" style="float: left; padding-left: 130px; margin-top: -60px;">
+              <span class="profilePic" id="profilePic"/></span><span id="userName" style="float: left; padding-left: 37px; padding-top: 4px"></span><span class="glukitScore" id="glukitScore"></span></div>
             </div>
         </div>
-       
-        <div class="large-4 columns">
-            <h3 style="padding-top:8%">Glukit Score</h3>
-            <!-- change this date range to the date range returned -->
-            <h5><small id="glukitScoreDates"></small></h5>
-        </div>
-       
       </div>
-    
+ 
       <div class="row">
         <div class="large-16 columns">
           <div class="slab graph">
@@ -115,9 +73,9 @@
     var chartNode = document.getElementById("chart");
     chartNode.innerHTML = '';
 
-    var margin = {top: 30, right: 10, bottom: 100, left: 40},    
+    var margin = {top: 20, right: 10, bottom: 30, left: 10},    
     width = 800 - margin.left - margin.right,
-    height = 600 - margin.top - margin.bottom;    
+    height = 650 - margin.top - margin.bottom;    
 
     // Our dates are milliseconds since epoch so that parse function
     // just instantiates a new Date from it.
@@ -454,19 +412,17 @@ function showProfile()
 
           var img = document.createElement("img");
           img.src = profilePicture;
+          img.className="profilePic";
           var src = document.getElementById("profilePic");
           src.appendChild(img);
 
-          document.getElementById('userName').innerHTML = firstName + " " +lastName;
-          document.getElementById('lastSync').innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();
+          document.getElementById('userName').innerHTML = firstName + " " +lastName;          
           if (glukitScore == null) {
             document.getElementById('glukitScore').innerHTML = "?";
           } else {
             document.getElementById('glukitScore').innerHTML = glukitScore;
           }          
-          document.getElementById('glukitScoreDates').innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');
-          document.getElementById('since').innerHTML = "Glukit user since " + moment(joinedOn, "YYYY-MM-DDHH:mm:ssZ").format('LL');
-
+          
         }).fail(function() {
           $("div#overlay").removeClass("hidden");
            //blurring the text behind the overlay for effect
