@@ -127,24 +127,29 @@
     d3.json("/{{.PathPrefix}}data", function(error, data) {
       globalGlucoseReads = data.data[0].data;
       globalUserEvents = data.data[1].data;
+      window.globalGlucoseReads = globalGlucoseReads;
       var highestOnChart = d3.max(globalGlucoseReads, function(d) { return d.y; });
       //var highestOnChart = 250;
 
       // 1 snap every day for 7 days      
-      var daysOfData = getDayBoundaries(globalGlucoseReads[0].x, moment.unix(globalGlucoseReads[0].x).add('days', 7).unix()); 
-      
+      var daysOfData = getDateSnapGuides(moment.unix(globalGlucoseReads[0].x).toDate(), moment.unix(globalGlucoseReads[0].x).add('days', 7).toDate());       
 
-      for (var dayIndex = 0; dayIndex < daysOfData.length - 1; dayIndex++) {
+      for (var dayIndex = 0; dayIndex < Math.min(daysOfData.length - 1, 7); dayIndex++) {
         if (dayIndex < daysOfData.length - 2) {
-          glucoseSliceEnd = binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex + 1]);
-          userEventsSliceEnd = binaryIndexOf.call(globalUserEvents, daysOfData[dayIndex + 1]);          
+          glucoseSliceEnd = Math.abs(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex + 1]));
+          userEventsSliceEnd = Math.abs(binaryIndexOf.call(globalUserEvents, daysOfData[dayIndex + 1]));            
         } else {
-          glucoseSliceEnd = globalGlucoseReads.length;
-          userEventsSliceEnd = globalUserEvents.length;          
+          glucoseSliceStart = globalGlucoseReads.length - 1;
+          userEventsSliceStart = globalUserEvents.length - 1;          
         }
         
-        glucoseReads = globalGlucoseReads.slice(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex]), glucoseSliceEnd);        
-        userEvents = globalUserEvents.slice(binaryIndexOf.call(globalUserEvents, daysOfData[dayIndex]), userEventsSliceEnd);                
+        glucoseSliceStart = Math.abs(binaryIndexOf.call(globalGlucoseReads, daysOfData[dayIndex]));
+        userEventsSliceStart = Math.abs(binaryIndexOf.call(globalUserEvents, daysOfData[dayIndex]));          
+                
+        console.log("slice start is " + glucoseSliceStart);
+        console.log("slice end is " + glucoseSliceEnd);
+        glucoseReads = globalGlucoseReads.slice(glucoseSliceStart, glucoseSliceEnd);        
+        userEvents = globalUserEvents.slice(userEventsSliceStart, userEventsSliceEnd);                
         timeRangeLowerBound = glucoseReads[0].x;
         glucoseReads.forEach(function(d) {
         d.date = parseDate(d.x * 1000);
