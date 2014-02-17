@@ -15,8 +15,7 @@ const (
 
 	// Time format used by the Google Drive api
 	DRIVE_TIMEFORMAT = "2006-01-02T15:04:05.000Z"
-	// Default timezone
-	TIMEZONE = "PST"
+
 	// Timezone for Dexcom interval time values
 	INTERNAL_TIMEZONE = "GMT"
 
@@ -71,17 +70,6 @@ func GetMidnightUTCBefore(timeValue time.Time) (latestMidnightBoundary time.Time
 	latestMidnightBoundary = time.Date(timeInUTC.Year(), timeInUTC.Month(), timeInUTC.Day(), 0, 0, 0, 0, time.UTC)
 	return latestMidnightBoundary
 }
-
-// Returns the timevalue with its timezone set to the default TIMEZONE_LOCATION
-// func TimeWithDefaultTimezone(timevalue time.Time) (localTime string) {
-// 	return timevalue.In(TIMEZONE_LOCATION).Format(TIMEFORMAT)
-// }
-
-// Returns the timevalue with its timezone set to the default TIMEZONE_LOCATION but without
-// printing the timezone in the formatted string
-// func TimeInDefaultTimezoneNoTz(timevalue time.Time) (localTime string) {
-// 	return timevalue.In(TIMEZONE_LOCATION).Format(TIMEFORMAT_NO_TZ)
-// }
 
 // Returns the timevalue with its timezone set to UTC but without
 // printing the timezone in the formatted string
