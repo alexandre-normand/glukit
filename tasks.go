@@ -1,11 +1,6 @@
 package glukit
 
 import (
-	"app/engine"
-	"app/importer"
-	"app/model"
-	"app/store"
-	"app/util"
 	"appengine"
 	"appengine/channel"
 	"appengine/datastore"
@@ -13,8 +8,13 @@ import (
 	"appengine/taskqueue"
 	"appengine/urlfetch"
 	"bufio"
-	"lib/drive"
-	"lib/goauth2/oauth"
+	"github.com/alexandre-normand/glukit/app/engine"
+	"github.com/alexandre-normand/glukit/app/importer"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
+	"github.com/alexandre-normand/glukit/lib/drive"
+	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"os"
 	"time"
 )

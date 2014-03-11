@@ -3,9 +3,9 @@
 package engine
 
 import (
-	"app/model"
-	"app/store"
-	"app/util"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
 	"appengine"
 	"appengine/taskqueue"
 	"math"

@@ -40,6 +40,22 @@ handlers:
   script: _go_app
   login: required
 
+- url: /v1/calibrations
+  script: _go_app
+  login: required 
+
+- url: /v1/injections
+  script: _go_app
+  login: required 
+
+- url: /v1/foods
+  script: _go_app
+  login: required 
+
+- url: /v1/glucosereads
+  script: _go_app
+  login: required 
+
 - url: /.*
   script: _go_app
 

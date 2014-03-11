@@ -1,7 +1,7 @@
 package model
 
 import (
-	"app/util"
+	"github.com/alexandre-normand/glukit/app/util"
 	"appengine/datastore"
 	"fmt"
 	"strconv"
