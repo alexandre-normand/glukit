@@ -4,7 +4,7 @@ Package models provides model types
 package model
 
 import (
-	"app/util"
+	"github.com/alexandre-normand/glukit/app/util"
 	"math"
 	"time"
 )

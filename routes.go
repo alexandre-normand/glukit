@@ -1,18 +1,19 @@
 package glukit
 
 import (
-	"app/engine"
-	"app/model"
-	"app/store"
-	"app/util"
 	"appengine"
 	"appengine/channel"
 	"appengine/datastore"
 	"appengine/delay"
 	"appengine/taskqueue"
 	"appengine/user"
+	"code.google.com/p/gorilla/mux"
+	"github.com/alexandre-normand/glukit/app/engine"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
+	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"html/template"
-	"lib/goauth2/oauth"
 	"net/http"
 	"time"
 )
@@ -35,32 +36,41 @@ type RenderVariables struct {
 
 // init initializes the routes and global initialization
 func init() {
+	r := mux.NewRouter()
+	http.Handle("/", r)
+
 	// Create user Glukit Bernstein as a fallback for comparisons
-	http.HandleFunc("/_ah/warmup", initializeGlukitBernstein)
-	http.HandleFunc("/initpower", initializeGlukitBernstein)
+	r.HandleFunc("/_ah/warmup", initializeGlukitBernstein)
+	r.HandleFunc("/initpower", initializeGlukitBernstein)
 
 	// Json endpoints
-	http.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
-	http.HandleFunc("/data", personalData)
-	http.HandleFunc("/"+DEMO_PATH_PREFIX+"steadySailor", demoSteadySailorData)
-	http.HandleFunc("/steadySailor", steadySailorData)
-	http.HandleFunc("/"+DEMO_PATH_PREFIX+"dashboard", demoDashboard)
-	http.HandleFunc("/dashboard", dashboard)
-	http.HandleFunc("/"+DEMO_PATH_PREFIX+"glukitScores", glukitScoresForDemo)
-	http.HandleFunc("/glukitScores", glukitScores)
+	r.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
+	r.HandleFunc("/data", personalData)
+	r.HandleFunc("/"+DEMO_PATH_PREFIX+"steadySailor", demoSteadySailorData)
+	r.HandleFunc("/steadySailor", steadySailorData)
+	r.HandleFunc("/"+DEMO_PATH_PREFIX+"dashboard", demoDashboard)
+	r.HandleFunc("/dashboard", dashboard)
+	r.HandleFunc("/"+DEMO_PATH_PREFIX+"glukitScores", glukitScoresForDemo)
+	r.HandleFunc("/glukitScores", glukitScores)
 
 	// "main"-page for both demo and real users
-	http.HandleFunc("/demo", renderDemo)
-	http.HandleFunc("/graph", renderRealUser)
-	http.HandleFunc("/"+DEMO_PATH_PREFIX+"report", demoReport)
-	http.HandleFunc("/report", report)
+	r.HandleFunc("/demo", renderDemo)
+	r.HandleFunc("/graph", renderRealUser)
+	r.HandleFunc("/"+DEMO_PATH_PREFIX+"report", demoReport)
+	r.HandleFunc("/report", report)
 
 	// Static pages
-	http.HandleFunc("/", landing)
-	http.HandleFunc("/nodata", nodata)
+	r.HandleFunc("/", landing)
+	r.HandleFunc("/nodata", nodata)
 
-	http.HandleFunc("/realuser", handleRealUser)
-	http.HandleFunc("/oauth2callback", oauthCallback)
+	r.HandleFunc("/realuser", handleRealUser)
+	r.HandleFunc("/oauth2callback", oauthCallback)
+
+	// Client API endpoints
+	r.HandleFunc("/v1/calibrations", processNewCalibrationData).Methods("POST")
+	//r.HandleFunc("/v1/injections", processNewInjectionData).Methods("POST")
+	//r.HandleFunc("/v1/foods", processNewFoodData).Methods("POST")
+	//r.HandleFunc("/v1/glucosereads", processNewGlucoseReadData).Methods("POST")
 
 	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
