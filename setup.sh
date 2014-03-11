@@ -1,7 +1,7 @@
 #!/bin/sh
 
-if [ ! -d "lib/github.com/grd/stat" ]; then
-	mkdir -p "lib/github.com/grd"
+if [ ! -d "github.com/alexandre-normand/glukit/lib/github.com/grd/stat" ]; then
+	mkdir -p "github.com/alexandre-normand/glukit/lib/github.com/grd"
 	git clone git@github.com:grd/stat.git lib/github.com/grd/stat
 fi
 

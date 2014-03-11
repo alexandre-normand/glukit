@@ -1,7 +1,7 @@
 package model
 
 import (
-	"lib/goauth2/oauth"
+	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"time"
 )
 

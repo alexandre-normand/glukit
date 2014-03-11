@@ -1,15 +1,15 @@
 package glukit
 
 import (
-	"app/engine"
-	"app/model"
-	"app/store"
-	"app/util"
 	"appengine"
 	"appengine/user"
 	"encoding/json"
 	"fmt"
-	"lib/github.com/grd/stat"
+	"github.com/alexandre-normand/glukit/app/engine"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
+	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
 	"net/http"
 	"sort"
 	"strconv"

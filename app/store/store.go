@@ -2,8 +2,8 @@
 package store
 
 import (
-	"app/model"
-	"app/util"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/util"
 	"appengine"
 	"appengine/datastore"
 	"math"
