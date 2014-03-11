@@ -1,7 +1,7 @@
 package store
 
 import (
-	"app/model"
+	"github.com/alexandre-normand/glukit/app/model"
 )
 
 // mergeGlucoseReadArrays merges two arrays of GlucoseRead elements.

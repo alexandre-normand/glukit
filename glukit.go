@@ -2,18 +2,18 @@
 package glukit
 
 import (
-	"app/model"
-	"app/store"
-	"app/util"
 	"appengine"
 	"appengine/datastore"
 	"appengine/taskqueue"
 	"appengine/urlfetch"
 	"appengine/user"
 	"fmt"
-	"lib/drive"
-	"lib/goauth2/oauth"
-	"lib/oauth2"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
+	"github.com/alexandre-normand/glukit/lib/drive"
+	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
+	"github.com/alexandre-normand/glukit/lib/oauth2"
 	"net/http"
 	"time"
 )

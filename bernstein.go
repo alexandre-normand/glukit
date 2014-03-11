@@ -1,17 +1,17 @@
 package glukit
 
 import (
-	"app/engine"
-	"app/importer"
-	"app/model"
-	"app/store"
-	"app/util"
 	"appengine"
 	"appengine/datastore"
 	"bytes"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/engine"
+	"github.com/alexandre-normand/glukit/app/importer"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
+	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"io"
-	"lib/goauth2/oauth"
 	"net/http"
 	"strings"
 	"time"
