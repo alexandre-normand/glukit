@@ -6,6 +6,7 @@ package bufio
 import (
 	"github.com/alexandre-normand/glukit/app/io"
 	"github.com/alexandre-normand/glukit/app/model"
+	"log"
 )
 
 const (
@@ -16,10 +17,11 @@ type CalibrationWriter struct {
 	buf []model.CalibrationRead
 	n   int
 	wr  io.CalibrationWriter
+	err error
 }
 
 // WriteCalibration writes a single CalibrationRead
-func (b *CalibrationWriter) WriteCalibration(calibrationRead *model.CalibrationRead) error {
+func (b *CalibrationWriter) WriteCalibration(calibrationRead model.CalibrationRead) error {
 	if b.err != nil {
 		return b.err
 	}
@@ -35,20 +37,20 @@ func (b *CalibrationWriter) WriteCalibration(calibrationRead *model.CalibrationR
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *CalibrationWriter) WriteCalibrations(p []*model.CalibrationRead) (nn int, err error) {
-	for len(calibrationReads) > b.Available() && b.err == nil {
+func (b *CalibrationWriter) WriteCalibrations(p []model.CalibrationRead) (nn int, err error) {
+	for len(p) > b.Available() && b.err == nil {
 		var n int
-		n = copy(b.buf[b.n:], calibrationReads)
+		n = copy(b.buf[b.n:], p)
 		b.n += n
 		b.Flush()
 
 		nn += n
-		calibrationReads = calibrationReads[n:]
+		p = p[n:]
 	}
 	if b.err != nil {
 		return nn, b.err
 	}
-	n := copy(b.buf[b.n:], calibrationReads)
+	n := copy(b.buf[b.n:], p)
 	b.n += n
 	nn += n
 	return nn, nil
@@ -56,12 +58,19 @@ func (b *CalibrationWriter) WriteCalibrations(p []*model.CalibrationRead) (nn in
 
 // NewWriterSize returns a new Writer whose buffer has the specified
 // size.
-func NewWriterSize(size int) *CalibrationWriter {
+func NewWriterSize(wr io.CalibrationWriter, size int) *CalibrationWriter {
+	// Is it already a Writer?
+	b, ok := wr.(*CalibrationWriter)
+	if ok && len(b.buf) >= size {
+		return b
+	}
+
 	if size <= 0 {
 		size = defaultBufSize
 	}
 	w := new(CalibrationWriter)
 	w.buf = make([]model.CalibrationRead, size)
+	w.wr = wr
 
 	return w
 }
@@ -74,7 +83,8 @@ func (b *CalibrationWriter) Flush() error {
 	if b.n == 0 {
 		return nil
 	}
-	n, err := b.wr.Write(b.buf[0:b.n])
+	log.Printf("b is [%v], wr is [%v]", b.buf, b.wr)
+	n, err := b.wr.WriteCalibrations(b.buf[0:b.n])
 	if n < b.n && err == nil {
 		err = io.ErrShortWrite
 	}
@@ -88,4 +98,14 @@ func (b *CalibrationWriter) Flush() error {
 	}
 	b.n = 0
 	return nil
+}
+
+// Available returns how many bytes are unused in the buffer.
+func (b *CalibrationWriter) Available() int {
+	return len(b.buf) - b.n
+}
+
+// Buffered returns the number of bytes that have been written into the current buffer.
+func (b *CalibrationWriter) Buffered() int {
+	return b.n
 }
