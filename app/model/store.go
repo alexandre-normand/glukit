@@ -1,9 +1,9 @@
 package model
 
 import (
-	"github.com/alexandre-normand/glukit/app/util"
 	"appengine/datastore"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/util"
 	"strconv"
 	"time"
 )
@@ -43,6 +43,82 @@ func (dayOfReads *DayOfGlucoseReads) Load(channel <-chan datastore.Property) err
 }
 
 func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) error {
+	defer close(channel)
+
+	size := len(dayOfReads.Reads)
+
+	// Nothing to do if the slice has zero elements
+	if size == 0 {
+		return nil
+	}
+	reads := dayOfReads.Reads
+	startTimestamp := int64(reads[0].Timestamp.EpochTime)
+	startTime := time.Unix(startTimestamp, 0)
+	startTimeLocal := reads[0].Timestamp.LocalTime
+	endTimestamp := int64(reads[size-1].Timestamp.EpochTime)
+	endTime := time.Unix(endTimestamp, 0)
+
+	channel <- datastore.Property{
+		Name:  "startTime",
+		Value: startTime,
+	}
+	channel <- datastore.Property{
+		Name:  "endTime",
+		Value: endTime,
+	}
+	channel <- datastore.Property{
+		Name:  "startTimeLocal",
+		Value: startTimeLocal,
+	}
+
+	for i := range reads {
+		readTimestamp := int64(reads[i].Timestamp.EpochTime)
+		readOffset := readTimestamp - startTimestamp
+		channel <- datastore.Property{
+			Name:    strconv.FormatInt(readOffset, 10),
+			Value:   int64(reads[i].Value),
+			NoIndex: true,
+		}
+	}
+
+	return nil
+}
+
+func (dayOfReads *DayOfCalibrationReads) Load(channel <-chan datastore.Property) error {
+	var startTime time.Time
+	var startTimeLocal string
+	var userLocation *time.Location
+
+	for property := range channel {
+		switch columnName, columnValue := property.Name, property.Value; {
+		case columnName == "startTime":
+			startTime = columnValue.(time.Time)
+		case columnName == "endTime":
+			// We ignore it on load
+			_ = columnValue.(time.Time)
+		case columnName == "startTimeLocal":
+			startTimeLocal = columnValue.(string)
+			userLocation = util.GetLocaltimeOffset(startTimeLocal, startTime)
+		default:
+			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
+			if err != nil {
+				util.Propagate(err)
+			}
+
+			readTime := time.Unix(startTime.Unix()+offsetInSeconds, 0)
+			// We need to convert value to int64 and cast it as int
+			value := int(columnValue.(int64))
+
+			localTime := readTime.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
+			read := CalibrationRead{Timestamp{localTime, readTime.Unix()}, value}
+			dayOfReads.Reads = append(dayOfReads.Reads, read)
+		}
+	}
+
+	return nil
+}
+
+func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfReads.Reads)
