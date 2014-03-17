@@ -2,10 +2,10 @@
 package store
 
 import (
-	"github.com/alexandre-normand/glukit/app/model"
-	"github.com/alexandre-normand/glukit/app/util"
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/util"
 	"math"
 	"time"
 )
@@ -103,6 +103,26 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 			context.Criticalf("Error storing updated user profile [%s] with most recent read value of %s: %v", userProfileKey, userProfile.MostRecentRead, err)
 			return nil, err
 		}
+	}
+
+	return elementKeys, nil
+}
+
+// StoreCalibrationReads stores a batch of DayOfCalibrations elements. It is a optimized operation in that:
+//    1. One element represents a relatively short-and-wide entry of all calibration reads for a single day.
+//    2. We have multiple DayOfReads elements and we use a PutMulti to make this faster.
+// For details of how a single element of DayOfReads is physically stored, see the implementation of model.Store and model.Load.
+func StoreCalibrationReads(context appengine.Context, userProfileKey *datastore.Key, daysOfCalibrationReads []model.DayOfCalibrationReads) (keys []*datastore.Key, err error) {
+	elementKeys := make([]*datastore.Key, len(daysOfCalibrationReads))
+	for i := range daysOfCalibrationReads {
+		elementKeys[i] = datastore.NewKey(context, "DayOfCalibrationReads", "", daysOfCalibrationReads[i].Reads[0].Timestamp.EpochTime, userProfileKey)
+	}
+
+	context.Infof("Emitting a PutMulti with %d keys for all %d days of calibration reads", len(elementKeys), len(daysOfCalibrationReads))
+	keys, error := datastore.PutMulti(context, elementKeys, daysOfCalibrationReads)
+	if error != nil {
+		context.Criticalf("Error writing %d days of calibration reads with keys [%s]: %v", len(elementKeys), elementKeys, error)
+		return nil, error
 	}
 
 	return elementKeys, nil
