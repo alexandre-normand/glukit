@@ -1,12 +1,12 @@
 package importer
 
 import (
-	"github.com/alexandre-normand/glukit/app/model"
-	"github.com/alexandre-normand/glukit/app/util"
 	"appengine"
 	"appengine/datastore"
 	"encoding/xml"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/util"
 	"io"
 	"strings"
 	"time"

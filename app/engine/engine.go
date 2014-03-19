@@ -3,11 +3,11 @@
 package engine
 
 import (
+	"appengine"
+	"appengine/taskqueue"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
-	"appengine"
-	"appengine/taskqueue"
 	"math"
 	"time"
 )

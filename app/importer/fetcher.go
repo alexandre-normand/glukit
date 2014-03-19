@@ -1,11 +1,11 @@
 package importer
 
 import (
-	"github.com/alexandre-normand/glukit/app/util"
 	"appengine"
 	"fmt"
-	"io"
+	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/drive"
+	"io"
 	"log"
 	"net/http"
 	"strings"

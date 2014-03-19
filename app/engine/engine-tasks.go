@@ -1,12 +1,12 @@
 package engine
 
 import (
-	"github.com/alexandre-normand/glukit/app/model"
-	"github.com/alexandre-normand/glukit/app/store"
-	"github.com/alexandre-normand/glukit/app/util"
 	"appengine"
 	"appengine/delay"
 	"appengine/taskqueue"
+	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
 	"time"
 )
 

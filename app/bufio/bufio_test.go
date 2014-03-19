@@ -3,7 +3,6 @@ package bufio_test
 import (
 	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 	"testing"
 )
 
@@ -13,7 +12,6 @@ type statsCalibrationWriter struct {
 }
 
 func (w *statsCalibrationWriter) WriteCalibrations(p []model.CalibrationRead) (n int, err error) {
-	log.Printf("Got some calibrations")
 	w.total += len(p)
 	w.batchCount++
 
@@ -31,11 +29,11 @@ func TestSimpleWriteOfSingleBatch(t *testing.T) {
 	w.Flush()
 
 	if statsWriter.total != 10 {
-		t.Errorf("simple batch test failed: got a total of %d but expected %d", statsWriter.total, 10)
+		t.Errorf("TestSimpleWriteOfSingleBatch failed: got a total of %d but expected %d", statsWriter.total, 10)
 	}
 
 	if statsWriter.batchCount != 1 {
-		t.Errorf("simple batch test failed: got a total of %d but expected %d", statsWriter.batchCount, 1)
+		t.Errorf("TestSimpleWriteOfSingleBatch failed: got a total of %d but expected %d", statsWriter.batchCount, 1)
 	}
 }
 
@@ -46,11 +44,11 @@ func TestIndividualWrite(t *testing.T) {
 	w.Flush()
 
 	if statsWriter.total != 1 {
-		t.Errorf("individual write test failed: got a total of %d but expected %d", statsWriter.total, 10)
+		t.Errorf("TestIndividualWrite failed: got a total of %d but expected %d", statsWriter.total, 10)
 	}
 
 	if statsWriter.batchCount != 1 {
-		t.Errorf("individual write test failed: got a total of %d but expected %d", statsWriter.batchCount, 1)
+		t.Errorf("TestIndividualWrite failed: got a total of %d but expected %d", statsWriter.batchCount, 1)
 	}
 }
 
@@ -64,22 +62,22 @@ func TestSimpleWriteLargerThanOneBatch(t *testing.T) {
 	w.WriteCalibrations(calibrations)
 
 	if statsWriter.total != 10 {
-		t.Errorf("simple write larger than one batch test failed: got a total of %d but expected %d", statsWriter.total, 10)
+		t.Errorf("TestSimpleWriteLargerThanOneBatch test failed: got a total of %d but expected %d", statsWriter.total, 10)
 	}
 
 	if statsWriter.batchCount != 1 {
-		t.Errorf("simple write larger than one batch test: got a total of %d but expected %d", statsWriter.batchCount, 1)
+		t.Errorf("TestSimpleWriteLargerThanOneBatch test: got a total of %d but expected %d", statsWriter.batchCount, 1)
 	}
 
 	// Flushing should cause the extra calibration to be written
 	w.Flush()
 
 	if statsWriter.total != 11 {
-		t.Errorf("simple write larger than one batch test: got a total of %d but expected %d", statsWriter.total, 11)
+		t.Errorf("TestSimpleWriteLargerThanOneBatch test: got a total of %d but expected %d", statsWriter.total, 11)
 	}
 
 	if statsWriter.batchCount != 2 {
-		t.Errorf("simple write larger than one batch test: got a total of %d but expected %d", statsWriter.batchCount, 2)
+		t.Errorf("TestSimpleWriteLargerThanOneBatch test: got a total of %d but expected %d", statsWriter.batchCount, 2)
 	}
 }
 
@@ -93,21 +91,21 @@ func TestWriteTwoFullBatches(t *testing.T) {
 	w.WriteCalibrations(calibrations)
 
 	if statsWriter.total != 10 {
-		t.Errorf("two full batch test failed: got a total of %d but expected %d", statsWriter.total, 10)
+		t.Errorf("TestWriteTwoFullBatches failed: got a total of %d but expected %d", statsWriter.total, 10)
 	}
 
 	if statsWriter.batchCount != 1 {
-		t.Errorf("two full batch test failed: got a total of %d but expected %d", statsWriter.batchCount, 1)
+		t.Errorf("TestWriteTwoFullBatches failed: got a total of %d but expected %d", statsWriter.batchCount, 1)
 	}
 
 	// Flushing should cause the extra batch to be written
 	w.Flush()
 
 	if statsWriter.total != 20 {
-		t.Errorf("two full batch test failed: got a total of %d but expected %d", statsWriter.total, 20)
+		t.Errorf("TestWriteTwoFullBatches failed: got a total of %d but expected %d", statsWriter.total, 20)
 	}
 
 	if statsWriter.batchCount != 2 {
-		t.Errorf("two full batch test failed: got a total of %d but expected %d", statsWriter.batchCount, 2)
+		t.Errorf("TestWriteTwoFullBatches failed: got a total of %d but expected %d", statsWriter.batchCount, 2)
 	}
 }
