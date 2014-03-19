@@ -3,7 +3,6 @@ package bufio
 import (
 	"github.com/alexandre-normand/glukit/app/io"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 	"time"
 )
 
@@ -30,11 +29,10 @@ func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationR
 	if b.t.IsZero() {
 		last := p[0]
 		b.t = last.GetTime().Truncate(b.d)
-		log.Printf("Initialized time to %v", b.t)
 	}
 
 	i := 0
-	for j, c := 0, p[0]; j < len(p) && b.err == nil; j, c = j+1, p[i] {
+	for j, c := range p {
 		t := c.GetTime()
 		if t.Sub(b.t) >= b.d {
 			var n int
@@ -43,14 +41,20 @@ func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationR
 			b.Flush()
 
 			nn += n
+
+			// If the flush resulted in an error, abort the write
+			if b.err != nil {
+				return nn, b.err
+			}
+
 			// Move beginning of next batch
 			i = j
 		}
 	}
 
-	if b.err != nil {
-		return nn, b.err
-	}
+	n := copy(b.buf[b.n:], p[i:])
+	b.n += n
+	nn += n
 
 	return nn, nil
 }
