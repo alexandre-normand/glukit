@@ -3,6 +3,7 @@ package bufio
 import (
 	"github.com/alexandre-normand/glukit/app/io"
 	"github.com/alexandre-normand/glukit/app/model"
+	"log"
 	"time"
 )
 
@@ -13,7 +14,7 @@ const (
 type TimeBufferedCalibrationWriter struct {
 	buf []model.CalibrationRead
 	n   int
-	wr  io.CalibrationWriter
+	wr  io.CalibrationBatchWriter
 	t   time.Time
 	d   time.Duration
 	err error
@@ -38,7 +39,7 @@ func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationR
 			var n int
 			n = copy(b.buf[b.n:], p[i:j])
 			b.n += n
-			b.Flush()
+			b.flush()
 
 			nn += n
 
@@ -61,13 +62,7 @@ func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationR
 
 // NewWriterSize returns a new Writer whose buffer has the specified
 // size.
-func NewWriterDuration(wr io.CalibrationWriter, bufferLength time.Duration) *TimeBufferedCalibrationWriter {
-	// Is it already a Writer?
-	b, ok := wr.(*TimeBufferedCalibrationWriter)
-	if ok {
-		return b
-	}
-
+func NewWriterDuration(wr io.CalibrationBatchWriter, bufferLength time.Duration) *TimeBufferedCalibrationWriter {
 	w := new(TimeBufferedCalibrationWriter)
 	w.buf = make([]model.CalibrationRead, bufferSize)
 	w.wr = wr
@@ -76,8 +71,9 @@ func NewWriterDuration(wr io.CalibrationWriter, bufferLength time.Duration) *Tim
 	return w
 }
 
-// Flush writes any buffered data to the underlying io.Writer.
-func (b *TimeBufferedCalibrationWriter) Flush() error {
+// Flush writes any buffered data to the underlying io.Writer as a batch.
+func (b *TimeBufferedCalibrationWriter) flush() error {
+	log.Printf("in TimeBufferedCalibrationWriter.flush with buffer of %d, err %v", b.n, b.err)
 	if b.err != nil {
 		return b.err
 	}
@@ -85,7 +81,7 @@ func (b *TimeBufferedCalibrationWriter) Flush() error {
 		return nil
 	}
 
-	n, err := b.wr.WriteCalibrations(b.buf[0:b.n])
+	n, err := b.wr.WriteCalibrationBatch(b.buf[0:b.n])
 	if n < b.n && err == nil {
 		err = io.ErrShortWrite
 	}
@@ -99,6 +95,16 @@ func (b *TimeBufferedCalibrationWriter) Flush() error {
 	}
 	b.n = 0
 	return nil
+}
+
+// Flush writes any buffered data to the underlying io.Writer.
+func (b *TimeBufferedCalibrationWriter) Flush() error {
+	log.Printf("User flush with timed buffer of [%d] calibrations", b.n)
+	if err := b.flush(); err != nil {
+		return err
+	}
+
+	return b.wr.Flush()
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
