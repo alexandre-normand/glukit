@@ -6,42 +6,43 @@ package bufio
 import (
 	"github.com/alexandre-normand/glukit/app/io"
 	"github.com/alexandre-normand/glukit/app/model"
+	"log"
 )
 
 const (
 	defaultBufSize = 200
 )
 
-type BufferedCalibrationWriter struct {
-	buf []model.CalibrationRead
+type BufferedCalibrationBatchWriter struct {
+	buf []model.DayOfCalibrationReads
 	n   int
-	wr  io.CalibrationWriter
+	wr  io.CalibrationBatchWriter
 	err error
 }
 
-// WriteCalibration writes a single CalibrationRead
-func (b *BufferedCalibrationWriter) WriteCalibration(calibrationRead model.CalibrationRead) error {
-	if b.err != nil {
-		return b.err
+// WriteCalibration writes a single model.DayOfCalibrationReads
+func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (nn int, err error) {
+	dayOfCalibrationReads := make([]model.DayOfCalibrationReads, 1)
+	dayOfCalibrationReads[0] = model.DayOfCalibrationReads{p}
+
+	n, err := b.WriteCalibrationBatches(dayOfCalibrationReads)
+	if err != nil {
+		return n * len(p), err
 	}
-	if b.Available() <= 0 && b.Flush() != nil {
-		return b.err
-	}
-	b.buf[b.n] = calibrationRead
-	b.n++
-	return nil
+
+	return len(p), nil
 }
 
-// WriteCalibrations writes the contents of p into the buffer.
-// It returns the number of bytes written.
+// WriteCalibrationBatches writes the contents of p into the buffer.
+// It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationRead) (nn int, err error) {
+func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (nn int, err error) {
 	for len(p) > b.Available() && b.err == nil {
 		var n int
 		n = copy(b.buf[b.n:], p)
 		b.n += n
-		b.Flush()
+		b.flush()
 
 		nn += n
 		p = p[n:]
@@ -57,9 +58,9 @@ func (b *BufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationRead)
 
 // NewWriterSize returns a new Writer whose buffer has the specified
 // size.
-func NewWriterSize(wr io.CalibrationWriter, size int) *BufferedCalibrationWriter {
+func NewWriterSize(wr io.CalibrationBatchWriter, size int) *BufferedCalibrationBatchWriter {
 	// Is it already a Writer?
-	b, ok := wr.(*BufferedCalibrationWriter)
+	b, ok := wr.(*BufferedCalibrationBatchWriter)
 	if ok && len(b.buf) >= size {
 		return b
 	}
@@ -67,15 +68,16 @@ func NewWriterSize(wr io.CalibrationWriter, size int) *BufferedCalibrationWriter
 	if size <= 0 {
 		size = defaultBufSize
 	}
-	w := new(BufferedCalibrationWriter)
-	w.buf = make([]model.CalibrationRead, size)
+	w := new(BufferedCalibrationBatchWriter)
+	w.buf = make([]model.DayOfCalibrationReads, size)
 	w.wr = wr
 
 	return w
 }
 
 // Flush writes any buffered data to the underlying io.Writer.
-func (b *BufferedCalibrationWriter) Flush() error {
+func (b *BufferedCalibrationBatchWriter) flush() error {
+	log.Printf("in BufferedCalibrationBatchWriter.flush()")
 	if b.err != nil {
 		return b.err
 	}
@@ -83,7 +85,7 @@ func (b *BufferedCalibrationWriter) Flush() error {
 		return nil
 	}
 
-	n, err := b.wr.WriteCalibrations(b.buf[0:b.n])
+	n, err := b.wr.WriteCalibrationBatches(b.buf[0:b.n])
 	if n < b.n && err == nil {
 		err = io.ErrShortWrite
 	}
@@ -99,12 +101,22 @@ func (b *BufferedCalibrationWriter) Flush() error {
 	return nil
 }
 
+// Flush writes any buffered data to the underlying io.Writer.
+func (b *BufferedCalibrationBatchWriter) Flush() error {
+	log.Printf("in BufferedCalibrationBatchWriter.Flush")
+	if err := b.flush(); err != nil {
+		return err
+	}
+
+	return b.wr.Flush()
+}
+
 // Available returns how many bytes are unused in the buffer.
-func (b *BufferedCalibrationWriter) Available() int {
+func (b *BufferedCalibrationBatchWriter) Available() int {
 	return len(b.buf) - b.n
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (b *BufferedCalibrationWriter) Buffered() int {
+func (b *BufferedCalibrationBatchWriter) Buffered() int {
 	return b.n
 }
