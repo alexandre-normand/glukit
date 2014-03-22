@@ -6,7 +6,6 @@ package bufio
 import (
 	"github.com/alexandre-normand/glukit/app/io"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 )
 
 const (
@@ -77,7 +76,6 @@ func NewWriterSize(wr io.CalibrationBatchWriter, size int) *BufferedCalibrationB
 
 // Flush writes any buffered data to the underlying io.Writer.
 func (b *BufferedCalibrationBatchWriter) flush() error {
-	log.Printf("in BufferedCalibrationBatchWriter.flush()")
 	if b.err != nil {
 		return b.err
 	}
@@ -103,7 +101,6 @@ func (b *BufferedCalibrationBatchWriter) flush() error {
 
 // Flush writes any buffered data to the underlying io.Writer.
 func (b *BufferedCalibrationBatchWriter) Flush() error {
-	log.Printf("in BufferedCalibrationBatchWriter.Flush")
 	if err := b.flush(); err != nil {
 		return err
 	}

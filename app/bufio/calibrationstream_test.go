@@ -18,7 +18,7 @@ func IgnoreTestWriteOfDayBatch(t *testing.T) {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
 		calibrations[i] = model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, 75}
 	}
-	w.WriteCalibrations(calibrations)
+	w.Write(calibrations)
 
 	if statsWriter.total != 24 {
 		t.Errorf("TestWriteOfDayBatch failed: got a total of %d but expected %d", statsWriter.total, 24)
@@ -48,7 +48,7 @@ func TestWriteOfHourlyBatch(t *testing.T) {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
 		calibrations[i] = model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, 75}
 	}
-	w.WriteCalibrations(calibrations)
+	w.Write(calibrations)
 
 	if statsWriter.total != 12 {
 		t.Errorf("TestWriteOfHourlyBatch failed: got a total of %d but expected %d", statsWriter.total, 12)
@@ -77,8 +77,8 @@ func TestWriteOfHourlyBatch(t *testing.T) {
 		t.Errorf("TestWriteOfHourlyBatch failed: got a batchCount of %d but expected %d", statsWriter.batchCount, 2)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestWriteOfHourlyBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 1)
+	if statsWriter.writeCount != 2 {
+		t.Errorf("TestWriteOfHourlyBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 2)
 	}
 
 	if statsWriter.flushCount != 1 {
