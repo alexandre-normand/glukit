@@ -10,10 +10,10 @@ const (
 	bufferSize = 86400
 )
 
-type TimeBufferedCalibrationWriter struct {
+type CalibrationReadStream struct {
 	buf []model.CalibrationRead
 	n   int
-	wr  io.CalibrationWriter
+	wr  io.CalibrationBatchWriter
 	t   time.Time
 	d   time.Duration
 	err error
@@ -23,7 +23,7 @@ type TimeBufferedCalibrationWriter struct {
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationRead) (nn int, err error) {
+func (b *CalibrationReadStream) Write(p []model.CalibrationRead) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
 	if b.t.IsZero() {
@@ -38,7 +38,7 @@ func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationR
 			var n int
 			n = copy(b.buf[b.n:], p[i:j])
 			b.n += n
-			b.Flush()
+			b.flush()
 
 			nn += n
 
@@ -61,14 +61,8 @@ func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationR
 
 // NewWriterSize returns a new Writer whose buffer has the specified
 // size.
-func NewWriterDuration(wr io.CalibrationWriter, bufferLength time.Duration) *TimeBufferedCalibrationWriter {
-	// Is it already a Writer?
-	b, ok := wr.(*TimeBufferedCalibrationWriter)
-	if ok {
-		return b
-	}
-
-	w := new(TimeBufferedCalibrationWriter)
+func NewWriterDuration(wr io.CalibrationBatchWriter, bufferLength time.Duration) *CalibrationReadStream {
+	w := new(CalibrationReadStream)
 	w.buf = make([]model.CalibrationRead, bufferSize)
 	w.wr = wr
 	w.d = bufferLength
@@ -76,8 +70,8 @@ func NewWriterDuration(wr io.CalibrationWriter, bufferLength time.Duration) *Tim
 	return w
 }
 
-// Flush writes any buffered data to the underlying io.Writer.
-func (b *TimeBufferedCalibrationWriter) Flush() error {
+// Flush writes any buffered data to the underlying io.Writer as a batch.
+func (b *CalibrationReadStream) flush() error {
 	if b.err != nil {
 		return b.err
 	}
@@ -85,8 +79,8 @@ func (b *TimeBufferedCalibrationWriter) Flush() error {
 		return nil
 	}
 
-	n, err := b.wr.WriteCalibrations(b.buf[0:b.n])
-	if n < b.n && err == nil {
+	n, err := b.wr.WriteCalibrationBatch(b.buf[0:b.n])
+	if n < 1 && err == nil {
 		err = io.ErrShortWrite
 	}
 	if err != nil {
@@ -101,7 +95,16 @@ func (b *TimeBufferedCalibrationWriter) Flush() error {
 	return nil
 }
 
+// Flush writes any buffered data to the underlying io.Writer.
+func (b *CalibrationReadStream) Flush() error {
+	if err := b.flush(); err != nil {
+		return err
+	}
+
+	return b.wr.Flush()
+}
+
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (b *TimeBufferedCalibrationWriter) Buffered() int {
+func (b *CalibrationReadStream) Buffered() int {
 	return b.n
 }
