@@ -3,7 +3,6 @@ package bufio
 import (
 	"github.com/alexandre-normand/glukit/app/io"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 	"time"
 )
 
@@ -11,7 +10,7 @@ const (
 	bufferSize = 86400
 )
 
-type TimeBufferedCalibrationWriter struct {
+type CalibrationReadStream struct {
 	buf []model.CalibrationRead
 	n   int
 	wr  io.CalibrationBatchWriter
@@ -24,7 +23,7 @@ type TimeBufferedCalibrationWriter struct {
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationRead) (nn int, err error) {
+func (b *CalibrationReadStream) Write(p []model.CalibrationRead) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
 	if b.t.IsZero() {
@@ -62,8 +61,8 @@ func (b *TimeBufferedCalibrationWriter) WriteCalibrations(p []model.CalibrationR
 
 // NewWriterSize returns a new Writer whose buffer has the specified
 // size.
-func NewWriterDuration(wr io.CalibrationBatchWriter, bufferLength time.Duration) *TimeBufferedCalibrationWriter {
-	w := new(TimeBufferedCalibrationWriter)
+func NewWriterDuration(wr io.CalibrationBatchWriter, bufferLength time.Duration) *CalibrationReadStream {
+	w := new(CalibrationReadStream)
 	w.buf = make([]model.CalibrationRead, bufferSize)
 	w.wr = wr
 	w.d = bufferLength
@@ -72,8 +71,7 @@ func NewWriterDuration(wr io.CalibrationBatchWriter, bufferLength time.Duration)
 }
 
 // Flush writes any buffered data to the underlying io.Writer as a batch.
-func (b *TimeBufferedCalibrationWriter) flush() error {
-	log.Printf("in TimeBufferedCalibrationWriter.flush with buffer of %d, err %v", b.n, b.err)
+func (b *CalibrationReadStream) flush() error {
 	if b.err != nil {
 		return b.err
 	}
@@ -82,7 +80,7 @@ func (b *TimeBufferedCalibrationWriter) flush() error {
 	}
 
 	n, err := b.wr.WriteCalibrationBatch(b.buf[0:b.n])
-	if n < b.n && err == nil {
+	if n < 1 && err == nil {
 		err = io.ErrShortWrite
 	}
 	if err != nil {
@@ -98,8 +96,7 @@ func (b *TimeBufferedCalibrationWriter) flush() error {
 }
 
 // Flush writes any buffered data to the underlying io.Writer.
-func (b *TimeBufferedCalibrationWriter) Flush() error {
-	log.Printf("User flush with timed buffer of [%d] calibrations", b.n)
+func (b *CalibrationReadStream) Flush() error {
 	if err := b.flush(); err != nil {
 		return err
 	}
@@ -108,6 +105,6 @@ func (b *TimeBufferedCalibrationWriter) Flush() error {
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (b *TimeBufferedCalibrationWriter) Buffered() int {
+func (b *CalibrationReadStream) Buffered() int {
 	return b.n
 }

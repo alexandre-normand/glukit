@@ -14,7 +14,7 @@ type loggingCalibrationWriter struct {
 	c appengine.Context
 }
 
-func (w loggingCalibrationWriter) WriteCalibrations(p []model.CalibrationRead) (n int, err error) {
+func (w loggingCalibrationWriter) Write(p []model.CalibrationRead) (n int, err error) {
 	w.c.Infof("Received write [%v]", p)
 	return len(p), nil
 }
