@@ -1,4 +1,4 @@
-package io_test
+package glukitio_test
 
 import (
 	"appengine/aetest"
