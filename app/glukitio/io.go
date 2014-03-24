@@ -1,4 +1,4 @@
-package io
+package glukitio
 
 import (
 	"appengine"
@@ -19,6 +19,7 @@ var ErrShortWrite = errors.New("short write")
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type CalibrationBatchWriter interface {
+	// TODO get rid of the Flush on the Writer. Only bufio should care about the Flush
 	Flush() error
 	WriteCalibrationBatch(p []model.CalibrationRead) (n int, err error)
 	WriteCalibrationBatches(p []model.DayOfCalibrationReads) (n int, err error)
@@ -48,4 +49,8 @@ func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatch(p []model.Calibr
 	dayOfCalibrationReads := make([]model.DayOfCalibrationReads, 1)
 	dayOfCalibrationReads[0] = model.DayOfCalibrationReads{p}
 	return w.WriteCalibrationBatches(dayOfCalibrationReads)
+}
+
+func (w *DataStoreCalibrationBatchWriter) Flush() error {
+	return nil
 }

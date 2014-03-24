@@ -1,7 +1,7 @@
 package bufio
 
 import (
-	"github.com/alexandre-normand/glukit/app/io"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"time"
 )
@@ -10,20 +10,32 @@ const (
 	bufferSize = 86400
 )
 
-type CalibrationReadStream struct {
+type CalibrationReadStreamer struct {
 	buf []model.CalibrationRead
 	n   int
-	wr  io.CalibrationBatchWriter
+	wr  glukitio.CalibrationBatchWriter
 	t   time.Time
 	d   time.Duration
 	err error
+}
+
+// WriteCalibration writes a single CalibrationRead into the buffer.
+func (b *CalibrationReadStreamer) WriteCalibration(c model.CalibrationRead) (nn int, err error) {
+	if b.err != nil {
+		return 0, b.err
+	}
+
+	p := make([]model.CalibrationRead, 1)
+	p[0] = c
+
+	return b.WriteCalibrations(p)
 }
 
 // WriteCalibrations writes the contents of p into the buffer.
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *CalibrationReadStream) Write(p []model.CalibrationRead) (nn int, err error) {
+func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
 	if b.t.IsZero() {
@@ -61,8 +73,8 @@ func (b *CalibrationReadStream) Write(p []model.CalibrationRead) (nn int, err er
 
 // NewWriterSize returns a new Writer whose buffer has the specified
 // size.
-func NewWriterDuration(wr io.CalibrationBatchWriter, bufferLength time.Duration) *CalibrationReadStream {
-	w := new(CalibrationReadStream)
+func NewWriterDuration(wr glukitio.CalibrationBatchWriter, bufferLength time.Duration) *CalibrationReadStreamer {
+	w := new(CalibrationReadStreamer)
 	w.buf = make([]model.CalibrationRead, bufferSize)
 	w.wr = wr
 	w.d = bufferLength
@@ -70,8 +82,8 @@ func NewWriterDuration(wr io.CalibrationBatchWriter, bufferLength time.Duration)
 	return w
 }
 
-// Flush writes any buffered data to the underlying io.Writer as a batch.
-func (b *CalibrationReadStream) flush() error {
+// Flush writes any buffered data to the underlying glukitio.Writer as a batch.
+func (b *CalibrationReadStreamer) flush() error {
 	if b.err != nil {
 		return b.err
 	}
@@ -81,7 +93,7 @@ func (b *CalibrationReadStream) flush() error {
 
 	n, err := b.wr.WriteCalibrationBatch(b.buf[0:b.n])
 	if n < 1 && err == nil {
-		err = io.ErrShortWrite
+		err = glukitio.ErrShortWrite
 	}
 	if err != nil {
 		if n > 0 && n < b.n {
@@ -95,8 +107,8 @@ func (b *CalibrationReadStream) flush() error {
 	return nil
 }
 
-// Flush writes any buffered data to the underlying io.Writer.
-func (b *CalibrationReadStream) Flush() error {
+// Flush writes any buffered data to the underlying glukitio.Writer.
+func (b *CalibrationReadStreamer) Flush() error {
 	if err := b.flush(); err != nil {
 		return err
 	}
@@ -105,6 +117,6 @@ func (b *CalibrationReadStream) Flush() error {
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (b *CalibrationReadStream) Buffered() int {
+func (b *CalibrationReadStreamer) Buffered() int {
 	return b.n
 }
