@@ -41,17 +41,19 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var c calibration
+		var c []calibration
 		// TODO: this is broken, fix it
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
 		} else if err != nil {
-			// We don't have enough data yet
-			continue
+			context.Warningf("Error getting user to process calibration data, user email is [%s]", user.Email)
+			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			break
 		}
-		calibrationRead := model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
-		context.Debugf("Writing new calibration read [%v]", calibrationRead)
-		calibrationStreamer.WriteCalibration(calibrationRead)
+
+		reads := convertToCalibrationRead(c)
+		context.Debugf("Writing new calibration reads [%v]", reads)
+		calibrationStreamer.WriteCalibrations(reads)
 	}
 
 	if err != io.EOF {
@@ -63,4 +65,12 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	calibrationStreamer.Flush()
 	context.Infof("Wrote calibrations to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
+}
+
+func convertToCalibrationRead(p []calibration) []model.CalibrationRead {
+	r := make([]model.CalibrationRead, len(p))
+	for i, c := range p {
+		r[i] = model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
+	}
+	return r
 }
