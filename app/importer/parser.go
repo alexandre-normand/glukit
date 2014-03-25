@@ -5,6 +5,8 @@ import (
 	"appengine/datastore"
 	"encoding/xml"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/bufio"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/util"
 	"io"
@@ -49,6 +51,10 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	exercises := make([]model.Exercise, 0)
 	daysOfExercises := make([]model.DayOfExercises, 0, batchSize)
 	var lastExercise model.Exercise
+
+	dataStoreWriter := glukitio.NewDataStoreCalibrationBatchWriter(context, parentKey)
+	batchingWriter := bufio.NewWriterSize(dataStoreWriter, 200)
+	calibrationStreamer := bufio.NewWriterDuration(batchingWriter, time.Hour*24)
 
 	var lastRead model.GlucoseRead
 	for {
@@ -217,7 +223,9 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				}
 
 			case "Meter":
-				// TODO: Read the meter calibrations? No need for it yet but we could
+				var c Meter
+				decoder.DecodeElement(&c, &se)
+				calibrationStreamer.WriteCalibration(model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value})
 			}
 		}
 	}
@@ -250,6 +258,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 		exerciseBatchHandler(context, parentKey, daysOfExercises)
 	}
 
+	calibrationStreamer.Flush()
 	context.Infof("Done parsing and storing all data")
 	return lastRead.GetTime()
 }
