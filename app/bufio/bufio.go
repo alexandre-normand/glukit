@@ -4,7 +4,7 @@ Package io provider buffered io to provide an efficient mecanism to accumulate d
 package bufio
 
 import (
-	"github.com/alexandre-normand/glukit/app/io"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
@@ -15,7 +15,7 @@ const (
 type BufferedCalibrationBatchWriter struct {
 	buf []model.DayOfCalibrationReads
 	n   int
-	wr  io.CalibrationBatchWriter
+	wr  glukitio.CalibrationBatchWriter
 	err error
 }
 
@@ -57,7 +57,7 @@ func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOf
 
 // NewWriterSize returns a new Writer whose buffer has the specified
 // size.
-func NewWriterSize(wr io.CalibrationBatchWriter, size int) *BufferedCalibrationBatchWriter {
+func NewWriterSize(wr glukitio.CalibrationBatchWriter, size int) *BufferedCalibrationBatchWriter {
 	// Is it already a Writer?
 	b, ok := wr.(*BufferedCalibrationBatchWriter)
 	if ok && len(b.buf) >= size {
@@ -74,7 +74,7 @@ func NewWriterSize(wr io.CalibrationBatchWriter, size int) *BufferedCalibrationB
 	return w
 }
 
-// Flush writes any buffered data to the underlying io.Writer.
+// Flush writes any buffered data to the underlying glukitio.Writer.
 func (b *BufferedCalibrationBatchWriter) flush() error {
 	if b.err != nil {
 		return b.err
@@ -85,7 +85,7 @@ func (b *BufferedCalibrationBatchWriter) flush() error {
 
 	n, err := b.wr.WriteCalibrationBatches(b.buf[0:b.n])
 	if n < b.n && err == nil {
-		err = io.ErrShortWrite
+		err = glukitio.ErrShortWrite
 	}
 	if err != nil {
 		if n > 0 && n < b.n {
@@ -99,7 +99,7 @@ func (b *BufferedCalibrationBatchWriter) flush() error {
 	return nil
 }
 
-// Flush writes any buffered data to the underlying io.Writer.
+// Flush writes any buffered data to the underlying glukitio.Writer.
 func (b *BufferedCalibrationBatchWriter) Flush() error {
 	if err := b.flush(); err != nil {
 		return err
