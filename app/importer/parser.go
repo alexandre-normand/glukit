@@ -5,21 +5,15 @@ import (
 	"appengine/datastore"
 	"encoding/xml"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
-	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"io"
 	"strings"
 	"time"
 )
-
-// Meter represents the xml element that we then map to a GlucoseRead
-type Meter struct {
-	InternalTime string `xml:"InternalTime,attr"`
-	DisplayTime  string `xml:"DisplayTime,attr"`
-	Value        int    `xml:"Value,attr"`
-}
 
 // Event represents the xml structure that holds all events. This includes injections, carbs and exercise.
 type Event struct {
@@ -52,7 +46,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	daysOfExercises := make([]model.DayOfExercises, 0, batchSize)
 	var lastExercise model.Exercise
 
-	dataStoreWriter := glukitio.NewDataStoreCalibrationBatchWriter(context, parentKey)
+	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, parentKey)
 	batchingWriter := bufio.NewWriterSize(dataStoreWriter, 200)
 	calibrationStreamer := bufio.NewWriterDuration(batchingWriter, time.Hour*24)
 
@@ -72,7 +66,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 			// ...and its name is "Glucose"
 			switch se.Name.Local {
 			case "Glucose":
-				var read Meter
+				var read apimodel.Read
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
 				if read.Value > 0 {
@@ -223,7 +217,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				}
 
 			case "Meter":
-				var c Meter
+				var c apimodel.Calibration
 				decoder.DecodeElement(&c, &se)
 				calibrationStreamer.WriteCalibration(model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value})
 			}
