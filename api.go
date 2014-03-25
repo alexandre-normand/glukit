@@ -5,8 +5,8 @@ import (
 	"appengine/user"
 	"encoding/json"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
-	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -14,12 +14,6 @@ import (
 	"net/http"
 	"time"
 )
-
-type calibration struct {
-	InternalTime string `json:"InternalTime"`
-	DisplayTime  string `json:"DisplayTime"`
-	Value        int    `json:"Value"`
-}
 
 // processNewCalibrationData Handles a Post to the calibration endpoint and
 // handles all data to be stored for a given user
@@ -34,14 +28,14 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	dataStoreWriter := glukitio.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
+	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
 	batchingWriter := bufio.NewWriterSize(dataStoreWriter, 200)
 	calibrationStreamer := bufio.NewWriterDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var c []calibration
+		var c []apimodel.Calibration
 		// TODO: this is broken, fix it
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
@@ -67,7 +61,7 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	writer.WriteHeader(200)
 }
 
-func convertToCalibrationRead(p []calibration) []model.CalibrationRead {
+func convertToCalibrationRead(p []apimodel.Calibration) []model.CalibrationRead {
 	r := make([]model.CalibrationRead, len(p))
 	for i, c := range p {
 		r[i] = model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
