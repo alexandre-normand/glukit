@@ -11,6 +11,7 @@ type DataStoreCalibrationBatchWriter struct {
 	k *datastore.Key
 }
 
+// NewDataStoreCalibrationBatchWriter creates a new CalibrationBatchWriter that persists to the datastore
 func NewDataStoreCalibrationBatchWriter(context appengine.Context, userProfileKey *datastore.Key) *DataStoreCalibrationBatchWriter {
 	w := new(DataStoreCalibrationBatchWriter)
 	w.c = context

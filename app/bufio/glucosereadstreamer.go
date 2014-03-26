@@ -6,32 +6,32 @@ import (
 	"time"
 )
 
-type CalibrationReadStreamer struct {
-	buf []model.CalibrationRead
+type GlucoseReadStreamer struct {
+	buf []model.GlucoseRead
 	n   int
-	wr  glukitio.CalibrationBatchWriter
+	wr  glukitio.GlucoseReadBatchWriter
 	t   time.Time
 	d   time.Duration
 	err error
 }
 
-// WriteCalibration writes a single CalibrationRead into the buffer.
-func (b *CalibrationReadStreamer) WriteCalibration(c model.CalibrationRead) (nn int, err error) {
+// WriteGlucoseRead writes a single GlucoseRead into the buffer.
+func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, err error) {
 	if b.err != nil {
 		return 0, b.err
 	}
 
-	p := make([]model.CalibrationRead, 1)
+	p := make([]model.GlucoseRead, 1)
 	p[0] = c
 
-	return b.WriteCalibrations(p)
+	return b.WriteGlucoseReads(p)
 }
 
-// WriteCalibrations writes the contents of p into the buffer.
+// WriteGlucoseReads writes the contents of p into the buffer.
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (nn int, err error) {
+func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
 	if b.t.IsZero() {
@@ -67,10 +67,10 @@ func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (
 	return nn, nil
 }
 
-// NewCalibrationReadStreamerDuration returns a new CalibrationReadStreamer whose buffer has the specified size.
-func NewCalibrationReadStreamerDuration(wr glukitio.CalibrationBatchWriter, bufferLength time.Duration) *CalibrationReadStreamer {
-	w := new(CalibrationReadStreamer)
-	w.buf = make([]model.CalibrationRead, bufferSize)
+// NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.
+func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferLength time.Duration) *GlucoseReadStreamer {
+	w := new(GlucoseReadStreamer)
+	w.buf = make([]model.GlucoseRead, bufferSize)
 	w.wr = wr
 	w.d = bufferLength
 
@@ -78,7 +78,7 @@ func NewCalibrationReadStreamerDuration(wr glukitio.CalibrationBatchWriter, buff
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
-func (b *CalibrationReadStreamer) Flush() error {
+func (b *GlucoseReadStreamer) Flush() error {
 	if b.err != nil {
 		return b.err
 	}
@@ -86,7 +86,7 @@ func (b *CalibrationReadStreamer) Flush() error {
 		return nil
 	}
 
-	n, err := b.wr.WriteCalibrationBatch(b.buf[0:b.n])
+	n, err := b.wr.WriteGlucoseReadBatch(b.buf[0:b.n])
 	if n < 1 && err == nil {
 		err = glukitio.ErrShortWrite
 	}
@@ -103,6 +103,6 @@ func (b *CalibrationReadStreamer) Flush() error {
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (b *CalibrationReadStreamer) Buffered() int {
+func (b *GlucoseReadStreamer) Buffered() int {
 	return b.n
 }

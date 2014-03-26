@@ -29,8 +29,8 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	}
 
 	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewWriterSize(dataStoreWriter, 200)
-	calibrationStreamer := bufio.NewWriterDuration(batchingWriter, time.Hour*24)
+	batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
+	calibrationStreamer := bufio.NewCalibrationReadStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 

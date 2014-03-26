@@ -47,8 +47,8 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	var lastExercise model.Exercise
 
 	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, parentKey)
-	batchingWriter := bufio.NewWriterSize(dataStoreWriter, 200)
-	calibrationStreamer := bufio.NewWriterDuration(batchingWriter, time.Hour*24)
+	batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
+	calibrationStreamer := bufio.NewCalibrationReadStreamerDuration(batchingWriter, time.Hour*24)
 
 	var lastRead model.GlucoseRead
 	for {
