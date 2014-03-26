@@ -66,7 +66,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 			// ...and its name is "Glucose"
 			switch se.Name.Local {
 			case "Glucose":
-				var read apimodel.Read
+				var read apimodel.Glucose
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
 				if read.Value > 0 {

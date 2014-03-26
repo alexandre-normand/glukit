@@ -19,18 +19,18 @@ func NewDataStoreGlucoseReadBatchWriter(context appengine.Context, userProfileKe
 	return w
 }
 
-func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfCalibrationReads) (n int, err error) {
-	if keys, err := StoreCalibrationReads(w.c, w.k, p); err != nil {
+func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error) {
+	if keys, err := StoreDaysOfReads(w.c, w.k, p); err != nil {
 		return 0, err
 	} else {
 		return len(keys), nil
 	}
 }
 
-func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.CalibrationRead) (n int, err error) {
-	dayOfCalibrationReads := make([]model.DayOfCalibrationReads, 1)
-	dayOfCalibrationReads[0] = model.DayOfCalibrationReads{p}
-	return w.WriteGlucoseReadBatches(dayOfCalibrationReads)
+func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error) {
+	dayOfGlucoseReads := make([]model.DayOfGlucoseReads, 1)
+	dayOfGlucoseReads[0] = model.DayOfGlucoseReads{p}
+	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }
 
 func (w *DataStoreGlucoseReadBatchWriter) Flush() error {
