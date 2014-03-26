@@ -29,14 +29,14 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	}
 
 	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewWriterSize(dataStoreWriter, 200)
-	calibrationStreamer := bufio.NewWriterDuration(batchingWriter, time.Hour*24)
+	batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
+	calibrationStreamer := bufio.NewCalibrationReadStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
 	for {
 		var c []apimodel.Calibration
-		// TODO: this is broken, fix it
+
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
 		} else if err != nil {
@@ -65,6 +65,60 @@ func convertToCalibrationRead(p []apimodel.Calibration) []model.CalibrationRead 
 	r := make([]model.CalibrationRead, len(p))
 	for i, c := range p {
 		r[i] = model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
+	}
+	return r
+}
+
+// processNewGlucoseReadData Handles a Post to the glucoseread endpoint and
+// handles all data to be stored for a given user
+func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	_, userProfileKey, _, err := store.GetUserData(context, user.Email)
+	if err != nil {
+		context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email)
+		http.Error(writer, "Error getting user to process glucose read data", 500)
+		return
+	}
+
+	dataStoreWriter := store.NewDataStoreGlucoseReadBatchWriter(context, userProfileKey)
+	batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, 200)
+	glucoseReadStreamer := bufio.NewGlucoseStreamerDuration(batchingWriter, time.Hour*24)
+
+	decoder := json.NewDecoder(request.Body)
+
+	for {
+		var c []apimodel.Glucose
+
+		if err = decoder.Decode(&c); err == io.EOF {
+			break
+		} else if err != nil {
+			context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email)
+			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			break
+		}
+
+		reads := convertToGlucoseRead(c)
+		context.Debugf("Writing new glucose reads [%v]", reads)
+		glucoseReadStreamer.WriteGlucoseReads(reads)
+	}
+
+	if err != io.EOF {
+		context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email)
+		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+		return
+	}
+
+	glucoseReadStreamer.Flush()
+	context.Infof("Wrote glucose reads to the datastore for user [%s]", user.Email)
+	writer.WriteHeader(200)
+}
+
+func convertToGlucoseRead(p []apimodel.Glucose) []model.GlucoseRead {
+	r := make([]model.GlucoseRead, len(p))
+	for i, c := range p {
+		r[i] = model.GlucoseRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
 	}
 	return r
 }
