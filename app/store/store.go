@@ -353,6 +353,16 @@ func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, 
 	return fileImport, nil
 }
 
+func GetGlukitUser(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, err error) {
+	key = GetUserKey(context, email)
+	userProfile, err = GetUserProfile(context, key)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return userProfile, key, nil
+}
+
 // GetUserData returns a GlukitUser entry and the boundaries of its most recent complete reads. This is aligned to complete days, meaning that
 // it "snaps" to the last day ending at 06:00 am. If the user doesn't have any imported data yet, GetUserData returns ErrNoImportedDataFound
 func GetUserData(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, upperBound time.Time, err error) {
