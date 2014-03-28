@@ -34,14 +34,14 @@ func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, err
 func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
-	if b.t.IsZero() {
-		last := p[0]
-		b.t = last.GetTime().Truncate(b.d)
+	if b.n == 0 {
+		b.resetFirstReadOfBatch(p[0])
 	}
 
 	i := 0
 	for j, c := range p {
 		t := c.GetTime()
+
 		if t.Sub(b.t) >= b.d {
 			var n int
 			n = copy(b.buf[b.n:], p[i:j])
@@ -57,6 +57,7 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, 
 
 			// Move beginning of next batch
 			i = j
+			b.resetFirstReadOfBatch(p[i])
 		}
 	}
 
@@ -65,6 +66,10 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, 
 	nn += n
 
 	return nn, nil
+}
+
+func (b *GlucoseReadStreamer) resetFirstReadOfBatch(r model.GlucoseRead) {
+	b.t = r.GetTime().Truncate(b.d)
 }
 
 // NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.

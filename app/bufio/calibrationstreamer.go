@@ -34,9 +34,8 @@ func (b *CalibrationReadStreamer) WriteCalibration(c model.CalibrationRead) (nn 
 func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
-	if b.t.IsZero() {
-		last := p[0]
-		b.t = last.GetTime().Truncate(b.d)
+	if b.n == 0 {
+		b.resetFirstReadOfBatch(p[0])
 	}
 
 	i := 0
@@ -57,6 +56,7 @@ func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (
 
 			// Move beginning of next batch
 			i = j
+			b.resetFirstReadOfBatch(p[i])
 		}
 	}
 
@@ -65,6 +65,10 @@ func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (
 	nn += n
 
 	return nn, nil
+}
+
+func (b *CalibrationReadStreamer) resetFirstReadOfBatch(r model.CalibrationRead) {
+	b.t = r.GetTime().Truncate(b.d)
 }
 
 // NewCalibrationReadStreamerDuration returns a new CalibrationReadStreamer whose buffer has the specified size.
