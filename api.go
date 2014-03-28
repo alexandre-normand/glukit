@@ -21,9 +21,9 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, userProfileKey, _, err := store.GetUserData(context, user.Email)
+	_, userProfileKey, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
-		context.Warningf("Error getting user to process calibration data, user email is [%s]", user.Email)
+		context.Warningf("Error getting user to process calibration data, user email is [%s]: %v", user.Email, err)
 		http.Error(writer, "Error getting user to process calibration data", 500)
 		return
 	}
@@ -75,9 +75,9 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, userProfileKey, _, err := store.GetUserData(context, user.Email)
+	_, userProfileKey, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
-		context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email)
+		context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email, err)
 		http.Error(writer, "Error getting user to process glucose read data", 500)
 		return
 	}
@@ -100,7 +100,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		}
 
 		reads := convertToGlucoseRead(c)
-		context.Debugf("Writing new glucose reads [%v]", reads)
+		context.Debugf("Writing [%d] new glucose reads", len(reads))
 		glucoseReadStreamer.WriteGlucoseReads(reads)
 	}
 

@@ -32,10 +32,14 @@ const (
 	REFRESH_USER_DATA_FUNCTION_NAME = "refreshUserData"
 )
 
+func updateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
+	// noop
+}
+
 // updateUserData is an async task that searches on Google Drive for dexcom files. It handles some high
 // watermark of the last import to avoid downloading already imported files (unless they've been updated).
 // It also schedules itself to run again the next day unless the token is invalid.
-func updateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
+func deprecatedUpdateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
 	glukitUser, userProfileKey, _, err := store.GetUserData(context, userEmail)
 	if _, ok := err.(store.StoreError); err != nil && !ok {
 		context.Errorf("We're trying to run an update data task for user [%s] that doesn't exist. "+

@@ -15,15 +15,6 @@ import (
 	"time"
 )
 
-// Event represents the xml structure that holds all events. This includes injections, carbs and exercise.
-type Event struct {
-	InternalTime string `xml:"InternalTime,attr"`
-	DisplayTime  string `xml:"DisplayTime,attr"`
-	EventTime    string `xml:"EventTime,attr"`
-	EventType    string `xml:"EventType,attr"`
-	Description  string `xml:"Decription,attr"`
-}
-
 // ParseContent is the big function that parses the Dexcom xml file. It is given a reader to the file and it parses batches of days of GlucoseReads/Events. It streams the content but
 // keeps some in memory until it reaches a full batch of a type. A batch is an array of DayOf[GlucoseReads,Injection,Carbs,Exercises]. A batch is flushed to the datastore once it reaches
 // the given batchSize or we reach the end of the file.
@@ -102,7 +93,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 					lastRead = glucoseRead
 				}
 			case "Event":
-				var event Event
+				var event apimodel.Event
 				decoder.DecodeElement(&event, &se)
 				internalEventTime := util.GetTimeInSeconds(event.InternalTime)
 
