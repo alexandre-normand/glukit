@@ -42,3 +42,20 @@ type GlucoseReadBatchWriter interface {
 	WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error)
 	WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error)
 }
+
+// InjectionBatchWriter is the interface that wraps the basic
+// WriteInjectionBatch and WriteInjectionBatches methods.
+//
+// WriteInjectionBatch writes len(p) model.Injection from p to the
+// underlying data stream. It returns the number of elements written
+// from p (0 <= n <= len(p)) and any error encountered that caused the
+// write to stop early. Write must return a non-nil error if it returns n < len(p).
+//
+// WriteInjectionBatches writes len(p) model.DayOfInjectionss from p to the
+// underlying data stream. It returns the number of batch elements written
+// from p (0 <= n <= len(p)) and any error encountered that caused the
+// write to stop early. Write must return a non-nil error if it returns n < len(p).
+type InjectionBatchWriter interface {
+	WriteInjectionBatch(p []model.Injection) (n int, err error)
+	WriteInjectionBatches(p []model.DayOfInjections) (n int, err error)
+}
