@@ -87,7 +87,7 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 	}
 
 	// Get the time of the batch's last read and update the most recent read timestamp if necessary
-	userProfile, err := GetUserProfile(context, userProfileKey)
+	userProfile, err := GetGlukitUserWithKey(context, userProfileKey)
 	if err != nil {
 		context.Criticalf("Error reading user profile [%s] for its most recent read value: %v", userProfileKey, err)
 		return nil, err
@@ -353,14 +353,19 @@ func GetFileImportLog(context appengine.Context, userProfileKey *datastore.Key, 
 	return fileImport, nil
 }
 
-func GetGlukitUser(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, err error) {
+func GetGlukitUser(context appengine.Context, email string) (key *datastore.Key, userProfile *model.GlukitUser, err error) {
 	key = GetUserKey(context, email)
+	userProfile, err = GetGlukitUserWithKey(context, key)
+	return key, userProfile, err
+}
+
+func GetGlukitUserWithKey(context appengine.Context, key *datastore.Key) (userProfile *model.GlukitUser, err error) {
 	userProfile, err = GetUserProfile(context, key)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return userProfile, key, nil
+	return userProfile, nil
 }
 
 // GetUserData returns a GlukitUser entry and the boundaries of its most recent complete reads. This is aligned to complete days, meaning that
