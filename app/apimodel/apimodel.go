@@ -23,3 +23,18 @@ type Event struct {
 	EventType    string `xml:"EventType,attr"`
 	Description  string `xml:"Decription,attr"`
 }
+
+// Injection represents an insulin injection
+type Injection struct {
+	EventTimestamp
+	Units       float32 `json:"units"`
+	InsulinName string  `json:"insulinName"`
+	InsulinType string  `json:"insulinType"`
+}
+
+// DataTime represents hold a timestamp and a localtime string
+type EventTimestamp struct {
+	RecordedTime string `json:"recordedTime"`
+	InternalTime string `json:"internalTime"`
+	EventTime    string `json:"eventTime"`
+}
