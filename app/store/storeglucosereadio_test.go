@@ -6,32 +6,36 @@ import (
 	. "github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
+	"log"
 	"testing"
 	"time"
 )
 
 var TEST_USER = "test@glukit.com"
 
-func setup(t *testing.T) {
+func setup(t *testing.T) (c aetest.Context) {
 	c, err := aetest.NewContext(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
 
 	var oauthToken oauth.Token
 	user := model.GlukitUser{TEST_USER, "", "", time.Now(),
 		"", "", util.GLUKIT_EPOCH_TIME, model.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
 		model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
 
-	_, err = StoreUserProfile(c, time.Unix(1000, 0), user)
+	key, err := StoreUserProfile(c, time.Unix(1000, 0), user)
 	if err != nil {
 		t.Fatal(err)
 	}
+	log.Printf("Initialized [%s] with key [%v]", TEST_USER, key)
+
+	return c
 }
 
 func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
-	setup(t)
+	c := setup(t)
+	defer c.Close()
 
 	r := make([]model.GlucoseRead, 25)
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
@@ -40,11 +44,6 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 		r[i] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, 75}
 	}
 
-	c, err := aetest.NewContext(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer c.Close()
 	key := GetUserKey(c, TEST_USER)
 
 	w := NewDataStoreGlucoseReadBatchWriter(c, key)
@@ -59,7 +58,8 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 }
 
 func TestSimpleWriteOfGlucoseReadBatches(t *testing.T) {
-	setup(t)
+	c := setup(t)
+	defer c.Close()
 
 	b := make([]model.DayOfGlucoseReads, 10)
 

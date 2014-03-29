@@ -37,13 +37,13 @@ func TestSimpleWriteOfSingleInjectionBatch(t *testing.T) {
 
 func TestSimpleWriteOfInjectionBatches(t *testing.T) {
 	b := make([]model.DayOfInjections, 10)
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
 	for i := 0; i < 10; i++ {
 		injections := make([]model.Injection, 24)
-		ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 		for j := 0; j < 24; j++ {
-			readTime := ct.Add(time.Duration(j) * time.Hour)
-			injections[i] = model.Injection{model.Timestamp{readTime.Format(util.TIMEFORMAT_NO_TZ), readTime.Unix()}, float32(1.5), model.UNDEFINED_READ}
+			readTime := ct.Add(time.Duration(i*24+j) * time.Hour)
+			injections[j] = model.Injection{model.Timestamp{readTime.Format(util.TIMEFORMAT_NO_TZ), readTime.Unix()}, float32(1.5), model.UNDEFINED_READ}
 		}
 		b[i] = model.DayOfInjections{injections}
 	}
