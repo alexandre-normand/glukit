@@ -48,7 +48,7 @@ handlers:
   script: _go_app
   login: required 
 
-- url: /v1/foods
+- url: /v1/meals
   script: _go_app
   login: required 
 
