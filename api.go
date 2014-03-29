@@ -21,7 +21,7 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, userProfileKey, err := store.GetGlukitUser(context, user.Email)
+	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
 		context.Warningf("Error getting user to process calibration data, user email is [%s]: %v", user.Email, err)
 		http.Error(writer, "Error getting user to process calibration data", 500)
@@ -69,13 +69,13 @@ func convertToCalibrationRead(p []apimodel.Calibration) []model.CalibrationRead 
 	return r
 }
 
-// processNewGlucoseReadData Handles a Post to the glucoseread endpoint and
+// processNewGlucoseReadData Handles a Post to the glucosereads endpoint and
 // handles all data to be stored for a given user
 func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	_, userProfileKey, err := store.GetGlukitUser(context, user.Email)
+	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
 		context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email, err)
 		http.Error(writer, "Error getting user to process glucose read data", 500)
@@ -119,6 +119,60 @@ func convertToGlucoseRead(p []apimodel.Glucose) []model.GlucoseRead {
 	r := make([]model.GlucoseRead, len(p))
 	for i, c := range p {
 		r[i] = model.GlucoseRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
+	}
+	return r
+}
+
+// processNewInjectionData Handles a Post to the injections endpoint and
+// handles all data to be stored for a given user
+func processNewInjectionData(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
+	if err != nil {
+		context.Warningf("Error getting user to process injection data, user email is [%s]", user.Email, err)
+		http.Error(writer, "Error getting user to process injection data", 500)
+		return
+	}
+
+	dataStoreWriter := store.NewDataStoreInjectionBatchWriter(context, userProfileKey)
+	batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, 200)
+	injectionStreamer := bufio.NewInjectionStreamerDuration(batchingWriter, time.Hour*24)
+
+	decoder := json.NewDecoder(request.Body)
+
+	for {
+		var p []apimodel.Injection
+
+		if err = decoder.Decode(&p); err == io.EOF {
+			break
+		} else if err != nil {
+			context.Warningf("Error getting user to process injection data, user email is [%s]", user.Email)
+			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			break
+		}
+
+		injections := convertToInjection(p)
+		context.Debugf("Writing [%d] new injections", len(injections))
+		injectionStreamer.WriteInjections(injections)
+	}
+
+	if err != io.EOF {
+		context.Warningf("Error getting user to process injection data, user email is [%s]", user.Email)
+		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+		return
+	}
+
+	injectionStreamer.Flush()
+	context.Infof("Wrote injections to the datastore for user [%s]", user.Email)
+	writer.WriteHeader(200)
+}
+
+func convertToInjection(p []apimodel.Injection) []model.Injection {
+	r := make([]model.Injection, len(p))
+	for i, e := range p {
+		r[i] = model.Injection{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Units, model.UNDEFINED_READ}
 	}
 	return r
 }
