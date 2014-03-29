@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"appengine/aetest"
+	"appengine/datastore"
 	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -13,7 +14,7 @@ import (
 
 var TEST_USER = "test@glukit.com"
 
-func setup(t *testing.T) (c aetest.Context) {
+func setup(t *testing.T) (c aetest.Context, key *datastore.Key) {
 	c, err := aetest.NewContext(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -24,17 +25,17 @@ func setup(t *testing.T) (c aetest.Context) {
 		"", "", util.GLUKIT_EPOCH_TIME, model.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
 		model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
 
-	key, err := StoreUserProfile(c, time.Unix(1000, 0), user)
+	key, err = StoreUserProfile(c, time.Unix(1000, 0), user)
 	if err != nil {
 		t.Fatal(err)
 	}
 	log.Printf("Initialized [%s] with key [%v]", TEST_USER, key)
 
-	return c
+	return c, key
 }
 
 func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
-	c := setup(t)
+	c, key := setup(t)
 	defer c.Close()
 
 	r := make([]model.GlucoseRead, 25)
@@ -43,8 +44,6 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
 		r[i] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, 75}
 	}
-
-	key := GetUserKey(c, TEST_USER)
 
 	w := NewDataStoreGlucoseReadBatchWriter(c, key)
 	n, err := w.WriteGlucoseReadBatch(r)
@@ -58,7 +57,7 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 }
 
 func TestSimpleWriteOfGlucoseReadBatches(t *testing.T) {
-	c := setup(t)
+	c, key := setup(t)
 	defer c.Close()
 
 	b := make([]model.DayOfGlucoseReads, 10)
@@ -72,13 +71,6 @@ func TestSimpleWriteOfGlucoseReadBatches(t *testing.T) {
 		}
 		b[i] = model.DayOfGlucoseReads{calibrations}
 	}
-
-	c, err := aetest.NewContext(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer c.Close()
-	key := GetUserKey(c, TEST_USER)
 
 	w := NewDataStoreGlucoseReadBatchWriter(c, key)
 	n, err := w.WriteGlucoseReadBatches(b)
