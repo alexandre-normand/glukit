@@ -1,0 +1,29 @@
+[
+	{
+		"RecordedTime": "2013-05-10 19:28:02",
+		"InternalTime": "2013-05-10 12:27:29",
+        "EventTime": "2013-05-10 12:27:29",
+		"Carbohydrates": 12.1,
+        "Proteins": 14.2,
+        "Fat": 12.0,
+        "SaturatedFat": 0.2   
+	},
+    {
+		"RecordedTime": "2013-04-10 19:28:02",
+		"InternalTime": "2013-04-10 12:27:29",
+        "EventTime": "2013-04-10 12:27:29",
+		"Carbohydrates": 12.1,
+        "Proteins": 14.2,
+        "Fat": 12.0,
+        "SaturatedFat": 0.2
+	},
+    {
+		"RecordedTime": "2013-04-10 20:28:02",
+		"InternalTime": "2013-04-10 13:27:29",
+        "EventTime": "2013-04-10 13:27:29",
+		"Carbohydrates": 12.1,
+        "Proteins": 14.2,
+        "Fat": 12.0,
+        "SaturatedFat": 0.2
+	}
+] 

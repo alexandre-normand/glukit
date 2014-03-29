@@ -24,6 +24,7 @@ var ErrShortWrite = errors.New("short write")
 type CalibrationBatchWriter interface {
 	WriteCalibrationBatch(p []model.CalibrationRead) (n int, err error)
 	WriteCalibrationBatches(p []model.DayOfCalibrationReads) (n int, err error)
+	Flush() error
 }
 
 // GlucoseReadBatchWriter is the interface that wraps the basic
@@ -41,6 +42,7 @@ type CalibrationBatchWriter interface {
 type GlucoseReadBatchWriter interface {
 	WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error)
 	WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error)
+	Flush() error
 }
 
 // InjectionBatchWriter is the interface that wraps the basic
@@ -58,6 +60,7 @@ type GlucoseReadBatchWriter interface {
 type InjectionBatchWriter interface {
 	WriteInjectionBatch(p []model.Injection) (n int, err error)
 	WriteInjectionBatches(p []model.DayOfInjections) (n int, err error)
+	Flush() error
 }
 
 // CarbBatchWriter is the interface that wraps the basic
@@ -75,6 +78,7 @@ type InjectionBatchWriter interface {
 type CarbBatchWriter interface {
 	WriteCarbBatch(p []model.Carb) (n int, err error)
 	WriteCarbBatches(p []model.DayOfCarbs) (n int, err error)
+	Flush() error
 }
 
 // ExerciseBatchWriter is the interface that wraps the basic
@@ -92,4 +96,5 @@ type CarbBatchWriter interface {
 type ExerciseBatchWriter interface {
 	WriteExerciseBatch(p []model.Exercise) (n int, err error)
 	WriteExerciseBatches(p []model.DayOfExercises) (n int, err error)
+	Flush() error
 }
