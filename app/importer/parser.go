@@ -243,7 +243,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 		exerciseBatchHandler(context, parentKey, daysOfExercises)
 	}
 
-	calibrationStreamer.Flush()
+	calibrationStreamer.Close()
 	context.Infof("Done parsing and storing all data")
 	return lastRead.GetTime()
 }
