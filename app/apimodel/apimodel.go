@@ -38,3 +38,12 @@ type EventTimestamp struct {
 	InternalTime string `json:"internalTime"`
 	EventTime    string `json:"eventTime"`
 }
+
+// Meal represents a meal's nutrients
+type Meal struct {
+	EventTimestamp
+	Carbohydrates float32 `json:"carbohydrates"`
+	Proteins      float32 `json:"proteins"`
+	Fat           float32 `json:"fat"`
+	SaturatedFat  float32 `json:"saturatedFat"`
+}

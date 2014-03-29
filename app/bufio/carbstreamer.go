@@ -106,6 +106,17 @@ func (b *CarbStreamer) Flush() error {
 	return nil
 }
 
+// Close flushes the buffer and the inner writer to effectively ensure nothing is left
+// unwritten
+func (b *CarbStreamer) Close() error {
+	err := b.Flush()
+	if err != nil {
+		return err
+	}
+
+	return b.wr.Flush()
+}
+
 // Buffered returns the number of bytes that have been written into the current buffer.
 func (b *CarbStreamer) Buffered() int {
 	return b.n

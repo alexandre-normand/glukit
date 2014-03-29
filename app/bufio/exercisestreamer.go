@@ -106,6 +106,17 @@ func (b *ExerciseStreamer) Flush() error {
 	return nil
 }
 
+// Close flushes the buffer and the inner writer to effectively ensure nothing is left
+// unwritten
+func (b *ExerciseStreamer) Close() error {
+	err := b.Flush()
+	if err != nil {
+		return err
+	}
+
+	return b.wr.Flush()
+}
+
 // Buffered returns the number of bytes that have been written into the current buffer.
 func (b *ExerciseStreamer) Buffered() int {
 	return b.n

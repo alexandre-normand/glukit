@@ -110,7 +110,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	glucoseReadStreamer.Flush()
+	glucoseReadStreamer.Close()
 	context.Infof("Wrote glucose reads to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
@@ -164,7 +164,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	injectionStreamer.Flush()
+	injectionStreamer.Close()
 	context.Infof("Wrote injections to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
@@ -173,6 +173,60 @@ func convertToInjection(p []apimodel.Injection) []model.Injection {
 	r := make([]model.Injection, len(p))
 	for i, e := range p {
 		r[i] = model.Injection{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Units, model.UNDEFINED_READ}
+	}
+	return r
+}
+
+// processNewMealData Handles a Post to the Meals endpoint and
+// handles all data to be stored for a given user
+func processNewMealData(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
+	if err != nil {
+		context.Warningf("Error getting user to process meal data, user email is [%s]", user.Email, err)
+		http.Error(writer, "Error getting user to process meal data", 500)
+		return
+	}
+
+	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
+	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
+	carbStreamer := bufio.NewCarbStreamerDuration(batchingWriter, time.Hour*24)
+
+	decoder := json.NewDecoder(request.Body)
+
+	for {
+		var p []apimodel.Meal
+
+		if err = decoder.Decode(&p); err == io.EOF {
+			break
+		} else if err != nil {
+			context.Warningf("Error getting user to process meal data, user email is [%s]", user.Email)
+			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			break
+		}
+
+		meals := convertToMeal(p)
+		context.Debugf("Writing [%d] new meals", len(meals))
+		carbStreamer.WriteCarbs(meals)
+	}
+
+	if err != io.EOF {
+		context.Warningf("Error getting user to process meal data, user email is [%s]", user.Email)
+		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+		return
+	}
+
+	carbStreamer.Close()
+	context.Infof("Wrote meals to the datastore for user [%s]", user.Email)
+	writer.WriteHeader(200)
+}
+
+func convertToMeal(p []apimodel.Meal) []model.Carb {
+	r := make([]model.Carb, len(p))
+	for i, e := range p {
+		r[i] = model.Carb{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Carbohydrates, model.UNDEFINED_READ}
 	}
 	return r
 }
