@@ -68,7 +68,7 @@ func init() {
 
 	// Client API endpoints
 	r.HandleFunc("/v1/calibrations", processNewCalibrationData).Methods("POST")
-	//r.HandleFunc("/v1/injections", processNewInjectionData).Methods("POST")
+	r.HandleFunc("/v1/injections", processNewInjectionData).Methods("POST")
 	//r.HandleFunc("/v1/foods", processNewFoodData).Methods("POST")
 	r.HandleFunc("/v1/glucosereads", processNewGlucoseReadData).Methods("POST")
 
