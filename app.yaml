@@ -56,6 +56,10 @@ handlers:
   script: _go_app
   login: required 
 
+- url: /v1/exercises
+  script: _go_app
+  login: required 
+
 - url: /.*
   script: _go_app
 
