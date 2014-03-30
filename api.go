@@ -246,7 +246,7 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 
 	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
 	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
-	carbStreamer := bufio.NewCarbStreamerDuration(batchingWriter, time.Hour*24)
+	exerciseStreamer := bufio.NewExerciseStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -261,9 +261,9 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 			break
 		}
 
-		Exercises := convertToExercise(p)
-		context.Debugf("Writing [%d] new Exercises", len(Exercises))
-		carbStreamer.WriteCarbs(Exercises)
+		exercises := convertToExercise(p)
+		context.Debugf("Writing [%d] new Exercises", len(exercises))
+		exerciseStreamer.WriteExercises(exercises)
 	}
 
 	if err != io.EOF {
@@ -272,12 +272,12 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	carbStreamer.Close()
+	exerciseStreamer.Close()
 	context.Infof("Wrote exercises to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
 
-func convertToExercise(p []apimodel.Exercise) []model.Carb {
+func convertToExercise(p []apimodel.Exercise) []model.Exercise {
 	r := make([]model.Carb, len(p))
 	for i, e := range p {
 		r[i] = model.Carb{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Carbohydrates, model.UNDEFINED_READ}
