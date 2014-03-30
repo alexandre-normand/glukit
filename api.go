@@ -230,3 +230,57 @@ func convertToMeal(p []apimodel.Meal) []model.Carb {
 	}
 	return r
 }
+
+// processNewExerciseData Handles a Post to the exercises endpoint and
+// handles all data to be stored for a given user
+func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
+	if err != nil {
+		context.Warningf("Error getting user to process exercise data, user email is [%s]", user.Email, err)
+		http.Error(writer, "Error getting user to process exercise data", 500)
+		return
+	}
+
+	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
+	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
+	carbStreamer := bufio.NewCarbStreamerDuration(batchingWriter, time.Hour*24)
+
+	decoder := json.NewDecoder(request.Body)
+
+	for {
+		var p []apimodel.Exercise
+
+		if err = decoder.Decode(&p); err == io.EOF {
+			break
+		} else if err != nil {
+			context.Warningf("Error getting user to process exercise data, user email is [%s]", user.Email)
+			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			break
+		}
+
+		Exercises := convertToExercise(p)
+		context.Debugf("Writing [%d] new Exercises", len(Exercises))
+		carbStreamer.WriteCarbs(Exercises)
+	}
+
+	if err != io.EOF {
+		context.Warningf("Error getting user to process exercise data, user email is [%s]", user.Email)
+		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+		return
+	}
+
+	carbStreamer.Close()
+	context.Infof("Wrote exercises to the datastore for user [%s]", user.Email)
+	writer.WriteHeader(200)
+}
+
+func convertToExercise(p []apimodel.Exercise) []model.Carb {
+	r := make([]model.Carb, len(p))
+	for i, e := range p {
+		r[i] = model.Carb{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Carbohydrates, model.UNDEFINED_READ}
+	}
+	return r
+}
