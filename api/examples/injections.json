@@ -1,11 +1,11 @@
 [
 	{
-		"RecordedTime": "2013-04-10 19:28:02",
-		"InternalTime": "2013-04-10 12:27:29",
-        "EventTime": "2013-04-10 12:27:29",
-		"Units": 1.5,
-        "InsulinName": "Humalog",
-        "InsulinType": "Bolus"
+		"recordedTime": "2013-04-10 19:28:02",
+		"internalTime": "2013-04-10 12:27:29",
+        "eventTime": "2013-04-10 12:27:29",
+		"units": 1.5,
+        "insulinName": "Humalog",
+        "insulinType": "Bolus"
         
 	}
 ] 
