@@ -244,8 +244,8 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
+	dataStoreWriter := store.NewDataStoreExerciseBatchWriter(context, userProfileKey)
+	batchingWriter := bufio.NewExerciseWriterSize(dataStoreWriter, 200)
 	exerciseStreamer := bufio.NewExerciseStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
@@ -278,9 +278,9 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 }
 
 func convertToExercise(p []apimodel.Exercise) []model.Exercise {
-	r := make([]model.Carb, len(p))
+	r := make([]model.Exercise, len(p))
 	for i, e := range p {
-		r[i] = model.Carb{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Carbohydrates, model.UNDEFINED_READ}
+		r[i] = model.Exercise{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.DurationMinutes, e.Intensity}
 	}
 	return r
 }

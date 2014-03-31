@@ -51,7 +51,7 @@ type Meal struct {
 // Exercise represents a session of exercise
 type Exercise struct {
 	EventTimestamp
-	DurationMinutes float32 `json:"durationInMinutes"`
-	Intensity       string  `json:"intensity"`
-	Description     string  `json:"description"`
+	DurationMinutes int    `json:"durationInMinutes"`
+	Intensity       string `json:"intensity"`
+	Description     string `json:"description"`
 }

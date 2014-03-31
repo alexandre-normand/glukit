@@ -1,12 +1,12 @@
 [
 	{
-		"InternalTime": "2013-03-10 19:28:02",
-		"DisplayTime": "2013-03-10 12:27:29",
-		"Value": 82
+		"internalTime": "2013-03-10 19:28:02",
+		"displayTime": "2013-03-10 12:27:29",
+		"value": 82
 	},
 	{
-		"InternalTime": "2013-03-11 00:55:38",
-		"DisplayTime": "2013-03-10 17:55:04",
-		"Value": 70
+		"internalTime": "2013-03-11 00:55:38",
+		"displayTime": "2013-03-10 17:55:04",
+		"value": 70
 	}
 ] 
