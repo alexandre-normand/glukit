@@ -1,16 +1,18 @@
 [
-	{
-		"recordedTime": "2013-05-10 19:28:02",
-		"internalTime": "2013-05-10 12:27:29",
+    {
+        "recordedTime": "2013-05-10 19:28:02",
+        "internalTime": "2013-05-10 12:27:29",
         "eventTime": "2013-05-10 12:27:29",
-		"durationInMinutes": 15
+        "durationInMinutes": 15,
+        "intensity": "light",
         "description": "Walking to work"        
-	},
+    },
     {
         "recordedTime": "2013-05-10 20:28:02",
         "internalTime": "2013-05-10 13:27:29",
         "eventTime": "2013-05-10 13:27:29",
-        "durationInMinutes": 15
+        "durationInMinutes": 15,
+        "intensity": "light",
         "description": "Walking back from work"        
     }
 ] 
