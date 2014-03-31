@@ -71,6 +71,7 @@ func init() {
 	r.HandleFunc("/v1/injections", processNewInjectionData).Methods("POST")
 	r.HandleFunc("/v1/meals", processNewMealData).Methods("POST")
 	r.HandleFunc("/v1/glucosereads", processNewGlucoseReadData).Methods("POST")
+	r.HandleFunc("/v1/exercises", processNewExerciseData).Methods("POST")
 
 	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
