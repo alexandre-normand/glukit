@@ -8,6 +8,7 @@ import (
 	"appengine/taskqueue"
 	"appengine/user"
 	"code.google.com/p/gorilla/mux"
+	"github.com/RangelReale/osin"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
@@ -40,8 +41,8 @@ func init() {
 	http.Handle("/", r)
 
 	// Create user Glukit Bernstein as a fallback for comparisons
-	r.HandleFunc("/_ah/warmup", initializeGlukitBernstein)
-	r.HandleFunc("/initpower", initializeGlukitBernstein)
+	r.HandleFunc("/_ah/warmup", warmUp)
+	r.HandleFunc("/initpower", warmUp)
 
 	// Json endpoints
 	r.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
@@ -200,4 +201,11 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 			glukitUser.RefreshToken, user.Email)
 		oauthCallback(writer, request)
 	}
+}
+
+func warmUp(writer http.ResponseWriter, request *http.Request) {
+	c := appengine.NewContext(request)
+	server := osin.NewServer(osin.NewServerConfig(), store.NewOsinAppEngineStore(c))
+	c.Debugf("Oauth server loaded: [%v]", server)
+	initializeGlukitBernstein(writer, request)
 }
