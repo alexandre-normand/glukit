@@ -25,6 +25,10 @@ handlers:
   script: _go_app
   login: required
 
+- url: /data
+  script: _go_app
+  login: required
+
 - url: /demo.report
   script: _go_app
 
