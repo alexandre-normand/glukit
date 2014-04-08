@@ -1,5 +1,5 @@
 application: glukit
-version: 1
+version: 1beta
 runtime: go
 api_version: go1
 
