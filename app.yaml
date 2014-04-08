@@ -64,6 +64,15 @@ handlers:
   script: _go_app
   login: required 
 
+- url: /authorize
+  script: _go_app
+  login: required  
+  secure: always
+
+- url: /token
+  script: _go_app  
+  secure: always
+
 - url: /.*
   script: _go_app
 

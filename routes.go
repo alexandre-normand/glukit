@@ -23,6 +23,7 @@ var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html
 var reportTemplate = template.Must(template.ParseFiles("view/templates/report.html"))
 var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
+var r = mux.NewRouter()
 
 const (
 	DEMO_PATH_PREFIX = "demo."
@@ -37,7 +38,6 @@ type RenderVariables struct {
 
 // init initializes the routes and global initialization
 func init() {
-	r := mux.NewRouter()
 	http.Handle("/", r)
 
 	// Create user Glukit Bernstein as a fallback for comparisons
@@ -204,8 +204,34 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 }
 
 func warmUp(writer http.ResponseWriter, request *http.Request) {
+	initOauthProvider(writer, request)
+	initializeGlukitBernstein(writer, request)
+}
+
+func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	c := appengine.NewContext(request)
 	server := osin.NewServer(osin.NewServerConfig(), store.NewOsinAppEngineStore(c))
+	r.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
+		resp := server.NewResponse()
+		if ar := server.HandleAuthorizeRequest(resp, r); ar != nil {
+
+			// Nothing to do since the page is already login restricted by gae app configuration
+
+			ar.Authorized = true
+			server.FinishAuthorizeRequest(resp, r, ar)
+		}
+		osin.OutputJSON(resp, w, r)
+	}).Methods("GET")
+
+	// Access token endpoint
+	r.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+		resp := server.NewResponse()
+		if ar := server.HandleAccessRequest(resp, r); ar != nil {
+			ar.Authorized = true
+			server.FinishAccessRequest(resp, r, ar)
+		}
+		osin.OutputJSON(resp, w, r)
+	}).Methods("GET")
+
 	c.Debugf("Oauth server loaded: [%v]", server)
-	initializeGlukitBernstein(writer, request)
 }
