@@ -1,5 +1,5 @@
 application: glukit
-version: 1
+version: 1beta
 runtime: go
 api_version: go1
 
@@ -22,6 +22,10 @@ handlers:
   login: required
 
 - url: /report
+  script: _go_app
+  login: required
+
+- url: /data
   script: _go_app
   login: required
 
@@ -59,6 +63,15 @@ handlers:
 - url: /v1/exercises
   script: _go_app
   login: required 
+
+- url: /authorize
+  script: _go_app
+  login: required  
+  secure: always
+
+- url: /token
+  script: _go_app  
+  secure: always
 
 - url: /.*
   script: _go_app
