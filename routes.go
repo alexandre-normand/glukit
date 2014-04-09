@@ -210,28 +210,33 @@ func warmUp(writer http.ResponseWriter, request *http.Request) {
 
 func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	c := appengine.NewContext(request)
-	server := osin.NewServer(osin.NewServerConfig(), store.NewOsinAppEngineStore(c))
+	sconfig := osin.NewServerConfig()
+	sconfig.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
+	sconfig.AllowedAccessTypes = osin.AllowedAccessType{osin.AUTHORIZATION_CODE,
+		osin.REFRESH_TOKEN, osin.CLIENT_CREDENTIALS}
+	server := osin.NewServer(sconfig, store.NewOsinAppEngineStore(c))
 	r.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		resp := server.NewResponse()
+		c.Debugf("Processing authorization request: %v", r)
 		if ar := server.HandleAuthorizeRequest(resp, r); ar != nil {
-
 			// Nothing to do since the page is already login restricted by gae app configuration
 
 			ar.Authorized = true
 			server.FinishAuthorizeRequest(resp, r, ar)
 		}
 		osin.OutputJSON(resp, w, r)
-	}).Methods("GET")
+	})
 
 	// Access token endpoint
 	r.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
 		resp := server.NewResponse()
+		c.Debugf("Processing token request: %v", r)
 		if ar := server.HandleAccessRequest(resp, r); ar != nil {
 			ar.Authorized = true
 			server.FinishAccessRequest(resp, r, ar)
 		}
 		osin.OutputJSON(resp, w, r)
-	}).Methods("GET")
+	})
 
 	c.Debugf("Oauth server loaded: [%v]", server)
 }
