@@ -43,3 +43,24 @@ func TestAccessDataStorage(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAuthorizeDataStorage(t *testing.T) {
+	c, err := aetest.NewContext(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	osinStorage := NewOsinAppEngineStore(c)
+	client, err := osinStorage.GetClient("834681386231.mygluk.it")
+	d := osin.AuthorizeData{client, "code", 0, "scope", "uri", "state", time.Now(), nil}
+	err = osinStorage.SaveAuthorize(&d)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = osinStorage.LoadAuthorize("code")
+	if err != nil {
+		t.Fatal(err)
+	}
+}

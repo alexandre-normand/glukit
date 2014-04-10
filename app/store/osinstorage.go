@@ -83,6 +83,7 @@ func newOsinClient(c *oClient) *osin.Client {
 	return &osin.Client{c.Id, c.Secret, c.RedirectUri, nil}
 }
 
+// TODO: implement saving and loading of the structs by their ids
 func (d *oAuthorizeData) Load(c <-chan datastore.Property) error {
 	if err := datastore.LoadStruct(d, c); err != nil {
 		return err
@@ -128,6 +129,7 @@ func (s *OsinAppEngineStore) SaveAuthorize(data *osin.AuthorizeData) error {
 	key := datastore.NewKey(s.c, "authorize.data", data.Code, 0, nil)
 	_, err := datastore.Put(s.c, key, newInternalAuthorizeData(data))
 	if err != nil {
+		s.c.Warningf("Error saving authorize data [%s]: [%v]", data.Code, err)
 		return err
 	}
 
