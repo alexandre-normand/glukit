@@ -71,6 +71,7 @@ handlers:
 
 - url: /token
   script: _go_app  
+  login: required  
   secure: always
 
 - url: /.*
