@@ -4,12 +4,12 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"errors"
-	"github.com/RangelReale/osin"
+	"github.com/alexandre-normand/osin"
+	"net/http"
 	"time"
 )
 
 type OsinAppEngineStore struct {
-	c appengine.Context
 }
 
 type oClient struct {
@@ -42,25 +42,27 @@ type oAccessData struct {
 	CreatedAt         time.Time `datastore:"CreatedAt,noindex"`
 }
 
-func NewOsinAppEngineStore(c appengine.Context) *OsinAppEngineStore {
-	r := &OsinAppEngineStore{c}
+func NewOsinAppEngineStore(r *http.Request) *OsinAppEngineStore {
+	c := appengine.NewContext(r)
+	s := &OsinAppEngineStore{}
 
-	err := r.addClient(&osin.Client{
+	err := s.addClient(&osin.Client{
 		Id:          "834681386231.mygluk.it",
 		Secret:      "xEh2sZvNRvYnK9his1S_sdd2MlUc",
 		RedirectUri: "urn:ietf:wg:oauth:2.0:oob",
-	})
+	}, r)
 
 	if err != nil {
 		c.Warningf("Failed to initialize oauth server: %v", err)
 	}
-	return r
+	return s
 }
 
-func (s *OsinAppEngineStore) addClient(c *osin.Client) error {
-	s.c.Debugf("AddClient: %s\n", c.Id)
-	key := datastore.NewKey(s.c, "osin.client", c.Id, 0, nil)
-	_, err := datastore.Put(s.c, key, newInternalClient(c))
+func (s *OsinAppEngineStore) addClient(c *osin.Client, r *http.Request) error {
+	context := appengine.NewContext(r)
+	context.Debugf("AddClient: %s\n", c.Id)
+	key := datastore.NewKey(context, "osin.client", c.Id, 0, nil)
+	_, err := datastore.Put(context, key, newInternalClient(c))
 
 	if err != nil {
 		return err
@@ -83,14 +85,15 @@ func newOsinClient(c *oClient) *osin.Client {
 	return &osin.Client{c.Id, c.Secret, c.RedirectUri, nil}
 }
 
-func (s *OsinAppEngineStore) GetClient(id string) (*osin.Client, error) {
-	s.c.Debugf("GetClient: %s\n", id)
-	key := datastore.NewKey(s.c, "osin.client", id, 0, nil)
+func (s *OsinAppEngineStore) GetClient(id string, r *http.Request) (*osin.Client, error) {
+	context := appengine.NewContext(r)
+	context.Debugf("GetClient: %s\n", id)
+	key := datastore.NewKey(context, "osin.client", id, 0, nil)
 	client := new(oClient)
-	err := datastore.Get(s.c, key, client)
+	err := datastore.Get(context, key, client)
 
 	if err != nil {
-		s.c.Warningf("Error looking up client by id [%s]: [%v]", id, err)
+		context.Warningf("Error looking up client by id [%s]: [%v]", id, err)
 		return nil, errors.New("Client not found")
 	}
 	osinClient := newOsinClient(client)
@@ -117,33 +120,35 @@ func newOsinAuthorizeData(d *oAuthorizeData, c *osin.Client) *osin.AuthorizeData
 	return &osin.AuthorizeData{c, d.Code, d.ExpiresIn, d.Scope, d.RedirectUri, d.State, d.CreatedAt, nil}
 }
 
-func (s *OsinAppEngineStore) SaveAuthorize(data *osin.AuthorizeData) error {
-	s.c.Debugf("SaveAuthorize: %s\n", data.Code)
-	key := datastore.NewKey(s.c, "authorize.data", data.Code, 0, nil)
-	_, err := datastore.Put(s.c, key, newInternalAuthorizeData(data))
+func (s *OsinAppEngineStore) SaveAuthorize(data *osin.AuthorizeData, r *http.Request) error {
+	context := appengine.NewContext(r)
+	context.Debugf("SaveAuthorize: %s\n", data.Code)
+	key := datastore.NewKey(context, "authorize.data", data.Code, 0, nil)
+	_, err := datastore.Put(context, key, newInternalAuthorizeData(data))
 	if err != nil {
-		s.c.Warningf("Error saving authorize data [%s]: [%v]", data.Code, err)
+		context.Warningf("Error saving authorize data [%s]: [%v]", data.Code, err)
 		return err
 	}
 
 	return nil
 }
 
-func (s *OsinAppEngineStore) LoadAuthorize(code string) (*osin.AuthorizeData, error) {
-	s.c.Debugf("LoadAuthorize: %s\n", code)
-	key := datastore.NewKey(s.c, "authorize.data", code, 0, nil)
+func (s *OsinAppEngineStore) LoadAuthorize(code string, r *http.Request) (*osin.AuthorizeData, error) {
+	context := appengine.NewContext(r)
+	context.Debugf("LoadAuthorize: %s\n", code)
+	key := datastore.NewKey(context, "authorize.data", code, 0, nil)
 	authorizeData := new(oAuthorizeData)
-	err := datastore.Get(s.c, key, authorizeData)
+	err := datastore.Get(context, key, authorizeData)
 	if err != nil {
-		s.c.Infof("Authorization data not found for code [%s]: %v", code, err)
+		context.Infof("Authorization data not found for code [%s]: %v", code, err)
 		return nil, errors.New("Authorize not found")
 	}
 
 	var c *osin.Client
 	if authorizeData.ClientId != "" {
-		c, err = s.GetClient(authorizeData.ClientId)
+		c, err = s.GetClient(authorizeData.ClientId, r)
 		if err != nil {
-			s.c.Infof("Authorization data can't load client with id [%s]: %v", authorizeData.ClientId, err)
+			context.Infof("Authorization data can't load client with id [%s]: %v", authorizeData.ClientId, err)
 			return nil, errors.New("Client for AuthorizeData not found")
 		}
 	}
@@ -151,10 +156,11 @@ func (s *OsinAppEngineStore) LoadAuthorize(code string) (*osin.AuthorizeData, er
 	return newOsinAuthorizeData(authorizeData, c), nil
 }
 
-func (s *OsinAppEngineStore) RemoveAuthorize(code string) error {
-	s.c.Debugf("RemoveAuthorize: %s\n", code)
-	key := datastore.NewKey(s.c, "authorize.data", code, 0, nil)
-	err := datastore.Delete(s.c, key)
+func (s *OsinAppEngineStore) RemoveAuthorize(code string, r *http.Request) error {
+	context := appengine.NewContext(r)
+	context.Debugf("RemoveAuthorize: %s\n", code)
+	key := datastore.NewKey(context, "authorize.data", code, 0, nil)
+	err := datastore.Delete(context, key)
 	if err != nil {
 		return err
 	}
@@ -191,18 +197,19 @@ func newOsinAccessData(d *oAccessData, c *osin.Client, authData *osin.AuthorizeD
 	return &osin.AccessData{c, authData, accessData, d.AccessToken, d.RefreshToken, d.ExpiresIn, d.Scope, d.RedirectUri, d.CreatedAt, nil}
 }
 
-func (s *OsinAppEngineStore) SaveAccess(data *osin.AccessData) error {
-	s.c.Debugf("SaveAccess: %s\n", data.AccessToken)
-	key := datastore.NewKey(s.c, "access.data", data.AccessToken, 0, nil)
+func (s *OsinAppEngineStore) SaveAccess(data *osin.AccessData, r *http.Request) error {
+	context := appengine.NewContext(r)
+	context.Debugf("SaveAccess: %s\n", data.AccessToken)
+	key := datastore.NewKey(context, "access.data", data.AccessToken, 0, nil)
 	internalAccessData := newInternalAccessData(data)
-	_, err := datastore.Put(s.c, key, internalAccessData)
+	_, err := datastore.Put(context, key, internalAccessData)
 	if err != nil {
 		return err
 	}
 
 	if data.RefreshToken != "" {
-		key = datastore.NewKey(s.c, "access.refresh", data.RefreshToken, 0, nil)
-		_, err := datastore.Put(s.c, key, internalAccessData)
+		key = datastore.NewKey(context, "access.refresh", data.RefreshToken, 0, nil)
+		_, err := datastore.Put(context, key, internalAccessData)
 		if err != nil {
 			return err
 		}
@@ -210,33 +217,52 @@ func (s *OsinAppEngineStore) SaveAccess(data *osin.AccessData) error {
 	return nil
 }
 
-func (s *OsinAppEngineStore) LoadAccess(code string) (*osin.AccessData, error) {
-	s.c.Debugf("LoadAccess: %s\n", code)
-	key := datastore.NewKey(s.c, "access.data", code, 0, nil)
+func (s *OsinAppEngineStore) LoadAccess(code string, r *http.Request) (*osin.AccessData, error) {
+	context := appengine.NewContext(r)
+	context.Debugf("LoadAccess: %s\n", code)
+	key := datastore.NewKey(context, "access.data", code, 0, nil)
 	accessData := new(oAccessData)
-	err := datastore.Get(s.c, key, accessData)
+	err := datastore.Get(context, key, accessData)
 	if err != nil {
-		s.c.Infof("Access data not found for code [%s]: %v", code, err)
+		context.Infof("Access data not found for code [%s]: %v", code, err)
 		return nil, errors.New("Access data not found")
 	}
 
 	var c *osin.Client
 	if accessData.ClientId != "" {
-		c, err = s.GetClient(accessData.ClientId)
+		c, err = s.GetClient(accessData.ClientId, r)
 		if err != nil {
-			s.c.Infof("Access data can't load client with id [%s]: %v", accessData.ClientId, err)
+			context.Infof("Access data can't load client with id [%s]: %v", accessData.ClientId, err)
 			return nil, errors.New("Client for AccessData not found")
 		}
 	}
 
-	// TODO Load inner authorize and access data
-	return newOsinAccessData(accessData, c, nil, nil), nil
+	var innerAuthData *osin.AuthorizeData
+	if accessData.AuthorizeDataCode != "" {
+		innerAuthData, err = s.LoadAuthorize(accessData.AuthorizeDataCode, r)
+		if err != nil {
+			context.Infof("Inner authorize data can't load client with code [%s]: %v", accessData.AuthorizeDataCode, err)
+			return nil, errors.New("Inner AuthorizeData for AccessData not found")
+		}
+	}
+
+	var innerAccessData *osin.AccessData
+	if accessData.AccessDataToken != "" {
+		innerAccessData, err = s.LoadAccess(accessData.AccessDataToken, r)
+		if err != nil {
+			context.Infof("Inner access data can't load client with token [%s]: %v", accessData.AccessDataToken, err)
+			return nil, errors.New("Inner AccessData for AccessData not found")
+		}
+	}
+
+	return newOsinAccessData(accessData, c, innerAuthData, innerAccessData), nil
 }
 
-func (s *OsinAppEngineStore) RemoveAccess(code string) error {
-	s.c.Debugf("RemoveAccess: %s\n", code)
-	key := datastore.NewKey(s.c, "access.data", code, 0, nil)
-	err := datastore.Delete(s.c, key)
+func (s *OsinAppEngineStore) RemoveAccess(code string, r *http.Request) error {
+	context := appengine.NewContext(r)
+	context.Debugf("RemoveAccess: %s\n", code)
+	key := datastore.NewKey(context, "access.data", code, 0, nil)
+	err := datastore.Delete(context, key)
 	if err != nil {
 		return err
 	}
@@ -244,33 +270,52 @@ func (s *OsinAppEngineStore) RemoveAccess(code string) error {
 	return nil
 }
 
-func (s *OsinAppEngineStore) LoadRefresh(code string) (*osin.AccessData, error) {
-	s.c.Debugf("LoadRefresh: %s\n", code)
-	key := datastore.NewKey(s.c, "access.refresh", code, 0, nil)
+func (s *OsinAppEngineStore) LoadRefresh(code string, r *http.Request) (*osin.AccessData, error) {
+	context := appengine.NewContext(r)
+	context.Debugf("LoadRefresh: %s\n", code)
+	key := datastore.NewKey(context, "access.refresh", code, 0, nil)
 	accessData := new(oAccessData)
-	_, err := datastore.Put(s.c, key, accessData)
+	_, err := datastore.Put(context, key, accessData)
 	if err != nil {
-		s.c.Infof("Refresh data not found for code [%s]: %v", code, err)
+		context.Infof("Refresh data not found for code [%s]: %v", code, err)
 		errors.New("Refresh not found")
 	}
 
-	// TODO Gracefully handle no client by setting to nil
 	var c *osin.Client
 	if accessData.ClientId != "" {
-		c, err = s.GetClient(accessData.ClientId)
+		c, err = s.GetClient(accessData.ClientId, r)
 		if err != nil {
-			s.c.Infof("Access data can't load client with id [%s]: %v", accessData.ClientId, err)
+			context.Infof("Access data can't load client with id [%s]: %v", accessData.ClientId, err)
 			return nil, errors.New("Client for AccessData not found")
 		}
 	}
-	// TODO Load inner authorize and access data
-	return newOsinAccessData(accessData, c, nil, nil), nil
+
+	var innerAuthData *osin.AuthorizeData
+	if accessData.AuthorizeDataCode != "" {
+		innerAuthData, err = s.LoadAuthorize(accessData.AuthorizeDataCode, r)
+		if err != nil {
+			context.Infof("Inner authorize data can't load client with code [%s]: %v", accessData.AuthorizeDataCode, err)
+			return nil, errors.New("Inner AuthorizeData for AccessData not found")
+		}
+	}
+
+	var innerAccessData *osin.AccessData
+	if accessData.AccessDataToken != "" {
+		innerAccessData, err = s.LoadAccess(accessData.AccessDataToken, r)
+		if err != nil {
+			context.Infof("Inner access data can't load client with token [%s]: %v", accessData.AccessDataToken, err)
+			return nil, errors.New("Inner AccessData for AccessData not found")
+		}
+	}
+
+	return newOsinAccessData(accessData, c, innerAuthData, innerAccessData), nil
 }
 
-func (s *OsinAppEngineStore) RemoveRefresh(code string) error {
-	s.c.Debugf("RemoveRefresh: %s\n", code)
-	key := datastore.NewKey(s.c, "access.refresh", code, 0, nil)
-	err := datastore.Delete(s.c, key)
+func (s *OsinAppEngineStore) RemoveRefresh(code string, r *http.Request) error {
+	context := appengine.NewContext(r)
+	context.Debugf("RemoveRefresh: %s\n", code)
+	key := datastore.NewKey(context, "access.refresh", code, 0, nil)
+	err := datastore.Delete(context, key)
 	if err != nil {
 		return err
 	}
