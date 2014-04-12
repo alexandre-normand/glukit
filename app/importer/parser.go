@@ -62,9 +62,6 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
 
-				var c apimodel.Calibration
-				decoder.DecodeElement(&c, &se)
-
 				if read.Value > 0 {
 					glucoseRead := model.GlucoseRead{model.Timestamp{read.DisplayTime, util.GetTimeInSeconds(read.InternalTime)}, read.Value}
 					glucoseStreamer.WriteGlucoseRead(glucoseRead)
@@ -109,7 +106,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 		}
 	}
 
-	// Run the final batch for each
+	// Close the streams and flush anything pending
 	glucoseStreamer.Close()
 	calibrationStreamer.Close()
 	injectionStreamer.Close()
