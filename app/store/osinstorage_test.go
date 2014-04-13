@@ -10,15 +10,14 @@ import (
 )
 
 func TestGetClient(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:8080", nil)
 	c, err := aetest.NewContext(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer c.Close()
 
-	osinStorage := NewOsinAppEngineStore(req)
-	_, err = osinStorage.GetClient("***REMOVED***", req)
+	osinStorage := NewOsinAppEngineStore(c.Request().(*http.Request))
+	_, err = osinStorage.GetClient("***REMOVED***", c.Request().(*http.Request))
 
 	if err != nil {
 		t.Fatal(err)
@@ -26,29 +25,27 @@ func TestGetClient(t *testing.T) {
 }
 
 func TestAccessDataStorage(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:8080", nil)
 	c, err := aetest.NewContext(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer c.Close()
 
-	osinStorage := NewOsinAppEngineStore(req)
-	client, err := osinStorage.GetClient("***REMOVED***", req)
+	osinStorage := NewOsinAppEngineStore(c.Request().(*http.Request))
+	client, err := osinStorage.GetClient("***REMOVED***", c.Request().(*http.Request))
 	d := osin.AccessData{client, nil, nil, "token", "test", 0, "scope", "uri", time.Now(), nil}
-	err = osinStorage.SaveAccess(&d, req)
+	err = osinStorage.SaveAccess(&d, c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = osinStorage.LoadAccess("token", req)
+	_, err = osinStorage.LoadAccess("token", c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestAuthorizeDataStorage(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:8080", nil)
 	c, err := aetest.NewContext(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -56,48 +53,47 @@ func TestAuthorizeDataStorage(t *testing.T) {
 	defer c.Close()
 
 	osinStorage := NewOsinAppEngineStore(nil)
-	client, err := osinStorage.GetClient("***REMOVED***", req)
+	client, err := osinStorage.GetClient("***REMOVED***", c.Request().(*http.Request))
 	d := osin.AuthorizeData{client, "code", 0, "scope", "uri", "state", time.Now(), nil}
-	err = osinStorage.SaveAuthorize(&d, req)
+	err = osinStorage.SaveAuthorize(&d, c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = osinStorage.LoadAuthorize("code", req)
+	_, err = osinStorage.LoadAuthorize("code", c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestFullAccessDataStorage(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:8080", nil)
 	c, err := aetest.NewContext(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer c.Close()
 
-	osinStorage := NewOsinAppEngineStore(req)
-	client, err := osinStorage.GetClient("***REMOVED***", req)
+	osinStorage := NewOsinAppEngineStore(c.Request().(*http.Request))
+	client, err := osinStorage.GetClient("***REMOVED***", c.Request().(*http.Request))
 	d := osin.AuthorizeData{client, "code", 0, "scope", "uri", "state", time.Now(), nil}
-	err = osinStorage.SaveAuthorize(&d, req)
+	err = osinStorage.SaveAuthorize(&d, c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	previousAccess := osin.AccessData{client, nil, nil, "token", "test", 0, "scope", "uri", time.Now(), nil}
-	err = osinStorage.SaveAccess(&previousAccess, req)
+	err = osinStorage.SaveAccess(&previousAccess, c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	access := osin.AccessData{client, &d, &previousAccess, "token", "test", 0, "scope", "uri", time.Now(), nil}
-	err = osinStorage.SaveAccess(&access, req)
+	err = osinStorage.SaveAccess(&access, c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = osinStorage.LoadAccess("token", req)
+	_, err = osinStorage.LoadAccess("token", c.Request().(*http.Request))
 	if err != nil {
 		t.Fatal(err)
 	}
