@@ -16,6 +16,7 @@ type oClient struct {
 	Id          string `datastore:"Id"`
 	Secret      string `datastore:"Secret,noindex"`
 	RedirectUri string `datastore:"RedirectUri,noindex"`
+	UserData    string `datastore:"UserData,noindex"`
 }
 
 // Authorization data
@@ -27,6 +28,7 @@ type oAuthorizeData struct {
 	RedirectUri string    `datastore:"RedirectUri"`
 	State       string    `datastore:"State"`
 	CreatedAt   time.Time `datastore:"CreatedAt"`
+	UserData    string    `datastore:"UserData,noindex"`
 }
 
 // AccessData
@@ -40,6 +42,7 @@ type oAccessData struct {
 	Scope             string    `datastore:"Scope,noindex"`
 	RedirectUri       string    `datastore:"RedirectUri,noindex"`
 	CreatedAt         time.Time `datastore:"CreatedAt,noindex"`
+	UserData          string    `datastore:"UserData,noindex"`
 }
 
 func NewOsinAppEngineStore(r *http.Request) *OsinAppEngineStore {
@@ -75,14 +78,14 @@ func newInternalClient(c *osin.Client) *oClient {
 	if c == nil {
 		return nil
 	}
-	return &oClient{c.Id, c.Secret, c.RedirectUri}
+	return &oClient{c.Id, c.Secret, c.RedirectUri, c.UserData.(string)}
 }
 
 func newOsinClient(c *oClient) *osin.Client {
 	if c == nil {
 		return nil
 	}
-	return &osin.Client{c.Id, c.Secret, c.RedirectUri, nil}
+	return &osin.Client{c.Id, c.Secret, c.RedirectUri, c.UserData}
 }
 
 func (s *OsinAppEngineStore) GetClient(id string, r *http.Request) (*osin.Client, error) {
@@ -110,14 +113,14 @@ func newInternalAuthorizeData(d *osin.AuthorizeData) *oAuthorizeData {
 		clientId = client.Id
 	}
 
-	return &oAuthorizeData{clientId, d.Code, d.ExpiresIn, d.Scope, d.RedirectUri, d.State, d.CreatedAt}
+	return &oAuthorizeData{clientId, d.Code, d.ExpiresIn, d.Scope, d.RedirectUri, d.State, d.CreatedAt, d.UserData.(string)}
 }
 
 func newOsinAuthorizeData(d *oAuthorizeData, c *osin.Client) *osin.AuthorizeData {
 	if d == nil {
 		return nil
 	}
-	return &osin.AuthorizeData{c, d.Code, d.ExpiresIn, d.Scope, d.RedirectUri, d.State, d.CreatedAt, nil}
+	return &osin.AuthorizeData{c, d.Code, d.ExpiresIn, d.Scope, d.RedirectUri, d.State, d.CreatedAt, d.UserData}
 }
 
 func (s *OsinAppEngineStore) SaveAuthorize(data *osin.AuthorizeData, r *http.Request) error {
@@ -187,14 +190,14 @@ func newInternalAccessData(d *osin.AccessData) *oAccessData {
 	if accessData := d.AccessData; accessData != nil {
 		accessToken = accessData.AccessToken
 	}
-	return &oAccessData{clientId, authCode, accessToken, d.AccessToken, d.RefreshToken, d.ExpiresIn, d.Scope, d.RedirectUri, d.CreatedAt}
+	return &oAccessData{clientId, authCode, accessToken, d.AccessToken, d.RefreshToken, d.ExpiresIn, d.Scope, d.RedirectUri, d.CreatedAt, d.UserData.(string)}
 }
 
 func newOsinAccessData(d *oAccessData, c *osin.Client, authData *osin.AuthorizeData, accessData *osin.AccessData) *osin.AccessData {
 	if d == nil {
 		return nil
 	}
-	return &osin.AccessData{c, authData, accessData, d.AccessToken, d.RefreshToken, d.ExpiresIn, d.Scope, d.RedirectUri, d.CreatedAt, nil}
+	return &osin.AccessData{c, authData, accessData, d.AccessToken, d.RefreshToken, d.ExpiresIn, d.Scope, d.RedirectUri, d.CreatedAt, d.UserData}
 }
 
 func (s *OsinAppEngineStore) SaveAccess(data *osin.AccessData, r *http.Request) error {
