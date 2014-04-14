@@ -82,7 +82,7 @@ func TestFullAccessDataStorage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	previousAccess := osin.AccessData{client, nil, nil, "token", "test", 0, "scope", "uri", time.Now(), TEST_USER}
+	previousAccess := osin.AccessData{client, nil, nil, "oldtoken", "oldtest", 0, "scope", "uri", time.Now(), TEST_USER}
 	err = osinStorage.SaveAccessWithContext(&previousAccess, c)
 	if err != nil {
 		t.Fatal(err)
