@@ -13,6 +13,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
 	sconfig.AllowedAccessTypes = osin.AllowedAccessType{osin.AUTHORIZATION_CODE,
 		osin.REFRESH_TOKEN, osin.CLIENT_CREDENTIALS}
+	sconfig.AllowGetAccessRequest = true
 	server := osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
 	r.HandleFunc("/authorize", func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
