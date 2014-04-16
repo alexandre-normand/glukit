@@ -12,7 +12,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig := osin.NewServerConfig()
 	sconfig.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
 	sconfig.AllowedAccessTypes = osin.AllowedAccessType{osin.AUTHORIZATION_CODE,
-		osin.REFRESH_TOKEN, osin.CLIENT_CREDENTIALS}
+		osin.REFRESH_TOKEN}
 	sconfig.AllowGetAccessRequest = true
 	server := osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
 	r.HandleFunc("/authorize", func(w http.ResponseWriter, req *http.Request) {
@@ -26,6 +26,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 			ar.Authorized = true
 			ar.UserData = user.Email
 			server.FinishAuthorizeRequest(resp, req, ar)
+			resp.Type = osin.DATA
 		}
 		if resp.IsError && resp.InternalError != nil {
 			c.Debugf("ERROR: %s\n", resp.InternalError)
