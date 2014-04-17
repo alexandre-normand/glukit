@@ -13,6 +13,8 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
 	sconfig.AllowedAccessTypes = osin.AllowedAccessType{osin.AUTHORIZATION_CODE,
 		osin.REFRESH_TOKEN}
+	// 30 days
+	sconfig.AccessExpiration = 60 * 60 * 24 * 30
 	sconfig.AllowGetAccessRequest = true
 	server := osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
 	r.HandleFunc("/authorize", func(w http.ResponseWriter, req *http.Request) {
@@ -26,7 +28,10 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 			ar.Authorized = true
 			ar.UserData = user.Email
 			server.FinishAuthorizeRequest(resp, req, ar)
-			resp.Type = osin.DATA
+
+			if resp.URL == "urn:ietf:wg:oauth:2.0:oob" {
+				resp.Type = osin.DATA
+			}
 		}
 		if resp.IsError && resp.InternalError != nil {
 			c.Debugf("ERROR: %s\n", resp.InternalError)
@@ -37,9 +42,9 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	// Access token endpoint
 	r.HandleFunc("/token", func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
+		c.Debugf("Processing token request: %v", req)
 		user := user.Current(c)
 		resp := server.NewResponse()
-		c.Debugf("Processing token request: %v", req)
 		if ar := server.HandleAccessRequest(resp, req); ar != nil {
 			ar.Authorized = true
 			ar.UserData = user.Email
