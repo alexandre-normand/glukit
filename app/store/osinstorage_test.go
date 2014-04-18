@@ -94,9 +94,12 @@ func TestFullAccessDataStorage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = osinStorage.LoadAccessWithContext("token", c)
+	loadedAccess, err := osinStorage.LoadAccessWithContext("token", c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	if loadedAccess.Client == nil {
+		t.Fatal("loadedAccess.Client should not be nil")
+	}
 }
