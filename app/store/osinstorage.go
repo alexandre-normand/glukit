@@ -78,7 +78,7 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 
 	err = s.addClient(&osin.Client{
 		Id:          "simple.mygluk.it",
-		Secret:      "sadsafe32+343=213=",
+		Secret:      "sadsafe32_343213",
 		RedirectUri: "http://localhost:14000/appauth/code",
 		UserData:    "",
 	}, c)
