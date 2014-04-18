@@ -21,10 +21,11 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 		c := appengine.NewContext(req)
 		user := user.Current(c)
 		resp := server.NewResponse()
-		c.Debugf("Processing authorization request: %v", r)
+		c.Debugf("Processing authorization request: %v", req)
+		req.ParseForm()
+		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
 		if ar := server.HandleAuthorizeRequest(resp, req); ar != nil {
 			// Nothing to do since the page is already login restricted by gae app configuration
-
 			ar.Authorized = true
 			ar.UserData = user.Email
 			server.FinishAuthorizeRequest(resp, req, ar)
@@ -45,7 +46,10 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 		c.Debugf("Processing token request: %v", req)
 		user := user.Current(c)
 		resp := server.NewResponse()
+		req.ParseForm()
+		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
 		if ar := server.HandleAccessRequest(resp, req); ar != nil {
+			c.Debugf("Processing token request with form: %v", req.Form)
 			ar.Authorized = true
 			ar.UserData = user.Email
 			server.FinishAccessRequest(resp, req, ar)

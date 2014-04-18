@@ -78,7 +78,7 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 
 	err = s.addClient(&osin.Client{
 		Id:          "***REMOVED***",
-		Secret:      "sadsafe32+343=213=",
+		Secret:      "***REMOVED***",
 		RedirectUri: "http://localhost:14000/appauth/code",
 		UserData:    "",
 	}, c)
