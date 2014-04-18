@@ -64,6 +64,29 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	if err != nil {
 		c.Warningf("Failed to initialize oauth server: %v", err)
 	}
+
+	err = s.addClient(&osin.Client{
+		Id:          "postman.mygluk.it",
+		Secret:      "asdasdsafewr324324r21aswfas",
+		RedirectUri: "https://www.getpostman.com/oauth2/callback",
+		UserData:    "",
+	}, c)
+
+	if err != nil {
+		c.Warningf("Failed to initialize oauth server: %v", err)
+	}
+
+	err = s.addClient(&osin.Client{
+		Id:          "simple.mygluk.it",
+		Secret:      "sadsafe32_343213",
+		RedirectUri: "http://localhost:14000/appauth/code",
+		UserData:    "",
+	}, c)
+
+	if err != nil {
+		c.Warningf("Failed to initialize oauth server: %v", err)
+	}
+
 	return s
 }
 
