@@ -261,7 +261,7 @@ func (s *OsinAppEngineStore) SaveAccess(data *osin.AccessData, r *http.Request) 
 }
 
 func (s *OsinAppEngineStore) SaveAccessWithContext(data *osin.AccessData, context appengine.Context) error {
-	context.Debugf("SaveAccess: %s\n", data.AccessToken)
+	context.Debugf("SaveAccess [%s]: [%v]\n", data.AccessToken, data)
 	key := datastore.NewKey(context, "access.data", data.AccessToken, 0, nil)
 	internalAccessData := newInternalAccessData(data)
 	_, err := datastore.Put(context, key, internalAccessData)
@@ -349,7 +349,7 @@ func (s *OsinAppEngineStore) LoadRefreshWithContext(code string, context appengi
 	context.Debugf("LoadRefresh: %s\n", code)
 	key := datastore.NewKey(context, "access.refresh", code, 0, nil)
 	accessData := new(oAccessData)
-	_, err := datastore.Put(context, key, accessData)
+	err := datastore.Get(context, key, accessData)
 	if err != nil {
 		context.Infof("Refresh data not found for code [%s]: %v", code, err)
 		errors.New("Refresh not found")
