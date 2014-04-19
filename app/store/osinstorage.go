@@ -91,14 +91,24 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 }
 
 func (s *OsinAppEngineStore) addClient(c *osin.Client, context appengine.Context) error {
-	context.Debugf("AddClient: %s\n", c.Id)
+	context.Debugf("AddClient: %s...\n", c.Id)
 	key := datastore.NewKey(context, "osin.client", c.Id, 0, nil)
-	_, err := datastore.Put(context, key, newInternalClient(c))
+	client := new(oClient)
+	err := datastore.Get(context, key, client)
+
+	if err == nil || err != datastore.ErrNoSuchEntity {
+		context.Debugf("Client [%s] already stored, skipping.\n", c.Id)
+		return nil
+	}
+
+	_, err = datastore.Put(context, key, newInternalClient(c))
 
 	if err != nil {
+		context.Warningf("Error storing client [%s]: %v", c.Id, err)
 		return err
 	}
 
+	context.Debugf("Stored new client [%s] successfully.\n", c.Id)
 	return nil
 }
 
