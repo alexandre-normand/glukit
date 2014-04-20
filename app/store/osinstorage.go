@@ -91,14 +91,24 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 }
 
 func (s *OsinAppEngineStore) addClient(c *osin.Client, context appengine.Context) error {
-	context.Debugf("AddClient: %s\n", c.Id)
+	context.Debugf("AddClient: %s...\n", c.Id)
 	key := datastore.NewKey(context, "osin.client", c.Id, 0, nil)
-	_, err := datastore.Put(context, key, newInternalClient(c))
+	client := new(oClient)
+	err := datastore.Get(context, key, client)
+
+	if err == nil || err != datastore.ErrNoSuchEntity {
+		context.Debugf("Client [%s] already stored, skipping.\n", c.Id)
+		return nil
+	}
+
+	_, err = datastore.Put(context, key, newInternalClient(c))
 
 	if err != nil {
+		context.Warningf("Error storing client [%s]: %v", c.Id, err)
 		return err
 	}
 
+	context.Debugf("Stored new client [%s] successfully.\n", c.Id)
 	return nil
 }
 
@@ -251,7 +261,7 @@ func (s *OsinAppEngineStore) SaveAccess(data *osin.AccessData, r *http.Request) 
 }
 
 func (s *OsinAppEngineStore) SaveAccessWithContext(data *osin.AccessData, context appengine.Context) error {
-	context.Debugf("SaveAccess: %s\n", data.AccessToken)
+	context.Debugf("SaveAccess [%s]: [%v]\n", data.AccessToken, data)
 	key := datastore.NewKey(context, "access.data", data.AccessToken, 0, nil)
 	internalAccessData := newInternalAccessData(data)
 	_, err := datastore.Put(context, key, internalAccessData)
@@ -339,7 +349,7 @@ func (s *OsinAppEngineStore) LoadRefreshWithContext(code string, context appengi
 	context.Debugf("LoadRefresh: %s\n", code)
 	key := datastore.NewKey(context, "access.refresh", code, 0, nil)
 	accessData := new(oAccessData)
-	_, err := datastore.Put(context, key, accessData)
+	err := datastore.Get(context, key, accessData)
 	if err != nil {
 		context.Infof("Refresh data not found for code [%s]: %v", code, err)
 		errors.New("Refresh not found")
