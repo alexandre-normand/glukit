@@ -10,6 +10,11 @@ import (
 
 var server *osin.Server
 
+const (
+	TOKEN_ROUTE     = "token"
+	AUTHORIZE_ROUTE = "authorize"
+)
+
 type oauthAuthenticatedHandler struct {
 	authenticatedHandler http.Handler
 }
@@ -23,7 +28,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig.AccessExpiration = 60 * 60 * 24 * 30
 	sconfig.AllowGetAccessRequest = true
 	server = osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
-	muxRouter.HandleFunc("/authorize", func(w http.ResponseWriter, req *http.Request) {
+	muxRouter.Get(AUTHORIZE_ROUTE).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		user := user.Current(c)
 		resp := server.NewResponse()
@@ -47,7 +52,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	})
 
 	// Access token endpoint
-	muxRouter.HandleFunc("/token", func(w http.ResponseWriter, req *http.Request) {
+	muxRouter.Get(TOKEN_ROUTE).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		c.Debugf("Processing token request: %v", req)
 		user := user.Current(c)
