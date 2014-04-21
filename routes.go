@@ -15,6 +15,7 @@ import (
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"html/template"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,7 @@ var reportTemplate = template.Must(template.ParseFiles("view/templates/report.ht
 var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
 var muxRouter = mux.NewRouter()
+var initOnce sync.Once
 
 const (
 	DEMO_PATH_PREFIX = "demo."
@@ -72,6 +74,10 @@ func init() {
 	muxRouter.Handle("/v1/meals", newOauthAuthenticationHandler(http.HandlerFunc(processNewMealData))).Methods("POST")
 	muxRouter.Handle("/v1/glucosereads", newOauthAuthenticationHandler(http.HandlerFunc(processNewGlucoseReadData))).Methods("POST")
 	muxRouter.Handle("/v1/exercises", newOauthAuthenticationHandler(http.HandlerFunc(processNewExerciseData))).Methods("POST")
+
+	// Register oauth endpoints to warmup which will initilize the oauth server and replace the routes with the actual oauth handlers
+	muxRouter.HandleFunc("/token", warmUp).Name(TOKEN_ROUTE)
+	muxRouter.HandleFunc("/authorize", warmUp).Name(AUTHORIZE_ROUTE)
 
 	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
@@ -203,6 +209,14 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 }
 
 func warmUp(writer http.ResponseWriter, request *http.Request) {
+	initOnce.Do(func() {
+		c := appengine.NewContext(request)
+		c.Infof("Initializing application...")
+		initializeApp(writer, request)
+	})
+}
+
+func initializeApp(writer http.ResponseWriter, request *http.Request) {
 	initOauthProvider(writer, request)
 	initializeGlukitBernstein(writer, request)
 }
