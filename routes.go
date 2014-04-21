@@ -22,7 +22,7 @@ var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html
 var reportTemplate = template.Must(template.ParseFiles("view/templates/report.html"))
 var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
-var r = mux.NewRouter()
+var muxRouter = mux.NewRouter()
 
 const (
 	DEMO_PATH_PREFIX = "demo."
@@ -37,41 +37,41 @@ type RenderVariables struct {
 
 // init initializes the routes and global initialization
 func init() {
-	http.Handle("/", r)
+	http.Handle("/", muxRouter)
 
 	// Create user Glukit Bernstein as a fallback for comparisons
-	r.HandleFunc("/_ah/warmup", warmUp)
-	r.HandleFunc("/initpower", warmUp)
+	muxRouter.HandleFunc("/_ah/warmup", warmUp)
+	muxRouter.HandleFunc("/initpower", warmUp)
 
 	// Json endpoints
-	r.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
-	r.HandleFunc("/data", personalData)
-	r.HandleFunc("/"+DEMO_PATH_PREFIX+"steadySailor", demoSteadySailorData)
-	r.HandleFunc("/steadySailor", steadySailorData)
-	r.HandleFunc("/"+DEMO_PATH_PREFIX+"dashboard", demoDashboard)
-	r.HandleFunc("/dashboard", dashboard)
-	r.HandleFunc("/"+DEMO_PATH_PREFIX+"glukitScores", glukitScoresForDemo)
-	r.HandleFunc("/glukitScores", glukitScores)
+	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
+	muxRouter.HandleFunc("/data", personalData)
+	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"steadySailor", demoSteadySailorData)
+	muxRouter.HandleFunc("/steadySailor", steadySailorData)
+	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"dashboard", demoDashboard)
+	muxRouter.HandleFunc("/dashboard", dashboard)
+	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"glukitScores", glukitScoresForDemo)
+	muxRouter.HandleFunc("/glukitScores", glukitScores)
 
 	// "main"-page for both demo and real users
-	r.HandleFunc("/demo", renderDemo)
-	r.HandleFunc("/graph", renderRealUser)
-	r.HandleFunc("/"+DEMO_PATH_PREFIX+"report", demoReport)
-	r.HandleFunc("/report", report)
+	muxRouter.HandleFunc("/demo", renderDemo)
+	muxRouter.HandleFunc("/graph", renderRealUser)
+	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"report", demoReport)
+	muxRouter.HandleFunc("/report", report)
 
 	// Static pages
-	r.HandleFunc("/", landing)
-	r.HandleFunc("/nodata", nodata)
+	muxRouter.HandleFunc("/", landing)
+	muxRouter.HandleFunc("/nodata", nodata)
 
-	r.HandleFunc("/realuser", handleRealUser)
-	r.HandleFunc("/oauth2callback", oauthCallback)
+	muxRouter.HandleFunc("/realuser", handleRealUser)
+	muxRouter.HandleFunc("/oauth2callback", oauthCallback)
 
 	// Client API endpoints
-	r.HandleFunc("/v1/calibrations", processNewCalibrationData).Methods("POST")
-	r.HandleFunc("/v1/injections", processNewInjectionData).Methods("POST")
-	r.HandleFunc("/v1/meals", processNewMealData).Methods("POST")
-	r.HandleFunc("/v1/glucosereads", processNewGlucoseReadData).Methods("POST")
-	r.HandleFunc("/v1/exercises", processNewExerciseData).Methods("POST")
+	muxRouter.Handle("/v1/calibrations", newOauthAuthenticationHandler(http.HandlerFunc(processNewCalibrationData))).Methods("POST")
+	muxRouter.Handle("/v1/injections", newOauthAuthenticationHandler(http.HandlerFunc(processNewInjectionData))).Methods("POST")
+	muxRouter.Handle("/v1/meals", newOauthAuthenticationHandler(http.HandlerFunc(processNewMealData))).Methods("POST")
+	muxRouter.Handle("/v1/glucosereads", newOauthAuthenticationHandler(http.HandlerFunc(processNewGlucoseReadData))).Methods("POST")
+	muxRouter.Handle("/v1/exercises", newOauthAuthenticationHandler(http.HandlerFunc(processNewExerciseData))).Methods("POST")
 
 	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)

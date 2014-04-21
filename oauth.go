@@ -8,6 +8,12 @@ import (
 	"net/http"
 )
 
+var server *osin.Server
+
+type oauthAuthenticatedHandler struct {
+	authenticatedHandler http.Handler
+}
+
 func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig := osin.NewServerConfig()
 	sconfig.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
@@ -16,8 +22,8 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	// 30 days
 	sconfig.AccessExpiration = 60 * 60 * 24 * 30
 	sconfig.AllowGetAccessRequest = true
-	server := osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
-	r.HandleFunc("/authorize", func(w http.ResponseWriter, req *http.Request) {
+	server = osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
+	muxRouter.HandleFunc("/authorize", func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		user := user.Current(c)
 		resp := server.NewResponse()
@@ -41,7 +47,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	})
 
 	// Access token endpoint
-	r.HandleFunc("/token", func(w http.ResponseWriter, req *http.Request) {
+	muxRouter.HandleFunc("/token", func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		c.Debugf("Processing token request: %v", req)
 		user := user.Current(c)
@@ -58,4 +64,15 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	})
 	context := appengine.NewContext(request)
 	context.Debugf("Oauth server loaded: [%v]", server)
+}
+
+func (handler *oauthAuthenticatedHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	c := appengine.NewContext(request)
+	c.Debugf("Checking authentication for request [%v]...", request)
+
+	handler.authenticatedHandler.ServeHTTP(writer, request)
+}
+
+func newOauthAuthenticationHandler(next http.Handler) *oauthAuthenticatedHandler {
+	return &oauthAuthenticatedHandler{next}
 }
