@@ -76,8 +76,8 @@ func init() {
 	muxRouter.Handle("/v1/exercises", newOauthAuthenticationHandler(http.HandlerFunc(processNewExerciseData))).Methods("POST")
 
 	// Register oauth endpoints to warmup which will initilize the oauth server and replace the routes with the actual oauth handlers
-	muxRouter.HandleFunc("/token", warmUp).Name(TOKEN_ROUTE)
-	muxRouter.HandleFunc("/authorize", warmUp).Name(AUTHORIZE_ROUTE)
+	muxRouter.HandleFunc("/token", initializeAndHandleRequest).Name(TOKEN_ROUTE)
+	muxRouter.HandleFunc("/authorize", initializeAndHandleRequest).Name(AUTHORIZE_ROUTE)
 
 	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
@@ -214,6 +214,12 @@ func warmUp(writer http.ResponseWriter, request *http.Request) {
 		c.Infof("Initializing application...")
 		initializeApp(writer, request)
 	})
+}
+
+func initializeAndHandleRequest(writer http.ResponseWriter, request *http.Request) {
+	warmUp(writer, request)
+
+	muxRouter.ServeHTTP(writer, request)
 }
 
 func initializeApp(writer http.ResponseWriter, request *http.Request) {

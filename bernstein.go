@@ -64,9 +64,6 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 	} else {
 		context.Infof("Data already stored for user [%s], continuing...", GLUKIT_BERNSTEIN_EMAIL)
 	}
-
-	writer.Header().Set("Content-Type", "text/plain")
-	writer.Write([]byte("dr.bernstein@glukit.com has been initialized.\n"))
 }
 
 // generateBernsteinData generates an in-memory dexcom file for the user Glukit Bernstein.
