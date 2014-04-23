@@ -45,24 +45,19 @@ handlers:
   login: required
 
 - url: /v1/calibrations
-  script: _go_app
-  login: required 
+  script: _go_app 
 
 - url: /v1/injections
-  script: _go_app
-  login: required 
+  script: _go_app 
 
 - url: /v1/meals
-  script: _go_app
-  login: required 
+  script: _go_app 
 
 - url: /v1/glucosereads
-  script: _go_app
-  login: required 
+  script: _go_app  
 
 - url: /v1/exercises
-  script: _go_app
-  login: required 
+  script: _go_app 
 
 - url: /authorize
   script: _go_app
