@@ -69,6 +69,7 @@ func init() {
 	muxRouter.HandleFunc("/oauth2callback", oauthCallback)
 
 	// Client API endpoints
+	// TODO: Move those in the oauth initialized routes so that their usage of the oauth server to check for authorization remains safe
 	muxRouter.Handle("/v1/calibrations", newOauthAuthenticationHandler(http.HandlerFunc(processNewCalibrationData))).Methods("POST")
 	muxRouter.Handle("/v1/injections", newOauthAuthenticationHandler(http.HandlerFunc(processNewInjectionData))).Methods("POST")
 	muxRouter.Handle("/v1/meals", newOauthAuthenticationHandler(http.HandlerFunc(processNewMealData))).Methods("POST")
