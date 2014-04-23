@@ -3,10 +3,23 @@ package glukit
 import (
 	"appengine"
 	"appengine/user"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/osin"
 	"net/http"
+	"strings"
 )
+
+var server *osin.Server
+
+const (
+	TOKEN_ROUTE     = "token"
+	AUTHORIZE_ROUTE = "authorize"
+)
+
+type oauthAuthenticatedHandler struct {
+	authenticatedHandler http.Handler
+}
 
 func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig := osin.NewServerConfig()
@@ -16,8 +29,8 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	// 30 days
 	sconfig.AccessExpiration = 60 * 60 * 24 * 30
 	sconfig.AllowGetAccessRequest = true
-	server := osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
-	r.HandleFunc("/authorize", func(w http.ResponseWriter, req *http.Request) {
+	server = osin.NewServer(sconfig, store.NewOsinAppEngineStoreWithRequest(request))
+	muxRouter.Get(AUTHORIZE_ROUTE).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		user := user.Current(c)
 		resp := server.NewResponse()
@@ -41,7 +54,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	})
 
 	// Access token endpoint
-	r.HandleFunc("/token", func(w http.ResponseWriter, req *http.Request) {
+	muxRouter.Get(TOKEN_ROUTE).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		c.Debugf("Processing token request: %v", req)
 		user := user.Current(c)
@@ -58,4 +71,62 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	})
 	context := appengine.NewContext(request)
 	context.Debugf("Oauth server loaded: [%v]", server)
+}
+
+func (handler *oauthAuthenticatedHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	c := appengine.NewContext(request)
+	request.ParseForm()
+	c.Debugf("Checking authentication for request [%v]...", request)
+
+	ret := server.NewResponse()
+	authorizationValue := request.Header.Get("Authorization")
+	if authorizationValue == "" {
+		ret.SetError(osin.E_INVALID_REQUEST, "Empty authorization")
+		osin.OutputJSON(ret, writer, request)
+		return
+	}
+
+	accessCode := strings.TrimPrefix(authorizationValue, "Bearer ")
+	if accessCode == "" {
+		ret.SetError(osin.E_INVALID_REQUEST, "Empty authorization value")
+		osin.OutputJSON(ret, writer, request)
+		return
+	}
+
+	var err error
+
+	// load access data
+	accessData, err := server.Storage.LoadAccess(accessCode, request)
+	if err != nil {
+		ret.SetError(osin.E_INVALID_REQUEST, fmt.Sprintf("Error loading access data for code [%s]: [%v]", accessCode, err))
+		ret.InternalError = err
+		osin.OutputJSON(ret, writer, request)
+		return
+	}
+	if accessData.Client == nil {
+		ret.SetError(osin.E_UNAUTHORIZED_CLIENT, "")
+		osin.OutputJSON(ret, writer, request)
+		return
+	}
+	if accessData.Client.RedirectUri == "" {
+		ret.SetError(osin.E_UNAUTHORIZED_CLIENT, "")
+		osin.OutputJSON(ret, writer, request)
+		return
+	}
+	if accessData.IsExpired() {
+		ret.SetError(osin.E_INVALID_GRANT, "")
+		osin.OutputJSON(ret, writer, request)
+		return
+	}
+
+	if ret.IsError {
+		osin.OutputJSON(ret, writer, request)
+		return
+	}
+
+	handler.authenticatedHandler.ServeHTTP(writer, request)
+}
+
+func newOauthAuthenticationHandler(next http.Handler) *oauthAuthenticatedHandler {
+	return &oauthAuthenticatedHandler{next}
 }
