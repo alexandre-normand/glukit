@@ -82,6 +82,7 @@ func (handler *oauthAuthenticatedHandler) ServeHTTP(writer http.ResponseWriter, 
 	authorizationValue := request.Header.Get("Authorization")
 	if authorizationValue == "" {
 		ret.SetError(osin.E_INVALID_REQUEST, "Empty authorization")
+		ret.StatusCode = 403
 		osin.OutputJSON(ret, writer, request)
 		return
 	}
@@ -89,6 +90,7 @@ func (handler *oauthAuthenticatedHandler) ServeHTTP(writer http.ResponseWriter, 
 	accessCode := strings.TrimPrefix(authorizationValue, "Bearer ")
 	if accessCode == "" {
 		ret.SetError(osin.E_INVALID_REQUEST, "Empty authorization value")
+		ret.StatusCode = 403
 		osin.OutputJSON(ret, writer, request)
 		return
 	}
@@ -99,27 +101,31 @@ func (handler *oauthAuthenticatedHandler) ServeHTTP(writer http.ResponseWriter, 
 	accessData, err := server.Storage.LoadAccess(accessCode, request)
 	if err != nil {
 		ret.SetError(osin.E_INVALID_REQUEST, fmt.Sprintf("Error loading access data for code [%s]: [%v]", accessCode, err))
-		ret.InternalError = err
+		ret.StatusCode = 403
 		osin.OutputJSON(ret, writer, request)
 		return
 	}
 	if accessData.Client == nil {
 		ret.SetError(osin.E_UNAUTHORIZED_CLIENT, "")
+		ret.StatusCode = 403
 		osin.OutputJSON(ret, writer, request)
 		return
 	}
 	if accessData.Client.RedirectUri == "" {
 		ret.SetError(osin.E_UNAUTHORIZED_CLIENT, "")
+		ret.StatusCode = 403
 		osin.OutputJSON(ret, writer, request)
 		return
 	}
 	if accessData.IsExpired() {
 		ret.SetError(osin.E_INVALID_GRANT, "")
+		ret.StatusCode = 403
 		osin.OutputJSON(ret, writer, request)
 		return
 	}
 
 	if ret.IsError {
+		ret.StatusCode = 403
 		osin.OutputJSON(ret, writer, request)
 		return
 	}
