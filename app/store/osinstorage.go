@@ -307,8 +307,7 @@ func (s *OsinAppEngineStore) LoadAccessWithContext(code string, context appengin
 	if accessData.AuthorizeDataCode != "" {
 		innerAuthData, err = s.LoadAuthorizeWithContext(accessData.AuthorizeDataCode, context)
 		if err != nil {
-			context.Infof("Inner authorize data can't load client with code [%s]: %v", accessData.AuthorizeDataCode, err)
-			return nil, errors.New("Inner AuthorizeData for AccessData not found")
+			context.Infof("Inner authorize data can't be loaded with code [%s]: %v", accessData.AuthorizeDataCode, err)
 		}
 	}
 
@@ -316,8 +315,7 @@ func (s *OsinAppEngineStore) LoadAccessWithContext(code string, context appengin
 	if accessData.AccessDataToken != "" {
 		innerAccessData, err = s.LoadAccessWithContext(accessData.AccessDataToken, context)
 		if err != nil {
-			context.Infof("Inner access data can't load client with token [%s]: %v", accessData.AccessDataToken, err)
-			return nil, errors.New("Inner AccessData for AccessData not found")
+			context.Infof("Inner access data can't be loaded with token [%s]: %v", accessData.AccessDataToken, err)
 		}
 	}
 
