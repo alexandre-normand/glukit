@@ -69,12 +69,11 @@ func init() {
 	muxRouter.HandleFunc("/oauth2callback", oauthCallback)
 
 	// Client API endpoints
-	// TODO: Move those in the oauth initialized routes so that their usage of the oauth server to check for authorization remains safe
-	muxRouter.Handle("/v1/calibrations", newOauthAuthenticationHandler(http.HandlerFunc(processNewCalibrationData))).Methods("POST")
-	muxRouter.Handle("/v1/injections", newOauthAuthenticationHandler(http.HandlerFunc(processNewInjectionData))).Methods("POST")
-	muxRouter.Handle("/v1/meals", newOauthAuthenticationHandler(http.HandlerFunc(processNewMealData))).Methods("POST")
-	muxRouter.Handle("/v1/glucosereads", newOauthAuthenticationHandler(http.HandlerFunc(processNewGlucoseReadData))).Methods("POST")
-	muxRouter.Handle("/v1/exercises", newOauthAuthenticationHandler(http.HandlerFunc(processNewExerciseData))).Methods("POST")
+	muxRouter.HandleFunc("/v1/calibrations", initializeAndHandleRequest).Methods("POST").Name(CALIBRATIONS_V1_ROUTE)
+	muxRouter.HandleFunc("/v1/injections", initializeAndHandleRequest).Methods("POST").Name(INJECTIONS_V1_ROUTE)
+	muxRouter.HandleFunc("/v1/meals", initializeAndHandleRequest).Methods("POST").Name(MEALS_V1_ROUTE)
+	muxRouter.HandleFunc("/v1/glucosereads", initializeAndHandleRequest).Methods("POST").Name(GLUCOSEREADS_V1_ROUTE)
+	muxRouter.HandleFunc("/v1/exercises", initializeAndHandleRequest).Methods("POST").Name(EXERCISES_V1_ROUTE)
 
 	// Register oauth endpoints to warmup which will initilize the oauth server and replace the routes with the actual oauth handlers
 	muxRouter.HandleFunc("/token", initializeAndHandleRequest).Name(TOKEN_ROUTE)
@@ -225,5 +224,6 @@ func initializeAndHandleRequest(writer http.ResponseWriter, request *http.Reques
 
 func initializeApp(writer http.ResponseWriter, request *http.Request) {
 	initOauthProvider(writer, request)
+	initApiEndpoints(writer, request)
 	initializeGlukitBernstein(writer, request)
 }
