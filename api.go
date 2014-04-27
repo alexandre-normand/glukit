@@ -15,6 +15,22 @@ import (
 	"time"
 )
 
+const (
+	GLUCOSEREADS_V1_ROUTE = "v1_glucosereads"
+	CALIBRATIONS_V1_ROUTE = "v1_calibrations"
+	EXERCISES_V1_ROUTE    = "v1_exercises"
+	MEALS_V1_ROUTE        = "v1_meals"
+	INJECTIONS_V1_ROUTE   = "v1_injections"
+)
+
+func initApiEndpoints(writer http.ResponseWriter, request *http.Request) {
+	muxRouter.Get(CALIBRATIONS_V1_ROUTE).Handler(newOauthAuthenticationHandler(http.HandlerFunc(processNewCalibrationData)))
+	muxRouter.Get(INJECTIONS_V1_ROUTE).Handler(newOauthAuthenticationHandler(http.HandlerFunc(processNewInjectionData)))
+	muxRouter.Get(MEALS_V1_ROUTE).Handler(newOauthAuthenticationHandler(http.HandlerFunc(processNewMealData)))
+	muxRouter.Get(GLUCOSEREADS_V1_ROUTE).Handler(newOauthAuthenticationHandler(http.HandlerFunc(processNewGlucoseReadData)))
+	muxRouter.Get(EXERCISES_V1_ROUTE).Handler(newOauthAuthenticationHandler(http.HandlerFunc(processNewExerciseData)))
+}
+
 // processNewCalibrationData Handles a Post to the calibration endpoint and
 // handles all data to be stored for a given user
 func processNewCalibrationData(writer http.ResponseWriter, request *http.Request) {
