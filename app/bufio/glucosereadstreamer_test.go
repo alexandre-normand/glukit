@@ -114,3 +114,41 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 		t.Errorf("TestWriteOfMultipleGlucoseReadBatches failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 3)
 	}
 }
+
+func TestStreamerWithBufferedIO(t *testing.T) {
+	statsWriter := NewStatsGlucoseReadWriter()
+	bufferedWriter := NewGlucoseReadWriterSize(statsWriter, 2)
+	w := NewGlucoseStreamerDuration(bufferedWriter, time.Hour*24)
+
+	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+
+	for b := 0; b < 3; b++ {
+		for i := 0; i < 48; i++ {
+			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+			w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*24 + i})
+		}
+	}
+
+	w.Flush()
+
+	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	if value, ok := statsWriter.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
+	if value, ok := statsWriter.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
+	if value, ok := statsWriter.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+}

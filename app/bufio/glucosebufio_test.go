@@ -33,6 +33,7 @@ func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (n
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
+		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
 		w.total += len(dayOfData.Reads)
 		w.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
 	}
