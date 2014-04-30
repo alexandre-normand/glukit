@@ -33,6 +33,10 @@ func (w *statsCalibrationWriter) WriteCalibrationBatches(p []model.DayOfCalibrat
 	return len(p), nil
 }
 
+func (w *statsCalibrationWriter) Flush() error {
+	return nil
+}
+
 func TestSimpleWriteOfSingleCalibrationBatch(t *testing.T) {
 	statsWriter := new(statsCalibrationWriter)
 	w := NewCalibrationWriterSize(statsWriter, 10)

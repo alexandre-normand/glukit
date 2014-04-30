@@ -8,7 +8,7 @@ import (
 )
 
 func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
-	statsWriter := new(statsGlucoseReadWriter)
+	statsWriter := NewStatsGlucoseReadWriter()
 	w := NewGlucoseStreamerDuration(statsWriter, time.Hour*24)
 	glucoseReads := make([]model.GlucoseRead, 25)
 
@@ -34,7 +34,7 @@ func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
 }
 
 func TestWriteOfHourlyGlucoseReadBatch(t *testing.T) {
-	statsWriter := new(statsGlucoseReadWriter)
+	statsWriter := NewStatsGlucoseReadWriter()
 	w := NewGlucoseStreamerDuration(statsWriter, time.Hour*1)
 	glucoseReads := make([]model.GlucoseRead, 13)
 
@@ -75,7 +75,7 @@ func TestWriteOfHourlyGlucoseReadBatch(t *testing.T) {
 }
 
 func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
-	statsWriter := new(statsGlucoseReadWriter)
+	statsWriter := NewStatsGlucoseReadWriter()
 	w := NewGlucoseStreamerDuration(statsWriter, time.Hour*1)
 	reads := make([]model.GlucoseRead, 25)
 

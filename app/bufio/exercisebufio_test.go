@@ -33,6 +33,10 @@ func (w *statsExerciseWriter) WriteExerciseBatches(p []model.DayOfExercises) (n 
 	return len(p), nil
 }
 
+func (w *statsExerciseWriter) Flush() error {
+	return nil
+}
+
 func TestSimpleWriteOfSingleExerciseBatch(t *testing.T) {
 	statsWriter := new(statsExerciseWriter)
 	w := NewExerciseWriterSize(statsWriter, 10)
