@@ -41,8 +41,9 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOf
 		n = copy(b.buf[b.n:], p)
 		log.Printf("Inner copied %d items", n)
 		b.n += n
+		log.Printf("buffer is [%v]", b.buf[:b.n])
 		b.Flush()
-
+		log.Printf("buffer is [%v]", b.buf[:b.n])
 		nn += n
 		p = p[n:]
 	}
@@ -52,10 +53,12 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOf
 	//log.Printf("Copying data at position %d: %v into\n\n-------\n%v", b.n, p, b.buf[:b.n])
 	log.Printf("Doing the copy starting at index %d, buffer is [%v]", b.n, b.buf[:b.n])
 	n := copy(b.buf[b.n:], p)
+	log.Printf("buffer is [%v]", b.buf[:b.n])
 	b.n += n
 	nn += n
 
 	log.Printf("Copied %d items from source (%p) to buffer (%p), current buffer is:\n%v\n", n, &p, &b.buf, b.buf[:b.n])
+	log.Printf("buffer is [%v]", b.buf[:b.n])
 
 	return nn, nil
 }
@@ -93,12 +96,14 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() error {
 
 	log.Printf("Calling physical persistence with b=%d and data: %v", b.n, b.buf[:b.n])
 	n, err := b.wr.WriteGlucoseReadBatches(b.buf[:b.n])
+	log.Printf("buffer is [%v]", b.buf[:b.n])
 	if n < b.n && err == nil {
 		err = glukitio.ErrShortWrite
 	}
 	if err != nil {
 		if n > 0 && n < b.n {
 			copy(b.buf[0:b.n-n], b.buf[n:b.n])
+			log.Printf("buffer is [%v]", b.buf[:b.n])
 		}
 		b.n -= n
 		b.err = err
