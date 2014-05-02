@@ -146,11 +146,11 @@ func TestWriteOverTwoFullGlucoseReadBatches(t *testing.T) {
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 
 	for b := 0; b < 3; b++ {
-		glucoseReads := make([]model.GlucoseRead, 24)
+		glucoseReads := make([]model.GlucoseRead, 48)
 
-		for i := 0; i < 24; i++ {
-			readTime := ct.Add(time.Duration(b*24+i) * time.Hour)
-			glucoseReads[i] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*24 + i}
+		for i := 0; i < 48; i++ {
+			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+			glucoseReads[i] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*48 + i}
 		}
 
 		w.WriteGlucoseReadBatch(glucoseReads)

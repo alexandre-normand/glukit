@@ -41,7 +41,6 @@ func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, err
 		b.resetFirstReadOfBatch(c)
 	}
 
-	log.Printf("Coping read [%v] to [%v]", c, b.buf[:b.n])
 	b.buf[b.n] = c
 	b.n += 1
 
