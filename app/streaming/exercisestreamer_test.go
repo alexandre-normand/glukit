@@ -1,11 +1,42 @@
-package bufio_test
+package streaming_test
 
 import (
-	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
+	. "github.com/alexandre-normand/glukit/app/streaming"
+	"log"
 	"testing"
 	"time"
 )
+
+type statsExerciseWriter struct {
+	total      int
+	batchCount int
+	writeCount int
+}
+
+func (w *statsExerciseWriter) WriteExerciseBatch(p []model.Exercise) (n int, err error) {
+	log.Printf("WriteExerciseBatch with [%d] elements: %v", len(p), p)
+	dayOfExercises := make([]model.DayOfExercises, 1)
+	dayOfExercises[0] = model.DayOfExercises{p}
+
+	return w.WriteExerciseBatches(dayOfExercises)
+}
+
+func (w *statsExerciseWriter) WriteExerciseBatches(p []model.DayOfExercises) (n int, err error) {
+	log.Printf("WriteExerciseBatch with [%d] batches: %v", len(p), p)
+	for _, dayOfData := range p {
+		w.total += len(dayOfData.Exercises)
+	}
+	log.Printf("WriteExerciseBatch with total of %d", w.total)
+	w.batchCount += len(p)
+	w.writeCount++
+
+	return len(p), nil
+}
+
+func (w *statsExerciseWriter) Flush() error {
+	return nil
+}
 
 func TestWriteOfDayExerciseBatch(t *testing.T) {
 	statsWriter := new(statsExerciseWriter)

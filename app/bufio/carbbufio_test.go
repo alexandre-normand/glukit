@@ -33,6 +33,10 @@ func (w *statsCarbWriter) WriteCarbBatches(p []model.DayOfCarbs) (n int, err err
 	return len(p), nil
 }
 
+func (w *statsCarbWriter) Flush() error {
+	return nil
+}
+
 func TestSimpleWriteOfSingleCarbBatch(t *testing.T) {
 	statsWriter := new(statsCarbWriter)
 	w := NewCarbWriterSize(statsWriter, 10)

@@ -1,4 +1,4 @@
-package bufio
+package streaming
 
 import (
 	"github.com/alexandre-normand/glukit/app/glukitio"
@@ -6,32 +6,32 @@ import (
 	"time"
 )
 
-type InjectionStreamer struct {
-	buf []model.Injection
+type CarbStreamer struct {
+	buf []model.Carb
 	n   int
-	wr  glukitio.InjectionBatchWriter
+	wr  glukitio.CarbBatchWriter
 	t   time.Time
 	d   time.Duration
 	err error
 }
 
-// WriteInjection writes a single Injection into the buffer.
-func (b *InjectionStreamer) WriteInjection(c model.Injection) (nn int, err error) {
+// WriteCarb writes a single Carb into the buffer.
+func (b *CarbStreamer) WriteCarb(c model.Carb) (nn int, err error) {
 	if b.err != nil {
 		return 0, b.err
 	}
 
-	p := make([]model.Injection, 1)
+	p := make([]model.Carb, 1)
 	p[0] = c
 
-	return b.WriteInjections(p)
+	return b.WriteCarbs(p)
 }
 
-// WriteInjections writes the contents of p into the buffer.
+// WriteCarbs writes the contents of p into the buffer.
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *InjectionStreamer) WriteInjections(p []model.Injection) (nn int, err error) {
+func (b *CarbStreamer) WriteCarbs(p []model.Carb) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
 	if b.n == 0 {
@@ -67,14 +67,14 @@ func (b *InjectionStreamer) WriteInjections(p []model.Injection) (nn int, err er
 	return nn, nil
 }
 
-func (b *InjectionStreamer) resetFirstReadOfBatch(r model.Injection) {
+func (b *CarbStreamer) resetFirstReadOfBatch(r model.Carb) {
 	b.t = r.GetTime().Truncate(b.d)
 }
 
-// NewInjectionStreamerDuration returns a new InjectionStreamer whose buffer has the specified size.
-func NewInjectionStreamerDuration(wr glukitio.InjectionBatchWriter, bufferLength time.Duration) *InjectionStreamer {
-	w := new(InjectionStreamer)
-	w.buf = make([]model.Injection, bufferSize)
+// NewCarbStreamerDuration returns a new CarbStreamer whose buffer has the specified size.
+func NewCarbStreamerDuration(wr glukitio.CarbBatchWriter, bufferLength time.Duration) *CarbStreamer {
+	w := new(CarbStreamer)
+	w.buf = make([]model.Carb, BUFFER_SIZE)
 	w.wr = wr
 	w.d = bufferLength
 
@@ -82,7 +82,7 @@ func NewInjectionStreamerDuration(wr glukitio.InjectionBatchWriter, bufferLength
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
-func (b *InjectionStreamer) Flush() error {
+func (b *CarbStreamer) Flush() error {
 	if b.err != nil {
 		return b.err
 	}
@@ -90,7 +90,7 @@ func (b *InjectionStreamer) Flush() error {
 		return nil
 	}
 
-	n, err := b.wr.WriteInjectionBatch(b.buf[0:b.n])
+	n, err := b.wr.WriteCarbBatch(b.buf[0:b.n])
 	if n < 1 && err == nil {
 		err = glukitio.ErrShortWrite
 	}
@@ -108,7 +108,7 @@ func (b *InjectionStreamer) Flush() error {
 
 // Close flushes the buffer and the inner writer to effectively ensure nothing is left
 // unwritten
-func (b *InjectionStreamer) Close() error {
+func (b *CarbStreamer) Close() error {
 	err := b.Flush()
 	if err != nil {
 		return err
@@ -118,6 +118,6 @@ func (b *InjectionStreamer) Close() error {
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (b *InjectionStreamer) Buffered() int {
+func (b *CarbStreamer) Buffered() int {
 	return b.n
 }

@@ -42,6 +42,7 @@ func (b *BufferedExerciseBatchWriter) WriteExerciseBatches(p []model.DayOfExerci
 	if b.err != nil {
 		return nn, b.err
 	}
+
 	n := copy(b.buf[b.n:], p)
 	b.n += n
 	nn += n

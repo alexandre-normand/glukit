@@ -4,6 +4,7 @@ import (
 	"appengine/datastore"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/util"
+	"log"
 	"strconv"
 	"time"
 )
@@ -46,6 +47,7 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 	defer close(channel)
 
 	size := len(dayOfReads.Reads)
+	log.Printf("Writing a day of reads with size of %d: [%v]", size, dayOfReads.Reads)
 
 	// Nothing to do if the slice has zero elements
 	if size == 0 {

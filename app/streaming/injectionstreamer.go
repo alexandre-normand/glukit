@@ -1,4 +1,4 @@
-package bufio
+package streaming
 
 import (
 	"github.com/alexandre-normand/glukit/app/glukitio"
@@ -6,32 +6,32 @@ import (
 	"time"
 )
 
-type GlucoseReadStreamer struct {
-	buf []model.GlucoseRead
+type InjectionStreamer struct {
+	buf []model.Injection
 	n   int
-	wr  glukitio.GlucoseReadBatchWriter
+	wr  glukitio.InjectionBatchWriter
 	t   time.Time
 	d   time.Duration
 	err error
 }
 
-// WriteGlucoseRead writes a single GlucoseRead into the buffer.
-func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, err error) {
+// WriteInjection writes a single Injection into the buffer.
+func (b *InjectionStreamer) WriteInjection(c model.Injection) (nn int, err error) {
 	if b.err != nil {
 		return 0, b.err
 	}
 
-	p := make([]model.GlucoseRead, 1)
+	p := make([]model.Injection, 1)
 	p[0] = c
 
-	return b.WriteGlucoseReads(p)
+	return b.WriteInjections(p)
 }
 
-// WriteGlucoseReads writes the contents of p into the buffer.
+// WriteInjections writes the contents of p into the buffer.
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, err error) {
+func (b *InjectionStreamer) WriteInjections(p []model.Injection) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
 	if b.n == 0 {
@@ -41,7 +41,6 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, 
 	i := 0
 	for j, c := range p {
 		t := c.GetTime()
-
 		if t.Sub(b.t) >= b.d {
 			var n int
 			n = copy(b.buf[b.n:], p[i:j])
@@ -68,14 +67,14 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, 
 	return nn, nil
 }
 
-func (b *GlucoseReadStreamer) resetFirstReadOfBatch(r model.GlucoseRead) {
+func (b *InjectionStreamer) resetFirstReadOfBatch(r model.Injection) {
 	b.t = r.GetTime().Truncate(b.d)
 }
 
-// NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.
-func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferLength time.Duration) *GlucoseReadStreamer {
-	w := new(GlucoseReadStreamer)
-	w.buf = make([]model.GlucoseRead, bufferSize)
+// NewInjectionStreamerDuration returns a new InjectionStreamer whose buffer has the specified size.
+func NewInjectionStreamerDuration(wr glukitio.InjectionBatchWriter, bufferLength time.Duration) *InjectionStreamer {
+	w := new(InjectionStreamer)
+	w.buf = make([]model.Injection, BUFFER_SIZE)
 	w.wr = wr
 	w.d = bufferLength
 
@@ -83,7 +82,7 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferLength
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
-func (b *GlucoseReadStreamer) Flush() error {
+func (b *InjectionStreamer) Flush() error {
 	if b.err != nil {
 		return b.err
 	}
@@ -91,7 +90,7 @@ func (b *GlucoseReadStreamer) Flush() error {
 		return nil
 	}
 
-	n, err := b.wr.WriteGlucoseReadBatch(b.buf[0:b.n])
+	n, err := b.wr.WriteInjectionBatch(b.buf[0:b.n])
 	if n < 1 && err == nil {
 		err = glukitio.ErrShortWrite
 	}
@@ -109,7 +108,7 @@ func (b *GlucoseReadStreamer) Flush() error {
 
 // Close flushes the buffer and the inner writer to effectively ensure nothing is left
 // unwritten
-func (b *GlucoseReadStreamer) Close() error {
+func (b *InjectionStreamer) Close() error {
 	err := b.Flush()
 	if err != nil {
 		return err
@@ -119,6 +118,6 @@ func (b *GlucoseReadStreamer) Close() error {
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (b *GlucoseReadStreamer) Buffered() int {
+func (b *InjectionStreamer) Buffered() int {
 	return b.n
 }
