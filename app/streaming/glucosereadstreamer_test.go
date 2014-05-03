@@ -25,8 +25,7 @@ func NewStatsGlucoseReadWriter() *statsGlucoseReadWriter {
 
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
-	dayOfGlucoseReads := make([]model.DayOfGlucoseReads, 1)
-	dayOfGlucoseReads[0] = model.DayOfGlucoseReads{p}
+	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}}
 
 	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }

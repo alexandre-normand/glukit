@@ -1,11 +1,42 @@
-package bufio_test
+package streaming_test
 
 import (
-	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
+	. "github.com/alexandre-normand/glukit/app/streaming"
+	"log"
 	"testing"
 	"time"
 )
+
+type statsInjectionWriter struct {
+	total      int
+	batchCount int
+	writeCount int
+}
+
+func (w *statsInjectionWriter) WriteInjectionBatch(p []model.Injection) (n int, err error) {
+	log.Printf("WriteInjectionBatch with [%d] elements: %v", len(p), p)
+	dayOfInjections := make([]model.DayOfInjections, 1)
+	dayOfInjections[0] = model.DayOfInjections{p}
+
+	return w.WriteInjectionBatches(dayOfInjections)
+}
+
+func (w *statsInjectionWriter) WriteInjectionBatches(p []model.DayOfInjections) (n int, err error) {
+	log.Printf("WriteInjectionBatch with [%d] batches: %v", len(p), p)
+	for _, dayOfData := range p {
+		w.total += len(dayOfData.Injections)
+	}
+	log.Printf("WriteInjectionBatch with total of %d", w.total)
+	w.batchCount += len(p)
+	w.writeCount++
+
+	return len(p), nil
+}
+
+func (w *statsInjectionWriter) Flush() error {
+	return nil
+}
 
 func TestWriteOfDayInjectionBatch(t *testing.T) {
 	statsWriter := new(statsInjectionWriter)

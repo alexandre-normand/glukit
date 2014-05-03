@@ -13,11 +13,31 @@ type BufferedGlucoseReadBatchWriter struct {
 	err error
 }
 
+// NewGlucoseReadWriterSize returns a new Writer whose Buffer has the specified size.
+func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, size int) *BufferedGlucoseReadBatchWriter {
+	// Is it already a Writer?
+	b, ok := wr.(*BufferedGlucoseReadBatchWriter)
+	if ok && len(b.buf) >= size {
+		log.Printf("Already a writer")
+		return b
+	}
+
+	if size <= 0 {
+		size = defaultBufSize
+	}
+	w := new(BufferedGlucoseReadBatchWriter)
+	w.buf = make([]model.DayOfGlucoseReads, size)
+
+	log.Printf("Creating empty Buffer [%v] at address [%p]", w.buf[:w.n], &w.buf)
+	w.wr = wr
+
+	return w
+}
+
 // WriteGlucose writes a single model.DayOfGlucoseReads
 func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (nn int, err error) {
 	log.Printf("Before building of batch, current buffer is:\n%v\n", b.buf[:b.n])
-	dayOfGlucoseReads := make([]model.DayOfGlucoseReads, 1)
-	dayOfGlucoseReads[0] = model.DayOfGlucoseReads{p}
+	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}}
 
 	log.Printf("Creating batch [%p] of reads with %d elements for data: [%v]", &dayOfGlucoseReads, len(p), dayOfGlucoseReads)
 	n, err := b.WriteGlucoseReadBatches(dayOfGlucoseReads)
@@ -43,7 +63,6 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOf
 		b.n += n
 		log.Printf("Buffer is [%v]", b.buf[:b.n])
 		b.Flush()
-		log.Printf("Buffer is [%v]", b.buf[:b.n])
 		nn += n
 		p = p[n:]
 	}
@@ -61,27 +80,6 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOf
 	log.Printf("Buffer is [%v]", b.buf[:b.n])
 
 	return nn, nil
-}
-
-// NewGlucoseReadWriterSize returns a new Writer whose Buffer has the specified size.
-func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, size int) *BufferedGlucoseReadBatchWriter {
-	// Is it already a Writer?
-	b, ok := wr.(*BufferedGlucoseReadBatchWriter)
-	if ok && len(b.buf) >= size {
-		log.Printf("Already a writer")
-		return b
-	}
-
-	if size <= 0 {
-		size = defaultBufSize
-	}
-	w := new(BufferedGlucoseReadBatchWriter)
-	w.buf = make([]model.DayOfGlucoseReads, size)
-
-	log.Printf("Creating empty Buffer [%v] at address [%p]", w.buf[:w.n], &w.buf)
-	w.wr = wr
-
-	return w
 }
 
 // Flush writes any Buffered data to the underlying glukitio.Writer.

@@ -1,11 +1,42 @@
-package bufio_test
+package streaming_test
 
 import (
-	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
+	. "github.com/alexandre-normand/glukit/app/streaming"
+	"log"
 	"testing"
 	"time"
 )
+
+type statsCarbWriter struct {
+	total      int
+	batchCount int
+	writeCount int
+}
+
+func (w *statsCarbWriter) WriteCarbBatch(p []model.Carb) (n int, err error) {
+	log.Printf("WriteCarbBatch with [%d] elements: %v", len(p), p)
+	dayOfCarbs := make([]model.DayOfCarbs, 1)
+	dayOfCarbs[0] = model.DayOfCarbs{p}
+
+	return w.WriteCarbBatches(dayOfCarbs)
+}
+
+func (w *statsCarbWriter) WriteCarbBatches(p []model.DayOfCarbs) (n int, err error) {
+	log.Printf("WriteCarbBatch with [%d] batches: %v", len(p), p)
+	for _, dayOfData := range p {
+		w.total += len(dayOfData.Carbs)
+	}
+	log.Printf("WriteCarbBatch with total of %d", w.total)
+	w.batchCount += len(p)
+	w.writeCount++
+
+	return len(p), nil
+}
+
+func (w *statsCarbWriter) Flush() error {
+	return nil
+}
 
 func TestWriteOfDayCarbBatch(t *testing.T) {
 	statsWriter := new(statsCarbWriter)
