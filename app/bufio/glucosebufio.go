@@ -28,12 +28,12 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.Glucose
 	return len(p), nil
 }
 
-// WriteGlucoseReadBatches writes the contents of p into the buffer.
+// WriteGlucoseReadBatches writes the contents of p into the Buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
 func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (nn int, err error) {
-	log.Printf("Before write, current buffer is:\n%v\n", b.buf[:b.n])
+	log.Printf("Before write, current Buffer is:\n%v\n", b.buf[:b.n])
 	log.Printf("Buffer has %d space available with this batch being of length %d", b.Available(), len(p))
 	for len(p) > b.Available() && b.err == nil {
 		var n int
@@ -41,29 +41,29 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOf
 		n = copy(b.buf[b.n:], p)
 		log.Printf("Inner copied %d items", n)
 		b.n += n
-		log.Printf("buffer is [%v]", b.buf[:b.n])
+		log.Printf("Buffer is [%v]", b.buf[:b.n])
 		b.Flush()
-		log.Printf("buffer is [%v]", b.buf[:b.n])
+		log.Printf("Buffer is [%v]", b.buf[:b.n])
 		nn += n
 		p = p[n:]
 	}
 	if b.err != nil {
 		return nn, b.err
 	}
-	//log.Printf("Copying data at position %d: %v into\n\n-------\n%v", b.n, p, b.buf[:b.n])
-	log.Printf("Doing the copy starting at index %d, buffer is [%v]", b.n, b.buf[:b.n])
+	//log.Printf("Copying data at position %d: %v into\n\n-------\n%v", b.n, p, b.Buf[:b.n])
+	log.Printf("Doing the copy starting at index %d, Buffer is [%v]", b.n, b.buf[:b.n])
 	n := copy(b.buf[b.n:], p)
-	log.Printf("buffer is [%v]", b.buf[:b.n])
+	log.Printf("Buffer is [%v]", b.buf[:b.n])
 	b.n += n
 	nn += n
 
-	log.Printf("Copied %d items from source (%p) to buffer (%p), current buffer is:\n%v\n", n, &p, &b.buf, b.buf[:b.n])
-	log.Printf("buffer is [%v]", b.buf[:b.n])
+	log.Printf("Copied %d items from source (%p) to Buffer (%p), current Buffer is:\n%v\n", n, &p, &b.buf, b.buf[:b.n])
+	log.Printf("Buffer is [%v]", b.buf[:b.n])
 
 	return nn, nil
 }
 
-// NewGlucoseReadWriterSize returns a new Writer whose buffer has the specified size.
+// NewGlucoseReadWriterSize returns a new Writer whose Buffer has the specified size.
 func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, size int) *BufferedGlucoseReadBatchWriter {
 	// Is it already a Writer?
 	b, ok := wr.(*BufferedGlucoseReadBatchWriter)
@@ -78,13 +78,13 @@ func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, size int) *Buf
 	w := new(BufferedGlucoseReadBatchWriter)
 	w.buf = make([]model.DayOfGlucoseReads, size)
 
-	log.Printf("Creating empty buffer [%v] at address [%p]", w.buf[:w.n], &w.buf)
+	log.Printf("Creating empty Buffer [%v] at address [%p]", w.buf[:w.n], &w.buf)
 	w.wr = wr
 
 	return w
 }
 
-// Flush writes any buffered data to the underlying glukitio.Writer.
+// Flush writes any Buffered data to the underlying glukitio.Writer.
 func (b *BufferedGlucoseReadBatchWriter) Flush() error {
 	log.Printf("In flush.. with n=%d", b.n)
 	if b.err != nil {
@@ -96,14 +96,14 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() error {
 
 	log.Printf("Calling physical persistence with b=%d and data: %v", b.n, b.buf[:b.n])
 	n, err := b.wr.WriteGlucoseReadBatches(b.buf[:b.n])
-	log.Printf("buffer is [%v]", b.buf[:b.n])
+	log.Printf("Buffer is [%v]", b.buf[:b.n])
 	if n < b.n && err == nil {
 		err = glukitio.ErrShortWrite
 	}
 	if err != nil {
 		if n > 0 && n < b.n {
 			copy(b.buf[0:b.n-n], b.buf[n:b.n])
-			log.Printf("buffer is [%v]", b.buf[:b.n])
+			log.Printf("Buffer is [%v]", b.buf[:b.n])
 		}
 		b.n -= n
 		b.err = err
@@ -113,12 +113,12 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() error {
 	return nil
 }
 
-// Available returns how many bytes are unused in the buffer.
+// Available returns how many bytes are unused in the Buffer.
 func (b *BufferedGlucoseReadBatchWriter) Available() int {
 	return len(b.buf) - b.n
 }
 
-// Buffered returns the number of bytes that have been written into the current buffer.
+// Buffered returns the number of bytes that have been written into the current Buffer.
 func (b *BufferedGlucoseReadBatchWriter) Buffered() int {
 	return b.n
 }
