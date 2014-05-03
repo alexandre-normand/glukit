@@ -1,7 +1,6 @@
 package streaming
 
 import (
-	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"log"
@@ -11,7 +10,7 @@ import (
 type GlucoseReadStreamer struct {
 	buf []model.GlucoseRead
 	n   int
-	wr  *bufio.BufferedGlucoseReadBatchWriter
+	wr  glukitio.GlucoseReadBatchWriter
 	t   time.Time
 	d   time.Duration
 	err error
@@ -58,7 +57,7 @@ func (b *GlucoseReadStreamer) resetFirstReadOfBatch(r model.GlucoseRead) {
 }
 
 // NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.
-func NewGlucoseStreamerDuration(wr *bufio.BufferedGlucoseReadBatchWriter, bufferLength time.Duration) *GlucoseReadStreamer {
+func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferLength time.Duration) *GlucoseReadStreamer {
 	w := new(GlucoseReadStreamer)
 	w.buf = make([]model.GlucoseRead, BUFFER_SIZE)
 	log.Printf("streamer buffer is %p", w.buf)
@@ -78,7 +77,6 @@ func (b *GlucoseReadStreamer) Flush() error {
 		return nil
 	}
 
-	//log.Printf("Streamer, sending batch [%v] to buf writer with state [%v]", b.buf[:b.n], b.wr.Buf[0:b.wr.N])
 	n, err := b.wr.WriteGlucoseReadBatch(b.buf[:b.n])
 	if n < 1 && err == nil {
 		err = glukitio.ErrShortWrite
