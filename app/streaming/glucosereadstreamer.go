@@ -26,29 +26,48 @@ func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, err
 		return 0, b.err
 	}
 
+	return b.WriteGlucoseReads([]model.GlucoseRead{c})
+}
+
+// WriteGlucoseReads writes the contents of p into the buffer.
+// It returns the number of bytes written.
+// If nn < len(p), it also returns an error explaining
+// why the write is short. p must be sorted by time (oldest to most recent).
+func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, err error) {
 	// Special case, we don't have a recorded value yet so we start our
 	// buffer with the date of the first element
 	if b.n == 0 {
-		b.resetFirstReadOfBatch(c)
+		b.resetFirstReadOfBatch(p[0])
 	}
 
-	t := c.GetTime()
-	log.Printf("Streaming value [%v]", c)
-	if t.Sub(b.t) >= b.d {
-		b.Flush()
+	i := 0
+	for j, c := range p {
+		t := c.GetTime()
 
-		// If the flush resulted in an error, abort the write
-		if b.err != nil {
-			return 0, b.err
+		if t.Sub(b.t) >= b.d {
+			var n int
+			n = copy(b.buf[b.n:], p[i:j])
+			b.n += n
+			b.Flush()
+
+			nn += n
+
+			// If the flush resulted in an error, abort the write
+			if b.err != nil {
+				return nn, b.err
+			}
+
+			// Move beginning of next batch
+			i = j
+			b.resetFirstReadOfBatch(p[i])
 		}
-
-		b.resetFirstReadOfBatch(c)
 	}
 
-	b.buf[b.n] = c
-	b.n += 1
-	//log.Printf("Streamer just added one element and current buffer of writer is %v", b.wr.Buf[:b.wr.N])
-	return 1, nil
+	n := copy(b.buf[b.n:], p[i:])
+	b.n += n
+	nn += n
+
+	return nn, nil
 }
 
 func (b *GlucoseReadStreamer) resetFirstReadOfBatch(r model.GlucoseRead) {
@@ -57,12 +76,12 @@ func (b *GlucoseReadStreamer) resetFirstReadOfBatch(r model.GlucoseRead) {
 }
 
 // NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.
-func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferLength time.Duration) *GlucoseReadStreamer {
+func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
 	w := new(GlucoseReadStreamer)
 	w.buf = make([]model.GlucoseRead, BUFFER_SIZE)
 	log.Printf("streamer buffer is %p", w.buf)
 	w.wr = wr
-	w.d = bufferLength
+	w.d = bufferDuration
 
 	return w
 }

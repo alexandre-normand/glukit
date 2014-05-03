@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
-	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/streaming"
 	"github.com/alexandre-normand/glukit/app/util"
 	"io"
 	"net/http"
@@ -45,8 +45,8 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	}
 
 	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
-	calibrationStreamer := bufio.NewCalibrationReadStreamerDuration(batchingWriter, time.Hour*24)
+	//batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
+	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(dataStoreWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -99,8 +99,8 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	}
 
 	dataStoreWriter := store.NewDataStoreGlucoseReadBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, 200)
-	glucoseReadStreamer := bufio.NewGlucoseStreamerDuration(batchingWriter, time.Hour*24)
+	//batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, 200)
+	glucoseReadStreamer := streaming.NewGlucoseStreamerDuration(dataStoreWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -153,8 +153,8 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 	}
 
 	dataStoreWriter := store.NewDataStoreInjectionBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, 200)
-	injectionStreamer := bufio.NewInjectionStreamerDuration(batchingWriter, time.Hour*24)
+	//batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, 200)
+	injectionStreamer := streaming.NewInjectionStreamerDuration(dataStoreWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -207,8 +207,8 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
-	carbStreamer := bufio.NewCarbStreamerDuration(batchingWriter, time.Hour*24)
+	//batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
+	carbStreamer := streaming.NewCarbStreamerDuration(dataStoreWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -261,8 +261,8 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	dataStoreWriter := store.NewDataStoreExerciseBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewExerciseWriterSize(dataStoreWriter, 200)
-	exerciseStreamer := bufio.NewExerciseStreamerDuration(batchingWriter, time.Hour*24)
+	//batchingWriter := bufio.NewExerciseWriterSize(dataStoreWriter, 200)
+	exerciseStreamer := streaming.NewExerciseStreamerDuration(dataStoreWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 

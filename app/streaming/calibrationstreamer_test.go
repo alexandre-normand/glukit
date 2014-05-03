@@ -1,11 +1,42 @@
-package bufio_test
+package streaming_test
 
 import (
-	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
+	. "github.com/alexandre-normand/glukit/app/streaming"
+	"log"
 	"testing"
 	"time"
 )
+
+type statsCalibrationWriter struct {
+	total      int
+	batchCount int
+	writeCount int
+}
+
+func (w *statsCalibrationWriter) WriteCalibrationBatch(p []model.CalibrationRead) (n int, err error) {
+	log.Printf("WriteCalibrationBatch with [%d] elements: %v", len(p), p)
+	dayOfCalibrationReads := make([]model.DayOfCalibrationReads, 1)
+	dayOfCalibrationReads[0] = model.DayOfCalibrationReads{p}
+
+	return w.WriteCalibrationBatches(dayOfCalibrationReads)
+}
+
+func (w *statsCalibrationWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (n int, err error) {
+	log.Printf("WriteCalibrationBatch with [%d] batches: %v", len(p), p)
+	for _, dayOfData := range p {
+		w.total += len(dayOfData.Reads)
+	}
+	log.Printf("WriteCalibrationBatch with total of %d", w.total)
+	w.batchCount += len(p)
+	w.writeCount++
+
+	return len(p), nil
+}
+
+func (w *statsCalibrationWriter) Flush() error {
+	return nil
+}
 
 func TestWriteOfDayCalibrationBatch(t *testing.T) {
 	statsWriter := new(statsCalibrationWriter)
