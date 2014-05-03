@@ -1,4 +1,4 @@
-package bufio
+package streaming
 
 import (
 	"github.com/alexandre-normand/glukit/app/glukitio"
@@ -74,7 +74,7 @@ func (b *ExerciseStreamer) resetFirstReadOfBatch(r model.Exercise) {
 // NewExerciseStreamerDuration returns a new ExerciseStreamer whose buffer has the specified size.
 func NewExerciseStreamerDuration(wr glukitio.ExerciseBatchWriter, bufferLength time.Duration) *ExerciseStreamer {
 	w := new(ExerciseStreamer)
-	w.buf = make([]model.Exercise, bufferSize)
+	w.buf = make([]model.Exercise, BUFFER_SIZE)
 	w.wr = wr
 	w.d = bufferLength
 

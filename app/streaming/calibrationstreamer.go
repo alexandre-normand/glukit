@@ -1,4 +1,4 @@
-package bufio
+package streaming
 
 import (
 	"github.com/alexandre-normand/glukit/app/glukitio"
@@ -72,11 +72,11 @@ func (b *CalibrationReadStreamer) resetFirstReadOfBatch(r model.CalibrationRead)
 }
 
 // NewCalibrationReadStreamerDuration returns a new CalibrationReadStreamer whose buffer has the specified size.
-func NewCalibrationReadStreamerDuration(wr glukitio.CalibrationBatchWriter, bufferLength time.Duration) *CalibrationReadStreamer {
+func NewCalibrationReadStreamerDuration(wr glukitio.CalibrationBatchWriter, bufferDuration time.Duration) *CalibrationReadStreamer {
 	w := new(CalibrationReadStreamer)
-	w.buf = make([]model.CalibrationRead, bufferSize)
+	w.buf = make([]model.CalibrationRead, BUFFER_SIZE)
 	w.wr = wr
-	w.d = bufferLength
+	w.d = bufferDuration
 
 	return w
 }

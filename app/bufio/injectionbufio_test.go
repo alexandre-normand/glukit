@@ -33,6 +33,10 @@ func (w *statsInjectionWriter) WriteInjectionBatches(p []model.DayOfInjections) 
 	return len(p), nil
 }
 
+func (w *statsInjectionWriter) Flush() error {
+	return nil
+}
+
 func TestSimpleWriteOfSingleInjectionBatch(t *testing.T) {
 	statsWriter := new(statsInjectionWriter)
 	w := NewInjectionWriterSize(statsWriter, 10)
