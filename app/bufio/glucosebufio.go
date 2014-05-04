@@ -1,6 +1,8 @@
 package bufio
 
 import (
+	"errors"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"log"
@@ -37,7 +39,12 @@ func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, size int) *Buf
 // WriteGlucose writes a single model.DayOfGlucoseReads
 func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (nn int, err error) {
 	log.Printf("Before building of batch, current buffer is:\n%v\n", b.buf[:b.n])
-	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}}
+	readsCopy := make([]model.GlucoseRead, len(p))
+	if copied := copy(readsCopy, p); copied != len(p) {
+		return 0, errors.New(fmt.Sprintf("Failed to create copy of glucose read batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
+	}
+
+	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{readsCopy}}
 
 	log.Printf("Creating batch [%p] of reads with %d elements for data: [%v]", &dayOfGlucoseReads, len(p), dayOfGlucoseReads)
 	n, err := b.WriteGlucoseReadBatches(dayOfGlucoseReads)
