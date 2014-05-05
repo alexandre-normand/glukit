@@ -3,7 +3,6 @@ package streaming
 import (
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 	"time"
 )
 
@@ -72,14 +71,13 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, 
 
 func (b *GlucoseReadStreamer) resetFirstReadOfBatch(r model.GlucoseRead) {
 	b.t = r.GetTime().Truncate(b.d)
-	log.Printf("First read of batch reset to [%v]", b.t)
 }
 
 // NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.
 func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
 	w := new(GlucoseReadStreamer)
 	w.buf = make([]model.GlucoseRead, BUFFER_SIZE)
-	log.Printf("streamer buffer is %p", w.buf)
+
 	w.wr = wr
 	w.d = bufferDuration
 
@@ -88,7 +86,6 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
 func (b *GlucoseReadStreamer) Flush() error {
-	log.Printf("Flushing day of reads with %d reads: %v", b.n, b.buf[:b.n])
 	if b.err != nil {
 		return b.err
 	}
