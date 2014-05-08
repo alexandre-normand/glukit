@@ -1,6 +1,8 @@
 package bufio
 
 import (
+	"errors"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
@@ -14,10 +16,12 @@ type BufferedCarbBatchWriter struct {
 
 // WriteCarb writes a single model.DayOfCarbs
 func (b *BufferedCarbBatchWriter) WriteCarbBatch(p []model.Carb) (nn int, err error) {
-	DayOfCarbs := make([]model.DayOfCarbs, 1)
-	DayOfCarbs[0] = model.DayOfCarbs{p}
+	c := make([]model.Carb, len(p))
+	if copied := copy(c, p); copied != len(p) {
+		return 0, errors.New(fmt.Sprintf("Failed to create copy of carb batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
+	}
 
-	n, err := b.WriteCarbBatches(DayOfCarbs)
+	n, err := b.WriteCarbBatches([]model.DayOfCarbs{model.DayOfCarbs{c}})
 	if err != nil {
 		return n * len(p), err
 	}

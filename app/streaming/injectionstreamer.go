@@ -21,10 +21,7 @@ func (b *InjectionStreamer) WriteInjection(c model.Injection) (nn int, err error
 		return 0, b.err
 	}
 
-	p := make([]model.Injection, 1)
-	p[0] = c
-
-	return b.WriteInjections(p)
+	return b.WriteInjections([]model.Injection{c})
 }
 
 // WriteInjections writes the contents of p into the buffer.
