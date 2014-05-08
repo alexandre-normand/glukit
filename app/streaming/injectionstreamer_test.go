@@ -1,6 +1,7 @@
 package streaming_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
@@ -12,21 +13,29 @@ type statsInjectionWriter struct {
 	total      int
 	batchCount int
 	writeCount int
+	batches    map[int64][]model.Injection
+}
+
+func NewStatsInjectionsWriter() *statsInjectionWriter {
+	w := new(statsInjectionWriter)
+	w.batches = make(map[int64][]model.Injection)
+
+	return w
 }
 
 func (w *statsInjectionWriter) WriteInjectionBatch(p []model.Injection) (n int, err error) {
 	log.Printf("WriteInjectionBatch with [%d] elements: %v", len(p), p)
-	dayOfInjections := make([]model.DayOfInjections, 1)
-	dayOfInjections[0] = model.DayOfInjections{p}
 
-	return w.WriteInjectionBatches(dayOfInjections)
+	return w.WriteInjectionBatches([]model.DayOfInjections{model.DayOfInjections{p}})
 }
 
 func (w *statsInjectionWriter) WriteInjectionBatches(p []model.DayOfInjections) (n int, err error) {
 	log.Printf("WriteInjectionBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.total += len(dayOfData.Injections)
+		w.batches[dayOfData.Injections[0].EpochTime] = dayOfData.Injections
 	}
+
 	log.Printf("WriteInjectionBatch with total of %d", w.total)
 	w.batchCount += len(p)
 	w.writeCount++
@@ -39,7 +48,7 @@ func (w *statsInjectionWriter) Flush() error {
 }
 
 func TestWriteOfDayInjectionBatch(t *testing.T) {
-	statsWriter := new(statsInjectionWriter)
+	statsWriter := NewStatsInjectionsWriter()
 	w := NewInjectionStreamerDuration(statsWriter, time.Hour*24)
 	injections := make([]model.Injection, 25)
 
@@ -65,7 +74,7 @@ func TestWriteOfDayInjectionBatch(t *testing.T) {
 }
 
 func TestWriteOfHourlyInjectionBatch(t *testing.T) {
-	statsWriter := new(statsInjectionWriter)
+	statsWriter := NewStatsInjectionsWriter()
 	w := NewInjectionStreamerDuration(statsWriter, time.Hour*1)
 	injections := make([]model.Injection, 13)
 
@@ -106,7 +115,7 @@ func TestWriteOfHourlyInjectionBatch(t *testing.T) {
 }
 
 func TestWriteOfMultipleInjectionBatches(t *testing.T) {
-	statsWriter := new(statsInjectionWriter)
+	statsWriter := NewStatsInjectionsWriter()
 	w := NewInjectionStreamerDuration(statsWriter, time.Hour*1)
 	injections := make([]model.Injection, 25)
 
@@ -143,5 +152,43 @@ func TestWriteOfMultipleInjectionBatches(t *testing.T) {
 
 	if statsWriter.writeCount != 3 {
 		t.Errorf("TestWriteOfMultipleInjectionBatches failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 3)
+	}
+}
+
+func TestInjectionStreamerWithBufferedIO(t *testing.T) {
+	statsWriter := NewStatsInjectionsWriter()
+	bufferedWriter := bufio.NewInjectionWriterSize(statsWriter, 2)
+	w := NewInjectionStreamerDuration(bufferedWriter, time.Hour*24)
+
+	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+
+	for b := 0; b < 3; b++ {
+		for i := 0; i < 48; i++ {
+			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+			w.WriteInjection(model.Injection{model.Timestamp{"", readTime.Unix()}, float32(b*48 + i), model.UNDEFINED_READ})
+		}
+	}
+
+	w.Close()
+
+	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	if value, ok := statsWriter.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
+	if value, ok := statsWriter.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
+	if value, ok := statsWriter.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
 	}
 }

@@ -1,6 +1,7 @@
 package streaming_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
@@ -12,21 +13,29 @@ type statsExerciseWriter struct {
 	total      int
 	batchCount int
 	writeCount int
+	batches    map[int64][]model.Exercise
+}
+
+func NewStatsExercisesWriter() *statsExerciseWriter {
+	w := new(statsExerciseWriter)
+	w.batches = make(map[int64][]model.Exercise)
+
+	return w
 }
 
 func (w *statsExerciseWriter) WriteExerciseBatch(p []model.Exercise) (n int, err error) {
 	log.Printf("WriteExerciseBatch with [%d] elements: %v", len(p), p)
-	dayOfExercises := make([]model.DayOfExercises, 1)
-	dayOfExercises[0] = model.DayOfExercises{p}
 
-	return w.WriteExerciseBatches(dayOfExercises)
+	return w.WriteExerciseBatches([]model.DayOfExercises{model.DayOfExercises{p}})
 }
 
 func (w *statsExerciseWriter) WriteExerciseBatches(p []model.DayOfExercises) (n int, err error) {
 	log.Printf("WriteExerciseBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.total += len(dayOfData.Exercises)
+		w.batches[dayOfData.Exercises[0].EpochTime] = dayOfData.Exercises
 	}
+
 	log.Printf("WriteExerciseBatch with total of %d", w.total)
 	w.batchCount += len(p)
 	w.writeCount++
@@ -39,7 +48,7 @@ func (w *statsExerciseWriter) Flush() error {
 }
 
 func TestWriteOfDayExerciseBatch(t *testing.T) {
-	statsWriter := new(statsExerciseWriter)
+	statsWriter := NewStatsExercisesWriter()
 	w := NewExerciseStreamerDuration(statsWriter, time.Hour*24)
 	exercises := make([]model.Exercise, 25)
 
@@ -65,7 +74,7 @@ func TestWriteOfDayExerciseBatch(t *testing.T) {
 }
 
 func TestWriteOfHourlyExerciseBatch(t *testing.T) {
-	statsWriter := new(statsExerciseWriter)
+	statsWriter := NewStatsExercisesWriter()
 	w := NewExerciseStreamerDuration(statsWriter, time.Hour*1)
 	exercises := make([]model.Exercise, 13)
 
@@ -106,7 +115,7 @@ func TestWriteOfHourlyExerciseBatch(t *testing.T) {
 }
 
 func TestWriteOfMultipleExerciseBatches(t *testing.T) {
-	statsWriter := new(statsExerciseWriter)
+	statsWriter := NewStatsExercisesWriter()
 	w := NewExerciseStreamerDuration(statsWriter, time.Hour*1)
 	exercises := make([]model.Exercise, 25)
 
@@ -143,5 +152,43 @@ func TestWriteOfMultipleExerciseBatches(t *testing.T) {
 
 	if statsWriter.writeCount != 3 {
 		t.Errorf("TestWriteOfMultipleExerciseBatches failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 3)
+	}
+}
+
+func TestExerciseStreamerWithBufferedIO(t *testing.T) {
+	statsWriter := NewStatsExercisesWriter()
+	bufferedWriter := bufio.NewExerciseWriterSize(statsWriter, 2)
+	w := NewExerciseStreamerDuration(bufferedWriter, time.Hour*24)
+
+	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+
+	for b := 0; b < 3; b++ {
+		for i := 0; i < 48; i++ {
+			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+			w.WriteExercise(model.Exercise{model.Timestamp{"", readTime.Unix()}, b*48 + i, "Light"})
+		}
+	}
+
+	w.Close()
+
+	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	if value, ok := statsWriter.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestExerciseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
+	if value, ok := statsWriter.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestExerciseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
+	if value, ok := statsWriter.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestExerciseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), statsWriter.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
 	}
 }

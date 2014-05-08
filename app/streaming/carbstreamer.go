@@ -21,10 +21,7 @@ func (b *CarbStreamer) WriteCarb(c model.Carb) (nn int, err error) {
 		return 0, b.err
 	}
 
-	p := make([]model.Carb, 1)
-	p[0] = c
-
-	return b.WriteCarbs(p)
+	return b.WriteCarbs([]model.Carb{c})
 }
 
 // WriteCarbs writes the contents of p into the buffer.

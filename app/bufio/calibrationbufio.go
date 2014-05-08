@@ -1,6 +1,8 @@
 package bufio
 
 import (
+	"errors"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
@@ -14,10 +16,12 @@ type BufferedCalibrationBatchWriter struct {
 
 // WriteCalibration writes a single model.DayOfCalibrationReads
 func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (nn int, err error) {
-	dayOfCalibrationReads := make([]model.DayOfCalibrationReads, 1)
-	dayOfCalibrationReads[0] = model.DayOfCalibrationReads{p}
+	c := make([]model.CalibrationRead, len(p))
+	if copied := copy(c, p); copied != len(p) {
+		return 0, errors.New(fmt.Sprintf("Failed to create copy of calibration read batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
+	}
 
-	n, err := b.WriteCalibrationBatches(dayOfCalibrationReads)
+	n, err := b.WriteCalibrationBatches([]model.DayOfCalibrationReads{model.DayOfCalibrationReads{c}})
 	if err != nil {
 		return n * len(p), err
 	}
