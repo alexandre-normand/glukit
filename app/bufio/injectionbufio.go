@@ -1,6 +1,8 @@
 package bufio
 
 import (
+	"errors"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
@@ -14,10 +16,12 @@ type BufferedInjectionBatchWriter struct {
 
 // WriteInjection writes a single model.DayOfInjections
 func (b *BufferedInjectionBatchWriter) WriteInjectionBatch(p []model.Injection) (nn int, err error) {
-	DayOfInjections := make([]model.DayOfInjections, 1)
-	DayOfInjections[0] = model.DayOfInjections{p}
+	c := make([]model.Injection, len(p))
+	if copied := copy(c, p); copied != len(p) {
+		return 0, errors.New(fmt.Sprintf("Failed to create copy of injection batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
+	}
 
-	n, err := b.WriteInjectionBatches(DayOfInjections)
+	n, err := b.WriteInjectionBatches([]model.DayOfInjections{model.DayOfInjections{c}})
 	if err != nil {
 		return n * len(p), err
 	}

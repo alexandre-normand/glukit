@@ -35,14 +35,12 @@ func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, size int) *Buf
 
 // WriteGlucose writes a single model.DayOfGlucoseReads
 func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (nn int, err error) {
-	readsCopy := make([]model.GlucoseRead, len(p))
-	if copied := copy(readsCopy, p); copied != len(p) {
+	c := make([]model.GlucoseRead, len(p))
+	if copied := copy(c, p); copied != len(p) {
 		return 0, errors.New(fmt.Sprintf("Failed to create copy of glucose read batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
 	}
 
-	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{readsCopy}}
-
-	n, err := b.WriteGlucoseReadBatches(dayOfGlucoseReads)
+	n, err := b.WriteGlucoseReadBatches([]model.DayOfGlucoseReads{model.DayOfGlucoseReads{c}})
 	if err != nil {
 		return n * len(p), err
 	}

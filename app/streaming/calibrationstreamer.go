@@ -21,10 +21,7 @@ func (b *CalibrationReadStreamer) WriteCalibration(c model.CalibrationRead) (nn 
 		return 0, b.err
 	}
 
-	p := make([]model.CalibrationRead, 1)
-	p[0] = c
-
-	return b.WriteCalibrations(p)
+	return b.WriteCalibrations([]model.CalibrationRead{c})
 }
 
 // WriteCalibrations writes the contents of p into the buffer.
