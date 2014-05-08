@@ -21,10 +21,7 @@ func (b *ExerciseStreamer) WriteExercise(c model.Exercise) (nn int, err error) {
 		return 0, b.err
 	}
 
-	p := make([]model.Exercise, 1)
-	p[0] = c
-
-	return b.WriteExercises(p)
+	return b.WriteExercises([]model.Exercise{c})
 }
 
 // WriteExercises writes the contents of p into the buffer.

@@ -1,6 +1,8 @@
 package bufio
 
 import (
+	"errors"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
@@ -14,10 +16,12 @@ type BufferedExerciseBatchWriter struct {
 
 // WriteExercise writes a single model.DayOfExercises
 func (b *BufferedExerciseBatchWriter) WriteExerciseBatch(p []model.Exercise) (nn int, err error) {
-	DayOfExercises := make([]model.DayOfExercises, 1)
-	DayOfExercises[0] = model.DayOfExercises{p}
+	c := make([]model.Exercise, len(p))
+	if copied := copy(c, p); copied != len(p) {
+		return 0, errors.New(fmt.Sprintf("Failed to create copy of exercise batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
+	}
 
-	n, err := b.WriteExerciseBatches(DayOfExercises)
+	n, err := b.WriteExerciseBatches([]model.DayOfExercises{model.DayOfExercises{c}})
 	if err != nil {
 		return n * len(p), err
 	}
