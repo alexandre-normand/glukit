@@ -188,3 +188,22 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 		t.Logf("Value is [%s]", value)
 	}
 }
+
+func BenchmarkStreamerWithBufferedIO(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		statsWriter := NewStatsGlucoseReadWriter()
+		bufferedWriter := bufio.NewGlucoseReadWriterSize(statsWriter, 2)
+		w := NewGlucoseStreamerDuration(bufferedWriter, time.Hour*24)
+
+		ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+
+		for b := 0; b < 3; b++ {
+			for i := 0; i < 48; i++ {
+				readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+				w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*48 + i})
+			}
+		}
+
+		w.Close()
+	}
+}
