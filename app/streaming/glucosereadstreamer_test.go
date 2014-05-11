@@ -197,10 +197,10 @@ func BenchmarkStreamerWithBufferedIO(b *testing.B) {
 
 		ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 
-		for b := 0; b < 3; b++ {
-			for i := 0; i < 48; i++ {
-				readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-				_, w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*48 + i})
+		for j := 0; j < 3; j++ {
+			for i := 0; i < 288; i++ {
+				readTime := ct.Add(time.Duration(j*288+i) * 5 * time.Minute)
+				w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, j*288 + i})
 			}
 		}
 
