@@ -35,7 +35,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	injectionStreamer := streaming.NewInjectionStreamerDuration(injectionBatchingWriter, time.Hour*24)
 
 	carbDataStoreWriter := store.NewDataStoreCarbBatchWriter(context, parentKey)
-	carbBatchingWriter := bufio.NewCarbWriterSize(carbDataStoreWriter, 1)
+	carbBatchingWriter := bufio.NewCarbWriterSize(carbDataStoreWriter, IMPORT_BATCH_SIZE)
 	carbStreamer := streaming.NewCarbStreamerDuration(carbBatchingWriter, time.Hour*24)
 
 	exerciseDataStoreWriter := store.NewDataStoreExerciseBatchWriter(context, parentKey)
