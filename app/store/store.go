@@ -260,7 +260,7 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 	carbSlice := model.CarbSlice(daysOfCarbs.Carbs)
 	startIndex, endIndex := model.GetBoundariesOfElementsInRange(carbSlice, lowerBound, upperBound)
 	filteredCarbs := daysOfCarbs.Carbs[startIndex : endIndex+1]
-	context.Debugf("Finished filterting with %d carbs", len(filteredCarbs))
+	context.Debugf("Finished filtering with %d carbs", len(filteredCarbs))
 
 	if err != datastore.Done {
 		util.Propagate(err)
