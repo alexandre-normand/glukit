@@ -9,9 +9,10 @@ import (
 )
 
 type GlucoseReadStreamer struct {
-	buf []model.GlucoseRead
-	wr  glukitio.GlucoseReadBatchWriter
-	d   time.Duration
+	next  *model.GlucoseRead
+	value *model.GlucoseRead
+	wr    glukitio.GlucoseReadBatchWriter
+	d     time.Duration
 }
 
 const (
@@ -28,29 +29,14 @@ func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, g *
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
 func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, g *GlucoseReadStreamer, err error) {
-	// Special case, we don't have a recorded value yet so we start our
-	// buffer with the date of the first element
-	var i int
 	for j, c := range p {
 		t := c.GetTime()
 
-		if len(b.buf) > 0 && t.Sub(b.buf[0].GetTime()) >= b.d {
-			var n int
-			for _, read := range p[i:j] {
-				b.buf = append(b.buf, read)
-				n++
-			}
-			b, err = b.Flush()
-
-			nn += n
-
-			// If the flush resulted in an error, abort the write
-			if err != nil {
-				return nn, nil, err
-			}
-
-			// Move beginning of next batch
-			i = j
+		if b.value != nil && t.Sub(b.value.GetTime()) >= b.d {
+			err = b.Flush()
+		} else {
+			b.next = b.value
+			b.value = &c
 		}
 	}
 
