@@ -41,11 +41,11 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *Gluco
 		t := c.GetTime()
 
 		if g.head == nil {
-			g.head = &GlucoseReadNode{nil, c}
+			g.head = NewGlucoseReadNode(nil, c)
 		} else if t.Sub(g.head.value.GetTime()) >= g.d {
 			g, err = g.Flush()
 		} else {
-			g.head = &GlucoseReadNode{g.head, c}
+			g.head = NewGlucoseReadNode(g.head, c)
 		}
 	}
 
@@ -72,9 +72,17 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 	return w
 }
 
+func NewGlucoseReadNode(next *GlucoseReadNode, value model.GlucoseRead) *GlucoseReadNode {
+	n := new(GlucoseReadNode)
+	n.next = next
+	n.value = value
+
+	return n
+}
+
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
 func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
-	batch := reverseList(b.head)
+	batch := ReverseList(b.head)
 
 	if len(batch) > 0 {
 		n, err := b.wr.WriteGlucoseReadBatch(batch)
@@ -88,7 +96,7 @@ func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	return newGlucoseStreamerDuration(nil, b.wr, b.d), nil
 }
 
-func reverseList(head *GlucoseReadNode) []model.GlucoseRead {
+func ReverseList(head *GlucoseReadNode) []model.GlucoseRead {
 	if head == nil {
 		return []model.GlucoseRead{}
 	}
@@ -97,7 +105,7 @@ func reverseList(head *GlucoseReadNode) []model.GlucoseRead {
 	size := 0
 	for cursor := head; cursor != nil; size, cursor = size+1, cursor.next {
 		log.Printf("Current item is %p: %v, head is %p", cursor, cursor, reverseListHead)
-		reverseListHead = &GlucoseReadNode{reverseListHead, cursor.value}
+		reverseListHead = NewGlucoseReadNode(reverseListHead, cursor.value)
 		log.Printf("Current head is %p", reverseListHead)
 	}
 

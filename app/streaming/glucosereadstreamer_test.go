@@ -151,6 +151,24 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 	}
 }
 
+func TestListReversal(t *testing.T) {
+	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	current := NewGlucoseReadNode(nil, model.GlucoseRead{model.Timestamp{"", ct.Unix()}, 0})
+
+	for i := 0; i < 9; i++ {
+		readTime := ct.Add(time.Duration(i+1) * 30 * time.Minute)
+		current = NewGlucoseReadNode(current, model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, i + 1})
+	}
+
+	reversed := ReverseList(current)
+
+	for i := 1; i < 10; i++ {
+		if reversed[i].Value <= reversed[i-1].Value {
+			t.Errorf("TestListReversal test failed: list in incorrect order: %s", reversed)
+		}
+	}
+}
+
 func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	statsWriter := NewStatsGlucoseReadWriter()
 	bufferedWriter := bufio.NewGlucoseReadWriterSize(statsWriter, 2)
@@ -168,24 +186,18 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	w.Close()
 
 	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
-	if value, ok := statsWriter.batches[firstBatchTime.Unix()]; !ok {
+	if _, ok := statsWriter.batches[firstBatchTime.Unix()]; !ok {
 		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), statsWriter.batches)
-	} else {
-		t.Logf("Value is [%s]", value)
 	}
 
 	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
-	if value, ok := statsWriter.batches[secondBatchTime.Unix()]; !ok {
+	if _, ok := statsWriter.batches[secondBatchTime.Unix()]; !ok {
 		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), statsWriter.batches)
-	} else {
-		t.Logf("Value is [%s]", value)
 	}
 
 	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
-	if value, ok := statsWriter.batches[thirdBatchTime.Unix()]; !ok {
+	if _, ok := statsWriter.batches[thirdBatchTime.Unix()]; !ok {
 		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), statsWriter.batches)
-	} else {
-		t.Logf("Value is [%s]", value)
 	}
 }
 
