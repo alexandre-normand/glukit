@@ -81,7 +81,7 @@ func TestWriteOfHourlyGlucoseReadBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		_, w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, 75})
+		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, 75})
 	}
 
 	if statsWriter.total != 12 {
@@ -120,7 +120,7 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		_, w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, 75})
+		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, 75})
 	}
 
 	if statsWriter.total != 24 {
@@ -161,7 +161,7 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			_, w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*48 + i})
+			w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*48 + i})
 		}
 	}
 
