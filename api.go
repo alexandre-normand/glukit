@@ -118,7 +118,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 
 		reads := convertToGlucoseRead(c)
 		context.Debugf("Writing [%d] new glucose reads", len(reads))
-		_, glucoseReadStreamer, _ = glucoseReadStreamer.WriteGlucoseReads(reads)
+		glucoseReadStreamer, _ = glucoseReadStreamer.WriteGlucoseReads(reads)
 	}
 
 	if err != io.EOF {
