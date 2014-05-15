@@ -64,7 +64,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 
 				if read.Value > 0 {
 					glucoseRead := model.GlucoseRead{model.Timestamp{read.DisplayTime, util.GetTimeInSeconds(read.InternalTime)}, read.Value}
-					_, glucoseStreamer, _ = glucoseStreamer.WriteGlucoseRead(glucoseRead)
+					glucoseStreamer, _ = glucoseStreamer.WriteGlucoseRead(glucoseRead)
 					lastRead = &glucoseRead
 				}
 			case "Event":
