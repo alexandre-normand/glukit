@@ -1,110 +1,96 @@
 package bufio
 
 import (
-	"errors"
-	"fmt"
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
+	"log"
 )
 
 type BufferedGlucoseReadBatchWriter struct {
-	buf []model.DayOfGlucoseReads
-	n   int
-	wr  glukitio.GlucoseReadBatchWriter
-	err error
+	head      *container.ImmutableList
+	size      int
+	flushSize int
+	wr        glukitio.GlucoseReadBatchWriter
 }
 
 // NewGlucoseReadWriterSize returns a new Writer whose Buffer has the specified size.
-func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, size int) *BufferedGlucoseReadBatchWriter {
+func NewGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, flushSize int) *BufferedGlucoseReadBatchWriter {
+	return newGlucoseReadWriterSize(wr, nil, 0, flushSize)
+}
+
+func newGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, head *container.ImmutableList, size int, flushSize int) *BufferedGlucoseReadBatchWriter {
 	// Is it already a Writer?
 	b, ok := wr.(*BufferedGlucoseReadBatchWriter)
-	if ok && len(b.buf) >= size {
+	if ok && b.flushSize >= flushSize {
 		return b
 	}
 
-	if size <= 0 {
-		size = defaultBufSize
+	if flushSize <= 0 {
+		flushSize = defaultBufSize
 	}
 	w := new(BufferedGlucoseReadBatchWriter)
-	w.buf = make([]model.DayOfGlucoseReads, size)
-
+	w.size = size
+	w.flushSize = flushSize
 	w.wr = wr
+	w.head = head
 
 	return w
 }
 
 // WriteGlucose writes a single model.DayOfGlucoseReads
-func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (nn int, err error) {
-	c := make([]model.GlucoseRead, len(p))
-	if copied := copy(c, p); copied != len(p) {
-		return 0, errors.New(fmt.Sprintf("Failed to create copy of glucose read batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
-	}
-
-	n, err := b.WriteGlucoseReadBatches([]model.DayOfGlucoseReads{model.DayOfGlucoseReads{c}})
-	if err != nil {
-		return n * len(p), err
-	}
-
-	return len(p), nil
+func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (w glukitio.GlucoseReadBatchWriter, err error) {
+	return b.WriteGlucoseReadBatches([]model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}})
 }
 
 // WriteGlucoseReadBatches writes the contents of p into the Buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (nn int, err error) {
-	for len(p) > b.Available() && b.err == nil {
-		var n int
-		n = copy(b.buf[b.n:], p)
-		b.n += n
-
-		b.Flush()
-		nn += n
-		p = p[n:]
+func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
+	w := b
+	for _, batch := range p {
+		if w.size >= w.flushSize {
+			w, err := w.Flush()
+			if err != nil {
+				return w, err
+			}
+		} else {
+			w = newGlucoseReadWriterSize(w.wr, container.NewImmutableList(w.head, batch), w.size+1, w.flushSize)
+		}
 	}
-	if b.err != nil {
-		return nn, b.err
-	}
 
-	n := copy(b.buf[b.n:], p)
-	b.n += n
-	nn += n
-
-	return nn, nil
+	return w, nil
 }
 
 // Flush writes any Buffered data to the underlying glukitio.Writer.
-func (b *BufferedGlucoseReadBatchWriter) Flush() error {
-	if b.err != nil {
-		return b.err
+func (b *BufferedGlucoseReadBatchWriter) Flush() (w glukitio.GlucoseReadBatchWriter, err error) {
+	if b.size == 0 {
+		return newGlucoseReadWriterSize(b.wr, nil, 0, b.flushSize), nil
 	}
-	if b.n == 0 {
-		return nil
-	}
+	r, size := container.ReverseList(b.head)
+	log.Printf("Reversed list of %p (%d) is %v", b.head, b.size, r)
+	batch := ListToArray(r, size)
 
-	n, err := b.wr.WriteGlucoseReadBatches(b.buf[:b.n])
-
-	if n < b.n && err == nil {
-		err = glukitio.ErrShortWrite
-	}
-	if err != nil {
-		if n > 0 && n < b.n {
-			copy(b.buf[0:b.n-n], b.buf[n:b.n])
+	if len(batch) > 0 {
+		innerWriter, err := b.wr.WriteGlucoseReadBatches(batch)
+		if err != nil {
+			return nil, err
 		}
-		b.n -= n
-		b.err = err
-		return err
+
+		return newGlucoseReadWriterSize(innerWriter, nil, 0, b.flushSize), nil
 	}
-	b.n = 0
-	return nil
+
+	return newGlucoseReadWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-// Available returns how many bytes are unused in the Buffer.
-func (b *BufferedGlucoseReadBatchWriter) Available() int {
-	return len(b.buf) - b.n
-}
+func ListToArray(head *container.ImmutableList, size int) []model.DayOfGlucoseReads {
+	r := make([]model.DayOfGlucoseReads, size)
+	cursor := head
+	for i := 0; i < size; i++ {
+		r[i] = cursor.Value.(model.DayOfGlucoseReads)
+		cursor = cursor.Next
+	}
 
-// Buffered returns the number of bytes that have been written into the current Buffer.
-func (b *BufferedGlucoseReadBatchWriter) Buffered() int {
-	return b.n
+	return r
 }

@@ -2,147 +2,170 @@ package bufio_test
 
 import (
 	. "github.com/alexandre-normand/glukit/app/bufio"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"log"
 	"testing"
 	"time"
 )
 
-type statsGlucoseReadWriter struct {
+type writerState struct {
 	total      int
 	batchCount int
 	writeCount int
 	batches    map[int64][]model.GlucoseRead
 }
 
-func NewStatsGlucoseReadWriter() *statsGlucoseReadWriter {
+type statsGlucoseReadWriter struct {
+	state *writerState
+}
+
+func NewWriterState() *writerState {
+	s := new(writerState)
+	s.batches = make(map[int64][]model.GlucoseRead)
+
+	return s
+}
+
+func NewStatsGlucoseReadWriter(s *writerState) *statsGlucoseReadWriter {
 	w := new(statsGlucoseReadWriter)
-	w.batches = make(map[int64][]model.GlucoseRead)
+	w.state = s
 
 	return w
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
-	dayOfGlucoseReads := make([]model.DayOfGlucoseReads, 1)
-	dayOfGlucoseReads[0] = model.DayOfGlucoseReads{p}
+	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}}
 
 	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
-		w.total += len(dayOfData.Reads)
-		w.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
+		w.state.total += len(dayOfData.Reads)
+		w.state.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
 	}
 
-	log.Printf("WriteGlucoseReadBatch with total of %d", w.total)
-	w.batchCount += len(p)
-	w.writeCount++
+	log.Printf("WriteGlucoseReadBatch with total of %d", w.state.total)
+	w.state.batchCount += len(p)
+	w.state.writeCount++
 
-	return len(p), nil
+	return w, nil
 }
 
-func (w *statsGlucoseReadWriter) Flush() error {
-	return nil
+func (w *statsGlucoseReadWriter) Flush() (glukitio.GlucoseReadBatchWriter, error) {
+	return w, nil
 }
 
 func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
-	statsWriter := NewStatsGlucoseReadWriter()
-	w := NewGlucoseReadWriterSize(statsWriter, 10)
+	state := NewWriterState()
+	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
 	batches := make([]model.DayOfGlucoseReads, 10)
+	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	for i := 0; i < 10; i++ {
 		glucoseReads := make([]model.GlucoseRead, 24)
 		for j := 0; j < 24; j++ {
-			glucoseReads[j] = model.GlucoseRead{model.Timestamp{"", 0}, 75}
+			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
+			glucoseReads[j] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, j}
 		}
 		batches[i] = model.DayOfGlucoseReads{glucoseReads}
 	}
-	w.WriteGlucoseReadBatches(batches)
-	w.Flush()
+	newWriter, _ := w.WriteGlucoseReadBatches(batches)
+	w = newWriter.(*BufferedGlucoseReadBatchWriter)
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedGlucoseReadBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestSimpleWriteOfSingleGlucoseReadBatch failed: got a total of %d but expected %d", statsWriter.total, 240)
+	if state.total != 240 {
+		t.Errorf("TestSimpleWriteOfSingleGlucoseReadBatch failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestSimpleWriteOfSingleGlucoseReadBatch failed: got a batchCount of %d but expected %d", statsWriter.total, 10)
+	if state.batchCount != 10 {
+		t.Errorf("TestSimpleWriteOfSingleGlucoseReadBatch failed: got a batchCount of %d but expected %d", state.total, 10)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestSimpleWriteOfSingleGlucoseReadBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 1)
+	if state.writeCount != 1 {
+		t.Errorf("TestSimpleWriteOfSingleGlucoseReadBatch failed: got a writeCount of %d but expected %d", state.writeCount, 1)
 	}
 }
 
 func TestIndividualGlucoseReadWrite(t *testing.T) {
-	statsWriter := NewStatsGlucoseReadWriter()
-	w := NewGlucoseReadWriterSize(statsWriter, 10)
+	state := NewWriterState()
+	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
 	glucoseReads := make([]model.GlucoseRead, 24)
+	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	for j := 0; j < 24; j++ {
-		glucoseReads[j] = model.GlucoseRead{model.Timestamp{"", 0}, 75}
+		readTime := ct.Add(time.Duration(j) * 1 * time.Hour)
+		glucoseReads[j] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, j}
 	}
-	w.WriteGlucoseReadBatch(glucoseReads)
-	w.Flush()
+	newWriter, _ := w.WriteGlucoseReadBatch(glucoseReads)
+	w = newWriter.(*BufferedGlucoseReadBatchWriter)
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedGlucoseReadBatchWriter)
 
-	if statsWriter.total != 24 {
-		t.Errorf("TestIndividualGlucoseReadWrite failed: got a total of %d but expected %d", statsWriter.total, 24)
+	if state.total != 24 {
+		t.Errorf("TestIndividualGlucoseReadWrite failed: got a total of %d but expected %d", state.total, 24)
 	}
 
-	if statsWriter.batchCount != 1 {
-		t.Errorf("TestIndividualGlucoseReadWrite failed: got a batchCount of %d but expected %d", statsWriter.total, 1)
+	if state.batchCount != 1 {
+		t.Errorf("TestIndividualGlucoseReadWrite failed: got a batchCount of %d but expected %d", state.total, 1)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestIndividualGlucoseReadWrite failed: got a writeCount of %d but expected %d", statsWriter.batchCount, 1)
+	if state.writeCount != 1 {
+		t.Errorf("TestIndividualGlucoseReadWrite failed: got a writeCount of %d but expected %d", state.batchCount, 1)
 	}
 }
 
 func TestSimpleWriteLargerThanOneGlucoseReadBatch(t *testing.T) {
-	statsWriter := NewStatsGlucoseReadWriter()
-	w := NewGlucoseReadWriterSize(statsWriter, 10)
+	state := NewWriterState()
+	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
 	batches := make([]model.DayOfGlucoseReads, 19)
+	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	for i := 0; i < 19; i++ {
 		glucoseReads := make([]model.GlucoseRead, 24)
 		for j := 0; j < 24; j++ {
-			glucoseReads[j] = model.GlucoseRead{model.Timestamp{"", 0}, 75}
+			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
+			glucoseReads[j] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, i*24 + j}
 		}
 		batches[i] = model.DayOfGlucoseReads{glucoseReads}
 	}
-	w.WriteGlucoseReadBatches(batches)
+	newWriter, _ := w.WriteGlucoseReadBatches(batches)
+	w = newWriter.(*BufferedGlucoseReadBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a total of %d but expected %d", statsWriter.total, 240)
+	if state.total != 240 {
+		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test: got a batchCount of %d but expected %d", statsWriter.batchCount, 10)
+	if state.batchCount != 10 {
+		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test: got a batchCount of %d but expected %d", state.batchCount, 10)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a writeCount of %d but expected %d", statsWriter.total, 1)
+	if state.writeCount != 1 {
+		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a writeCount of %d but expected %d", state.total, 1)
 	}
 
 	// Flushing should cause the extra GlucoseRead to be written
-	w.Flush()
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedGlucoseReadBatchWriter)
 
-	if statsWriter.total != 456 {
-		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a total of %d but expected %d", statsWriter.total, 456)
+	if state.total != 456 {
+		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a total of %d but expected %d", state.total, 456)
 	}
 
-	if statsWriter.batchCount != 19 {
-		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test: got a batchCount of %d but expected %d", statsWriter.batchCount, 11)
+	if state.batchCount != 19 {
+		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test: got a batchCount of %d but expected %d", state.batchCount, 11)
 	}
 
-	if statsWriter.writeCount != 2 {
-		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a writeCount of %d but expected %d", statsWriter.total, 2)
+	if state.writeCount != 2 {
+		t.Errorf("TestSimpleWriteLargerThanOneGlucoseReadBatch test failed: got a writeCount of %d but expected %d", state.total, 2)
 	}
 }
 
 func TestWriteOverTwoFullGlucoseReadBatches(t *testing.T) {
-	statsWriter := NewStatsGlucoseReadWriter()
-	w := NewGlucoseReadWriterSize(statsWriter, 2)
+	state := NewWriterState()
+	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 
 	for b := 0; b < 3; b++ {
@@ -153,28 +176,30 @@ func TestWriteOverTwoFullGlucoseReadBatches(t *testing.T) {
 			glucoseReads[i] = model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, b*48 + i}
 		}
 
-		w.WriteGlucoseReadBatch(glucoseReads)
+		newWriter, _ := w.WriteGlucoseReadBatch(glucoseReads)
+		w = newWriter.(*BufferedGlucoseReadBatchWriter)
 	}
 
-	w.Flush()
+	newWriter, _ := w.Flush()
+	w = newWriter.(*BufferedGlucoseReadBatchWriter)
 
 	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
-	if value, ok := statsWriter.batches[firstBatchTime.Unix()]; !ok {
-		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), statsWriter.batches)
+	if value, ok := state.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
-	if value, ok := statsWriter.batches[secondBatchTime.Unix()]; !ok {
-		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), statsWriter.batches)
+	if value, ok := state.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
-	if value, ok := statsWriter.batches[thirdBatchTime.Unix()]; !ok {
-		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), statsWriter.batches)
+	if value, ok := state.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestWriteOverTwoFullGlucoseReadBatches test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}

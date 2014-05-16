@@ -15,6 +15,7 @@ type writerState struct {
 	writeCount int
 	batches    map[int64][]model.GlucoseRead
 }
+
 type statsGlucoseReadWriter struct {
 	state *writerState
 }
