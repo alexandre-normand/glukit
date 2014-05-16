@@ -41,6 +41,9 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *Gluco
 			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, b.wr, b.d)
 		} else if t.Sub(g.tailVal.GetTime()) >= g.d {
 			g, err = g.Flush()
+			if err != nil {
+				return g, err
+			}
 			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, b.wr, b.d)
 		} else {
 			g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), b.tailVal, b.wr, b.d)
@@ -74,7 +77,7 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	r, size := container.ReverseList(b.head)
 	batch := ListToArray(r, size)
-	log.Printf("Flushing batch %v", batch)
+
 	if len(batch) > 0 {
 		n, err := b.wr.WriteGlucoseReadBatch(batch)
 		if n < 1 && err == nil {
