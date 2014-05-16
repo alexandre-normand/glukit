@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"log"
@@ -8,15 +9,10 @@ import (
 )
 
 type GlucoseReadStreamer struct {
-	head    *GlucoseReadNode
+	head    *container.ImmutableList
 	tailVal *model.GlucoseRead
 	wr      glukitio.GlucoseReadBatchWriter
 	d       time.Duration
-}
-
-type GlucoseReadNode struct {
-	next  *GlucoseReadNode
-	value model.GlucoseRead
 }
 
 const (
@@ -42,19 +38,19 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *Gluco
 		t := c.GetTime()
 
 		if g.head == nil {
-			g = newGlucoseStreamerDuration(NewGlucoseReadNode(nil, c), &c, b.wr, b.d)
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, b.wr, b.d)
 		} else if t.Sub(g.tailVal.GetTime()) >= g.d {
 			g, err = g.Flush()
-			g = newGlucoseStreamerDuration(NewGlucoseReadNode(nil, c), &c, b.wr, b.d)
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, b.wr, b.d)
 		} else {
-			g = newGlucoseStreamerDuration(NewGlucoseReadNode(g.head, c), b.tailVal, b.wr, b.d)
+			g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), b.tailVal, b.wr, b.d)
 		}
 	}
 
 	return g, err
 }
 
-func newGlucoseStreamerDuration(head *GlucoseReadNode, tailVal *model.GlucoseRead, wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
+func newGlucoseStreamerDuration(head *container.ImmutableList, tailVal *model.GlucoseRead, wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
 	w := new(GlucoseReadStreamer)
 	w.head = head
 	w.tailVal = tailVal
@@ -74,17 +70,10 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 	return w
 }
 
-func NewGlucoseReadNode(next *GlucoseReadNode, value model.GlucoseRead) *GlucoseReadNode {
-	n := new(GlucoseReadNode)
-	n.next = next
-	n.value = value
-
-	return n
-}
-
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
 func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
-	batch := ReverseList(b.head)
+	r, size := container.ReverseList(b.head)
+	batch := ListToArray(r, size)
 	log.Printf("Flushing batch %v", batch)
 	if len(batch) > 0 {
 		n, err := b.wr.WriteGlucoseReadBatch(batch)
@@ -98,22 +87,12 @@ func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	return newGlucoseStreamerDuration(nil, nil, b.wr, b.d), nil
 }
 
-func ReverseList(head *GlucoseReadNode) []model.GlucoseRead {
-	if head == nil {
-		return []model.GlucoseRead{}
-	}
-
-	var reverseListHead *GlucoseReadNode = &GlucoseReadNode{nil, head.value}
-	size := 0
-	for cursor := head; cursor != nil; size, cursor = size+1, cursor.next {
-		reverseListHead = NewGlucoseReadNode(reverseListHead, cursor.value)
-	}
-
+func ListToArray(head *container.ImmutableList, size int) []model.GlucoseRead {
 	r := make([]model.GlucoseRead, size)
-	cursor := reverseListHead
+	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.value
-		cursor = cursor.next
+		r[i] = cursor.Value.(model.GlucoseRead)
+		cursor = cursor.Next
 	}
 
 	return r
