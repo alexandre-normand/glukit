@@ -163,24 +163,6 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 	}
 }
 
-func TestListReversal(t *testing.T) {
-	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
-	current := NewGlucoseReadNode(nil, model.GlucoseRead{model.Timestamp{"", ct.Unix()}, 0})
-
-	for i := 0; i < 9; i++ {
-		readTime := ct.Add(time.Duration(i+1) * 30 * time.Minute)
-		current = NewGlucoseReadNode(current, model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, i + 1})
-	}
-
-	reversed := ReverseList(current)
-
-	for i := 1; i < 10; i++ {
-		if reversed[i].Value <= reversed[i-1].Value {
-			t.Errorf("TestListReversal test failed: list in incorrect order: %s", reversed)
-		}
-	}
-}
-
 func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	state := NewWriterState()
 	bufferedWriter := bufio.NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
