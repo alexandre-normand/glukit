@@ -51,13 +51,15 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOf
 	w := b
 	for _, batch := range p {
 		if w.size >= w.flushSize {
-			w, err := w.Flush()
+			log.Printf("Reached size %d, flushing...", w.size)
+			fw, err := w.Flush()
 			if err != nil {
-				return w, err
+				return fw, err
 			}
-		} else {
-			w = newGlucoseReadWriterSize(w.wr, container.NewImmutableList(w.head, batch), w.size+1, w.flushSize)
+			w = fw.(*BufferedGlucoseReadBatchWriter)
 		}
+
+		w = newGlucoseReadWriterSize(w.wr, container.NewImmutableList(w.head, batch), w.size+1, w.flushSize)
 	}
 
 	return w, nil
