@@ -30,7 +30,7 @@ func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (g *GlucoseR
 func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *GlucoseReadStreamer, err error) {
 	g = newGlucoseStreamerDuration(b.head, b.tailVal, b.wr, b.d)
 	if err != nil {
-		return nil, err
+		return g, err
 	}
 
 	for _, c := range p {
@@ -102,16 +102,16 @@ func ListToArray(head *container.ImmutableList, size int) []model.GlucoseRead {
 
 // Close flushes the buffer and the inner writer to effectively ensure nothing is left
 // unwritten
-func (b *GlucoseReadStreamer) Close() error {
+func (b *GlucoseReadStreamer) Close() (*GlucoseReadStreamer, error) {
 	g, err := b.Flush()
 	if err != nil {
-		return err
+		return g, err
 	}
 
-	_, err = g.wr.Flush()
+	innerWriter, err := g.wr.Flush()
 	if err != nil {
-		return err
+		return newGlucoseStreamerDuration(g.head, g.tailVal, innerWriter, b.d), err
 	}
 
-	return nil
+	return g, nil
 }
