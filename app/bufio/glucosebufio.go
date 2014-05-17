@@ -68,7 +68,7 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() (w glukitio.GlucoseReadBatchWri
 	if b.size == 0 {
 		return newGlucoseReadWriterSize(b.wr, nil, 0, b.flushSize), nil
 	}
-	r, size := container.ReverseList(b.head)
+	r, size := b.head.ReverseList()
 	log.Printf("Reversed list of %p (%d) is %v", b.head, b.size, r)
 	batch := ListToArray(r, size)
 
@@ -88,8 +88,8 @@ func ListToArray(head *container.ImmutableList, size int) []model.DayOfGlucoseRe
 	r := make([]model.DayOfGlucoseReads, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value.(model.DayOfGlucoseReads)
-		cursor = cursor.Next
+		r[i] = cursor.Value().(model.DayOfGlucoseReads)
+		cursor = cursor.Next()
 	}
 
 	return r
