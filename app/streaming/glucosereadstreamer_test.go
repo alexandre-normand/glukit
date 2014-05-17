@@ -43,14 +43,14 @@ func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (g
 }
 
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
-	log.Printf("WriteGlucoseReadBatch with [%d] batches: %v", len(p), p)
+	log.Printf("WriteGlucoseReadBatches with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
 		w.state.total += len(dayOfData.Reads)
 		w.state.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
 	}
 
-	log.Printf("WriteGlucoseReadBatch with total of %d", w.state.total)
+	log.Printf("WriteGlucoseReadBatches with total of %d", w.state.total)
 	w.state.batchCount += len(p)
 	w.state.writeCount++
 
@@ -183,17 +183,17 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 
 	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	if _, ok := state.batches[firstBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", firstBatchTime, firstBatchTime.Unix(), state.batches)
 	}
 
 	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
 	if _, ok := state.batches[secondBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", secondBatchTime, secondBatchTime.Unix(), state.batches)
 	}
 
 	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
 	if _, ok := state.batches[thirdBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", thirdBatchTime, thirdBatchTime.Unix(), state.batches)
 	}
 }
 
