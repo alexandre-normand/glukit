@@ -4,7 +4,6 @@ import (
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 	"time"
 )
 
@@ -77,7 +76,7 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	r, size := b.head.ReverseList()
 	batch := ListToArray(r, size)
-	log.Printf("Flushing streamed batch: %v", batch)
+
 	if len(batch) > 0 {
 		innerWriter, err := b.wr.WriteGlucoseReadBatch(batch)
 		if err != nil {
