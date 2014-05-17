@@ -16,11 +16,11 @@ func TestListReversal(t *testing.T) {
 		current = NewImmutableList(current, model.GlucoseRead{model.Timestamp{"", readTime.Unix()}, i + 1})
 	}
 
-	r, _ := ReverseList(current)
+	r, _ := current.ReverseList()
 
-	for previous, cursor := r.Next, r.Next.Next; cursor.Next != nil; previous, cursor = previous.Next, cursor.Next {
-		t.Logf("Current is %d and previous is %d", cursor.Value.(model.GlucoseRead).Value, previous.Value.(model.GlucoseRead).Value)
-		if cursor.Value.(model.GlucoseRead).Value <= previous.Value.(model.GlucoseRead).Value {
+	for previous, cursor := r.Next(), r.Next().Next(); cursor.Next() != nil; previous, cursor = previous.Next(), cursor.Next() {
+		t.Logf("Current is %d and previous is %d", cursor.Value().(model.GlucoseRead).Value, previous.Value().(model.GlucoseRead).Value)
+		if cursor.Value().(model.GlucoseRead).Value <= previous.Value().(model.GlucoseRead).Value {
 			t.Errorf("TestListReversal test failed: list in incorrect order: %s", r)
 		}
 	}

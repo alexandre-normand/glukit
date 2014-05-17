@@ -5,26 +5,34 @@ Therefore, any existing list remains immuted. It is, in other words, a prepend-o
 package container
 
 type ImmutableList struct {
-	Next  *ImmutableList
-	Value interface{}
+	next  *ImmutableList
+	value interface{}
 }
 
 func NewImmutableList(next *ImmutableList, value interface{}) *ImmutableList {
 	l := new(ImmutableList)
-	l.Next = next
-	l.Value = value
+	l.next = next
+	l.value = value
 
 	return l
 }
 
-func ReverseList(head *ImmutableList) (r *ImmutableList, size int) {
+func (head *ImmutableList) Next() (next *ImmutableList) {
+	return head.next
+}
+
+func (head *ImmutableList) Value() (value interface{}) {
+	return head.value
+}
+
+func (head *ImmutableList) ReverseList() (r *ImmutableList, size int) {
 	if head == nil {
 		return nil, 0
 	}
 
-	r = &ImmutableList{nil, head.Value}
-	for cursor := head; cursor != nil; size, cursor = size+1, cursor.Next {
-		r = NewImmutableList(r, cursor.Value)
+	r = &ImmutableList{nil, head.Value()}
+	for cursor := head; cursor != nil; size, cursor = size+1, cursor.Next() {
+		r = NewImmutableList(r, cursor.Value())
 	}
 
 	return r, size
