@@ -4,7 +4,6 @@ import (
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 )
 
 type BufferedGlucoseReadBatchWriter struct {
@@ -51,7 +50,6 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOf
 	w := b
 	for _, batch := range p {
 		if w.size >= w.flushSize {
-			log.Printf("Reached size %d, flushing...", w.size)
 			fw, err := w.Flush()
 			if err != nil {
 				return fw, err
