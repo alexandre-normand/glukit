@@ -4,7 +4,6 @@ import (
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
-	"log"
 	"time"
 )
 
@@ -75,15 +74,15 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
 func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
-	r, size := container.ReverseList(b.head)
+	r, size := b.head.ReverseList()
 	batch := ListToArray(r, size)
 
 	if len(batch) > 0 {
-		n, err := b.wr.WriteGlucoseReadBatch(batch)
-		if n < 1 && err == nil {
-			err = glukitio.ErrShortWrite
-		} else if err != nil {
+		innerWriter, err := b.wr.WriteGlucoseReadBatch(batch)
+		if err != nil {
 			return nil, err
+		} else {
+			return newGlucoseStreamerDuration(nil, nil, innerWriter, b.d), nil
 		}
 	}
 
@@ -94,8 +93,8 @@ func ListToArray(head *container.ImmutableList, size int) []model.GlucoseRead {
 	r := make([]model.GlucoseRead, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value.(model.GlucoseRead)
-		cursor = cursor.Next
+		r[i] = cursor.Value().(model.GlucoseRead)
+		cursor = cursor.Next()
 	}
 
 	return r
@@ -109,5 +108,10 @@ func (b *GlucoseReadStreamer) Close() error {
 		return err
 	}
 
-	return b.wr.Flush()
+	_, err = b.wr.Flush()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -2,6 +2,7 @@ package streaming_test
 
 import (
 	"github.com/alexandre-normand/glukit/app/bufio"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
@@ -34,14 +35,14 @@ func NewStatsGlucoseReadWriter(s *writerState) *statsGlucoseReadWriter {
 	return w
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
 	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}}
 
 	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
@@ -53,11 +54,11 @@ func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseR
 	w.state.batchCount += len(p)
 	w.state.writeCount++
 
-	return len(p), nil
+	return w, nil
 }
 
-func (w *statsGlucoseReadWriter) Flush() error {
-	return nil
+func (w *statsGlucoseReadWriter) Flush() (glukitio.GlucoseReadBatchWriter, error) {
+	return w, nil
 }
 
 func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
