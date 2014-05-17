@@ -71,7 +71,6 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() (w glukitio.GlucoseReadBatchWri
 		return newGlucoseReadWriterSize(b.wr, nil, 0, b.flushSize), nil
 	}
 	r, size := b.head.ReverseList()
-	log.Printf("Reversed list of %p (%d) is %v", b.head, b.size, r)
 	batch := ListToArray(r, size)
 
 	if len(batch) > 0 {

@@ -4,6 +4,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
+	"log"
 	"time"
 )
 
@@ -37,15 +38,15 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *Gluco
 		t := c.GetTime()
 
 		if g.head == nil {
-			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, b.wr, b.d)
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
 		} else if t.Sub(g.tailVal.GetTime()) >= g.d {
 			g, err = g.Flush()
 			if err != nil {
 				return g, err
 			}
-			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, b.wr, b.d)
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
 		} else {
-			g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), b.tailVal, b.wr, b.d)
+			g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.tailVal, g.wr, g.d)
 		}
 	}
 
@@ -76,7 +77,7 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	r, size := b.head.ReverseList()
 	batch := ListToArray(r, size)
-
+	log.Printf("Flushing streamed batch: %v", batch)
 	if len(batch) > 0 {
 		innerWriter, err := b.wr.WriteGlucoseReadBatch(batch)
 		if err != nil {
@@ -103,12 +104,12 @@ func ListToArray(head *container.ImmutableList, size int) []model.GlucoseRead {
 // Close flushes the buffer and the inner writer to effectively ensure nothing is left
 // unwritten
 func (b *GlucoseReadStreamer) Close() error {
-	_, err := b.Flush()
+	g, err := b.Flush()
 	if err != nil {
 		return err
 	}
 
-	_, err = b.wr.Flush()
+	_, err = g.wr.Flush()
 	if err != nil {
 		return err
 	}
