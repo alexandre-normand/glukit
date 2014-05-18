@@ -31,4 +31,5 @@ type FileImportLog struct {
 	Id                string
 	Md5Checksum       string
 	LastDataProcessed time.Time
+	Error             error
 }
