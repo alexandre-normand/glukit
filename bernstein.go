@@ -44,8 +44,13 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 		}
 
 		reader := generateBernsteinData(context)
-		lastReadTime := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.GLUKIT_EPOCH_TIME,
+		lastReadTime, err := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.GLUKIT_EPOCH_TIME,
 			store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+
+		if err != nil {
+			util.Propagate(err)
+		}
+
 		store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "bernstein", Md5Checksum: "dummychecksum",
 			LastDataProcessed: lastReadTime})
 
