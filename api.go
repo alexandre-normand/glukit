@@ -118,7 +118,11 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 
 		reads := convertToGlucoseRead(c)
 		context.Debugf("Writing [%d] new glucose reads", len(reads))
-		glucoseReadStreamer, _ = glucoseReadStreamer.WriteGlucoseReads(reads)
+		glucoseReadStreamer, err = glucoseReadStreamer.WriteGlucoseReads(reads)
+		if err != nil {
+			context.Warningf("Error storing user data [%v]: %v", reads, err)
+			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		}
 	}
 
 	if err != io.EOF {
