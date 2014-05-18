@@ -110,12 +110,16 @@ func processFileSearchResults(token *oauth.Token, files []*drive.File, context a
 	// use the Http Range header but that's unlikely to be possible since new event/read data is spreadout in the
 	// file
 	for i := range files {
-		task, err := processFile.Task(token, files[i], userEmail, userProfileKey)
-		if err != nil {
-			util.Propagate(err)
-		}
-		taskqueue.Add(context, task, "store")
+		enqueueFileImport(token, files[i], userEmail, userProfileKey)
 	}
+}
+
+func enqueueFileImport(token *oauth.Token, files *drive.File, userEmail string, userKey *datastore.Key) error {
+	task, err := processFile.Task(token, files[i], userEmail, userProfileKey)
+	if err != nil {
+		util.Propagate(err)
+	}
+	taskqueue.Add(context, task, "store")
 }
 
 // processSingleFile handles the import of a single file. It deals with:
