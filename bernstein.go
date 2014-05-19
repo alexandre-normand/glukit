@@ -52,7 +52,7 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 		}
 
 		store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "bernstein", Md5Checksum: "dummychecksum",
-			LastDataProcessed: lastReadTime})
+			LastDataProcessed: lastReadTime, ImportResult: "Success"})
 
 		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
 			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
