@@ -22,9 +22,9 @@ var ErrShortWrite = errors.New("short write")
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type CalibrationBatchWriter interface {
-	WriteCalibrationBatch(p []model.CalibrationRead) (n int, err error)
-	WriteCalibrationBatches(p []model.DayOfCalibrationReads) (n int, err error)
-	Flush() error
+	WriteCalibrationBatch(p []model.CalibrationRead) (w CalibrationBatchWriter, err error)
+	WriteCalibrationBatches(p []model.DayOfCalibrationReads) (w CalibrationBatchWriter, err error)
+	Flush() (w CalibrationBatchWriter, err error)
 }
 
 // GlucoseReadBatchWriter is the interface that wraps the basic

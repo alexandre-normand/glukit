@@ -1,106 +1,95 @@
 package bufio
 
 import (
-	"errors"
-	"fmt"
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedCalibrationBatchWriter struct {
-	buf []model.DayOfCalibrationReads
-	n   int
-	wr  glukitio.CalibrationBatchWriter
-	err error
+	head      *container.ImmutableList
+	size      int
+	flushSize int
+	wr        glukitio.CalibrationBatchWriter
+}
+
+// NewCalibrationWriterSize returns a new Writer whose Buffer has the specified size.
+func NewCalibrationWriterSize(wr glukitio.CalibrationBatchWriter, flushSize int) *BufferedCalibrationBatchWriter {
+	return newCalibrationWriterSize(wr, nil, 0, flushSize)
+}
+
+func newCalibrationWriterSize(wr glukitio.CalibrationBatchWriter, head *container.ImmutableList, size int, flushSize int) *BufferedCalibrationBatchWriter {
+	// Is it already a Writer?
+	b, ok := wr.(*BufferedCalibrationBatchWriter)
+	if ok && b.flushSize >= flushSize {
+		return b
+	}
+
+	if flushSize <= 0 {
+		flushSize = defaultBufSize
+	}
+	w := new(BufferedCalibrationBatchWriter)
+	w.size = size
+	w.flushSize = flushSize
+	w.wr = wr
+	w.head = head
+
+	return w
 }
 
 // WriteCalibration writes a single model.DayOfCalibrationReads
-func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (nn int, err error) {
-	c := make([]model.CalibrationRead, len(p))
-	if copied := copy(c, p); copied != len(p) {
-		return 0, errors.New(fmt.Sprintf("Failed to create copy of calibration read batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
-	}
-
-	n, err := b.WriteCalibrationBatches([]model.DayOfCalibrationReads{model.DayOfCalibrationReads{c}})
-	if err != nil {
-		return n * len(p), err
-	}
-
-	return len(p), nil
+func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
+	return b.WriteCalibrationBatches([]model.DayOfCalibrationReads{model.DayOfCalibrationReads{p}})
 }
 
 // WriteCalibrationBatches writes the contents of p into the buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (nn int, err error) {
-	for len(p) > b.Available() && b.err == nil {
-		var n int
-		n = copy(b.buf[b.n:], p)
-		b.n += n
-		b.Flush()
+func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
+	w := b
+	for _, batch := range p {
+		if w.size >= w.flushSize {
+			fw, err := w.Flush()
+			if err != nil {
+				return fw, err
+			}
+			w = fw.(*BufferedCalibrationBatchWriter)
+		}
 
-		nn += n
-		p = p[n:]
-	}
-	if b.err != nil {
-		return nn, b.err
-	}
-	n := copy(b.buf[b.n:], p)
-	b.n += n
-	nn += n
-	return nn, nil
-}
-
-// NewCalibrationWriterSize returns a new Writer whose buffer has the specified size.
-func NewCalibrationWriterSize(wr glukitio.CalibrationBatchWriter, size int) *BufferedCalibrationBatchWriter {
-	// Is it already a Writer?
-	b, ok := wr.(*BufferedCalibrationBatchWriter)
-	if ok && len(b.buf) >= size {
-		return b
+		w = newCalibrationWriterSize(w.wr, container.NewImmutableList(w.head, batch), w.size+1, w.flushSize)
 	}
 
-	if size <= 0 {
-		size = defaultBufSize
-	}
-	w := new(BufferedCalibrationBatchWriter)
-	w.buf = make([]model.DayOfCalibrationReads, size)
-	w.wr = wr
-
-	return w
+	return w, nil
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer.
-func (b *BufferedCalibrationBatchWriter) Flush() error {
-	if b.err != nil {
-		return b.err
+func (b *BufferedCalibrationBatchWriter) Flush() (w glukitio.CalibrationBatchWriter, err error) {
+	if b.size == 0 {
+		return newCalibrationWriterSize(b.wr, nil, 0, b.flushSize), nil
 	}
-	if b.n == 0 {
-		return nil
-	}
+	r, size := b.head.ReverseList()
+	batch := ListToArrayOfCalibrationReadBatch(r, size)
 
-	n, err := b.wr.WriteCalibrationBatches(b.buf[0:b.n])
-	if n < b.n && err == nil {
-		err = glukitio.ErrShortWrite
-	}
-	if err != nil {
-		if n > 0 && n < b.n {
-			copy(b.buf[0:b.n-n], b.buf[n:b.n])
+	if len(batch) > 0 {
+		innerWriter, err := b.wr.WriteCalibrationBatches(batch)
+		if err != nil {
+			return nil, err
 		}
-		b.n -= n
-		b.err = err
-		return err
+
+		return newCalibrationWriterSize(innerWriter, nil, 0, b.flushSize), nil
 	}
-	b.n = 0
-	return nil
+
+	return newCalibrationWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-// Available returns how many bytes are unused in the buffer.
-func (b *BufferedCalibrationBatchWriter) Available() int {
-	return len(b.buf) - b.n
-}
+func ListToArrayOfCalibrationReadBatch(head *container.ImmutableList, size int) []model.DayOfCalibrationReads {
+	r := make([]model.DayOfCalibrationReads, size)
+	cursor := head
+	for i := 0; i < size; i++ {
+		r[i] = cursor.Value().(model.DayOfCalibrationReads)
+		cursor = cursor.Next()
+	}
 
-// Buffered returns the number of bytes that have been written into the current buffer.
-func (b *BufferedCalibrationBatchWriter) Buffered() int {
-	return b.n
+	return r
 }

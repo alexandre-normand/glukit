@@ -46,13 +46,8 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 	}
 
 	w := NewDataStoreGlucoseReadBatchWriter(c, key)
-	n, err := w.WriteGlucoseReadBatch(r)
-	if err != nil {
+	if _, err := w.WriteGlucoseReadBatch(r); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 1 {
-		t.Errorf("TestSimpleWriteOfSingleGlucoseReadBatch failed, got batch write count of %d but expected %d", n, 1)
 	}
 }
 
@@ -73,12 +68,7 @@ func TestSimpleWriteOfGlucoseReadBatches(t *testing.T) {
 	}
 
 	w := NewDataStoreGlucoseReadBatchWriter(c, key)
-	n, err := w.WriteGlucoseReadBatches(b)
-	if err != nil {
+	if _, err := w.WriteGlucoseReadBatches(b); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 10 {
-		t.Errorf("TestSimpleWriteOfGlucoseReadBatches failed, got batch write count of %d but expected %d", n, 10)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type writerState struct {
+type glucoseWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
@@ -18,17 +18,17 @@ type writerState struct {
 }
 
 type statsGlucoseReadWriter struct {
-	state *writerState
+	state *glucoseWriterState
 }
 
-func NewWriterState() *writerState {
-	s := new(writerState)
+func NewGlucoseWriterState() *glucoseWriterState {
+	s := new(glucoseWriterState)
 	s.batches = make(map[int64][]model.GlucoseRead)
 
 	return s
 }
 
-func NewStatsGlucoseReadWriter(s *writerState) *statsGlucoseReadWriter {
+func NewStatsGlucoseReadWriter(s *glucoseWriterState) *statsGlucoseReadWriter {
 	w := new(statsGlucoseReadWriter)
 	w.state = s
 
@@ -62,7 +62,7 @@ func (w *statsGlucoseReadWriter) Flush() (glukitio.GlucoseReadBatchWriter, error
 }
 
 func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	w := NewGlucoseStreamerDuration(NewStatsGlucoseReadWriter(state), time.Hour*24)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
@@ -86,7 +86,7 @@ func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
 }
 
 func TestWriteOfHourlyGlucoseReadBatch(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	w := NewGlucoseStreamerDuration(NewStatsGlucoseReadWriter(state), time.Hour*1)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
@@ -127,7 +127,7 @@ func TestWriteOfHourlyGlucoseReadBatch(t *testing.T) {
 }
 
 func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	w := NewGlucoseStreamerDuration(NewStatsGlucoseReadWriter(state), time.Hour*1)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
@@ -166,7 +166,7 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 }
 
 func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	bufferedWriter := bufio.NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
 	w := NewGlucoseStreamerDuration(bufferedWriter, time.Hour*24)
 
@@ -199,7 +199,7 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 
 func BenchmarkStreamerWithBufferedIO(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		state := NewWriterState()
+		state := NewGlucoseWriterState()
 		bufferedWriter := bufio.NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
 		w := NewGlucoseStreamerDuration(bufferedWriter, time.Hour*24)
 

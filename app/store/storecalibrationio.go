@@ -3,6 +3,7 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
@@ -19,20 +20,20 @@ func NewDataStoreCalibrationBatchWriter(context appengine.Context, userProfileKe
 	return w
 }
 
-func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (n int, err error) {
-	if keys, err := StoreCalibrationReads(w.c, w.k, p); err != nil {
-		return 0, err
+func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
+	if _, err := StoreCalibrationReads(w.c, w.k, p); err != nil {
+		return w, err
 	} else {
-		return len(keys), nil
+		return w, nil
 	}
 }
 
-func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (n int, err error) {
+func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
 	dayOfCalibrationReads := make([]model.DayOfCalibrationReads, 1)
 	dayOfCalibrationReads[0] = model.DayOfCalibrationReads{p}
 	return w.WriteCalibrationBatches(dayOfCalibrationReads)
 }
 
-func (w *DataStoreCalibrationBatchWriter) Flush() error {
-	return nil
+func (w *DataStoreCalibrationBatchWriter) Flush() (glukitio.CalibrationBatchWriter, error) {
+	return w, nil
 }
