@@ -162,12 +162,14 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 
 		lastReadTime, err := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, startTime,
 			store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+		errMessage := "Success"
 		if err != nil {
 			enqueueFileImport(context, token, file, userEmail, userProfileKey)
+			errMessage = err.Error()
 		}
 
 		store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum,
-			LastDataProcessed: lastReadTime, Error: err})
+			LastDataProcessed: lastReadTime, ImportResult: errMessage})
 		reader.Close()
 
 		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
@@ -208,7 +210,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	}
 
 	store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum",
-		LastDataProcessed: lastReadTime, Error: err})
+		LastDataProcessed: lastReadTime, ImportResult: "Success"})
 
 	if userProfile, err := store.GetUserProfile(context, userProfileKey); err != nil {
 		context.Warningf("Error while persisting score for %s: %v", DEMO_EMAIL, err)
