@@ -19,7 +19,12 @@ import (
 	"time"
 )
 
-var processFile = delay.Func("processSingleFile", processSingleFile)
+var processFile = delay.Func(PROCESS_FILE_FUNCTION_NAME, func(context appengine.Context, token *oauth.Token, file *drive.File, userEmail string,
+	userProfileKey *datastore.Key) {
+	context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that " +
+		"shows up because the function calls a function that calls this one. This implementation defines the same signature as the " +
+		"real one which we define in init() to override this implementation!")
+})
 var processDemoFile = delay.Func("processDemoFile", processStaticDemoFile)
 var refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, func(context appengine.Context, userEmail string,
 	autoScheduleNextRun bool) {
@@ -30,6 +35,7 @@ var refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, func(context a
 
 const (
 	REFRESH_USER_DATA_FUNCTION_NAME = "refreshUserData"
+	PROCESS_FILE_FUNCTION_NAME      = "processSingleFile"
 )
 
 func disabledUpdateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
@@ -110,12 +116,20 @@ func processFileSearchResults(token *oauth.Token, files []*drive.File, context a
 	// use the Http Range header but that's unlikely to be possible since new event/read data is spreadout in the
 	// file
 	for i := range files {
-		task, err := processFile.Task(token, files[i], userEmail, userProfileKey)
-		if err != nil {
-			util.Propagate(err)
-		}
-		taskqueue.Add(context, task, "store")
+		enqueueFileImport(context, token, files[i], userEmail, userProfileKey, time.Duration(0))
 	}
+}
+
+func enqueueFileImport(context appengine.Context, token *oauth.Token, file *drive.File, userEmail string, userKey *datastore.Key, delay time.Duration) error {
+	task, err := processFile.Task(token, file, userEmail, userKey)
+	if err != nil {
+		return err
+	}
+
+	task.ETA = time.Now().Add(delay)
+	_, err = taskqueue.Add(context, task, "store")
+
+	return err
 }
 
 // processSingleFile handles the import of a single file. It deals with:
@@ -148,19 +162,27 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			util.Propagate(err)
 		}
 
-		lastReadTime := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, startTime,
+		lastReadTime, err := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, startTime,
 			store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+		errMessage := "Success"
+		if err != nil {
+			enqueueFileImport(context, token, file, userEmail, userProfileKey, time.Duration(1)*time.Hour)
+			errMessage = err.Error()
+		}
+
 		store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: file.Id, Md5Checksum: file.Md5Checksum,
-			LastDataProcessed: lastReadTime})
+			LastDataProcessed: lastReadTime, ImportResult: errMessage})
 		reader.Close()
 
-		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
-			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", userEmail, err)
-		} else {
-			// Calculate Glukit Score batch here for the newly imported data
-			err := engine.CalculateGlukitScoreBatch(context, glukitUser)
-			if err != nil {
-				context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", userEmail, err)
+		if err == nil {
+			if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
+				context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", userEmail, err)
+			} else {
+				// Calculate Glukit Score batch here for the newly imported data
+				err := engine.CalculateGlukitScoreBatch(context, glukitUser)
+				if err != nil {
+					context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", userEmail, err)
+				}
 			}
 		}
 	}
@@ -184,10 +206,15 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.GLUKIT_EPOCH_TIME,
+	lastReadTime, err := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.GLUKIT_EPOCH_TIME,
 		store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+
+	if err != nil {
+		util.Propagate(err)
+	}
+
 	store.LogFileImport(context, userProfileKey, model.FileImportLog{Id: "demo", Md5Checksum: "dummychecksum",
-		LastDataProcessed: lastReadTime})
+		LastDataProcessed: lastReadTime, ImportResult: "Success"})
 
 	if userProfile, err := store.GetUserProfile(context, userProfileKey); err != nil {
 		context.Warningf("Error while persisting score for %s: %v", DEMO_EMAIL, err)

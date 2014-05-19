@@ -79,7 +79,9 @@ func init() {
 	muxRouter.HandleFunc("/token", initializeAndHandleRequest).Name(TOKEN_ROUTE)
 	muxRouter.HandleFunc("/authorize", initializeAndHandleRequest).Name(AUTHORIZE_ROUTE)
 
+	// Initialize task functions that would otherwise be prone to initialization loops
 	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
+	processFile = delay.Func(PROCESS_FILE_FUNCTION_NAME, processSingleFile)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
 }
 

@@ -3,6 +3,7 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
@@ -19,20 +20,20 @@ func NewDataStoreGlucoseReadBatchWriter(context appengine.Context, userProfileKe
 	return w
 }
 
-func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error) {
-	if keys, err := StoreDaysOfReads(w.c, w.k, p); err != nil {
-		return 0, err
+func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
+	if _, err := StoreDaysOfReads(w.c, w.k, p); err != nil {
+		return w, err
 	} else {
-		return len(keys), nil
+		return w, nil
 	}
 }
 
-func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error) {
+func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	dayOfGlucoseReads := make([]model.DayOfGlucoseReads, 1)
 	dayOfGlucoseReads[0] = model.DayOfGlucoseReads{p}
 	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }
 
-func (w *DataStoreGlucoseReadBatchWriter) Flush() error {
-	return nil
+func (w *DataStoreGlucoseReadBatchWriter) Flush() (glukitio.GlucoseReadBatchWriter, error) {
+	return w, nil
 }

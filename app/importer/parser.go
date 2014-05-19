@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
@@ -18,28 +19,28 @@ import (
 // ParseContent is the big function that parses the Dexcom xml file. It is given a reader to the file and it parses batches of days of GlucoseReads/Events. It streams the content but
 // keeps some in memory until it reaches a full batch of a type. A batch is an array of DayOf[GlucoseReads,Injection,Carbs,Exercises]. A batch is flushed to the datastore once it reaches
 // the given batchSize or we reach the end of the file.
-func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, carbs []model.DayOfGlucoseReads) ([]*datastore.Key, error), carbsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []model.DayOfCarbs) ([]*datastore.Key, error), injectionBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time) {
+func ParseContent(context appengine.Context, reader io.Reader, batchSize int, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, carbs []model.DayOfGlucoseReads) ([]*datastore.Key, error), carbsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []model.DayOfCarbs) ([]*datastore.Key, error), injectionBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time, err error) {
 	decoder := xml.NewDecoder(reader)
 
 	calibrationDataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, parentKey)
-	//calibrationBatchingWriter := bufio.NewCalibrationWriterSize(calibrationDataStoreWriter, 1)
-	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(calibrationDataStoreWriter, time.Hour*24)
+	calibrationBatchingWriter := bufio.NewCalibrationWriterSize(calibrationDataStoreWriter, IMPORT_BATCH_SIZE)
+	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(calibrationBatchingWriter, time.Hour*24)
 
 	glucoseDataStoreWriter := store.NewDataStoreGlucoseReadBatchWriter(context, parentKey)
-	//glucoseBatchingWriter := bufio.NewGlucoseReadWriterSize(glucoseDataStoreWriter, 1)
-	glucoseStreamer := streaming.NewGlucoseStreamerDuration(glucoseDataStoreWriter, time.Hour*24)
+	glucoseBatchingWriter := bufio.NewGlucoseReadWriterSize(glucoseDataStoreWriter, IMPORT_BATCH_SIZE)
+	glucoseStreamer := streaming.NewGlucoseStreamerDuration(glucoseBatchingWriter, time.Hour*24)
 
 	injectionDataStoreWriter := store.NewDataStoreInjectionBatchWriter(context, parentKey)
-	//injectionBatchingWriter := bufio.NewInjectionWriterSize(injectionDataStoreWriter, 1)
-	injectionStreamer := streaming.NewInjectionStreamerDuration(injectionDataStoreWriter, time.Hour*24)
+	injectionBatchingWriter := bufio.NewInjectionWriterSize(injectionDataStoreWriter, IMPORT_BATCH_SIZE)
+	injectionStreamer := streaming.NewInjectionStreamerDuration(injectionBatchingWriter, time.Hour*24)
 
 	carbDataStoreWriter := store.NewDataStoreCarbBatchWriter(context, parentKey)
-	//carbBatchingWriter := bufio.NewCarbWriterSize(carbDataStoreWriter, 1)
-	carbStreamer := streaming.NewCarbStreamerDuration(carbDataStoreWriter, time.Hour*24)
+	carbBatchingWriter := bufio.NewCarbWriterSize(carbDataStoreWriter, IMPORT_BATCH_SIZE)
+	carbStreamer := streaming.NewCarbStreamerDuration(carbBatchingWriter, time.Hour*24)
 
 	exerciseDataStoreWriter := store.NewDataStoreExerciseBatchWriter(context, parentKey)
-	//exerciseBatchingWriter := bufio.NewExerciseWriterSize(exerciseDataStoreWriter, 1)
-	exerciseStreamer := streaming.NewExerciseStreamerDuration(exerciseDataStoreWriter, time.Hour*24)
+	exerciseBatchingWriter := bufio.NewExerciseWriterSize(exerciseDataStoreWriter, IMPORT_BATCH_SIZE)
+	exerciseStreamer := streaming.NewExerciseStreamerDuration(exerciseBatchingWriter, time.Hour*24)
 
 	var lastRead *model.GlucoseRead
 	for {
@@ -63,7 +64,12 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 
 				if read.Value > 0 {
 					glucoseRead := model.GlucoseRead{model.Timestamp{read.DisplayTime, util.GetTimeInSeconds(read.InternalTime)}, read.Value}
-					glucoseStreamer.WriteGlucoseRead(glucoseRead)
+					glucoseStreamer, err = glucoseStreamer.WriteGlucoseRead(glucoseRead)
+
+					if err != nil {
+						return lastRead.GetTime(), err
+					}
+
 					lastRead = &glucoseRead
 				}
 			case "Event":
@@ -113,5 +119,5 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	exerciseStreamer.Close()
 
 	context.Infof("Done parsing and storing all data")
-	return lastRead.GetTime()
+	return lastRead.GetTime(), nil
 }

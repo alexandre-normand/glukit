@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
@@ -99,8 +100,8 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	}
 
 	dataStoreWriter := store.NewDataStoreGlucoseReadBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, 200)
-	glucoseReadStreamer := streaming.NewGlucoseStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, 200)
+	glucoseReadStreamer := streaming.NewGlucoseStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -117,7 +118,11 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 
 		reads := convertToGlucoseRead(c)
 		context.Debugf("Writing [%d] new glucose reads", len(reads))
-		glucoseReadStreamer.WriteGlucoseReads(reads)
+		glucoseReadStreamer, err = glucoseReadStreamer.WriteGlucoseReads(reads)
+		if err != nil {
+			context.Warningf("Error storing user data [%v]: %v", reads, err)
+			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		}
 	}
 
 	if err != io.EOF {

@@ -1,18 +1,17 @@
 package streaming
 
 import (
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"time"
 )
 
 type GlucoseReadStreamer struct {
-	buf []model.GlucoseRead
-	n   int
-	wr  glukitio.GlucoseReadBatchWriter
-	t   time.Time
-	d   time.Duration
-	err error
+	head    *container.ImmutableList
+	tailVal *model.GlucoseRead
+	wr      glukitio.GlucoseReadBatchWriter
+	d       time.Duration
 }
 
 const (
@@ -20,11 +19,7 @@ const (
 )
 
 // WriteGlucoseRead writes a single GlucoseRead into the buffer.
-func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, err error) {
-	if b.err != nil {
-		return 0, b.err
-	}
-
+func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (g *GlucoseReadStreamer, err error) {
 	return b.WriteGlucoseReads([]model.GlucoseRead{c})
 }
 
@@ -32,52 +27,45 @@ func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (nn int, err
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (nn int, err error) {
-	// Special case, we don't have a recorded value yet so we start our
-	// buffer with the date of the first element
-	if b.n == 0 {
-		b.resetFirstReadOfBatch(p[0])
+func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *GlucoseReadStreamer, err error) {
+	g = newGlucoseStreamerDuration(b.head, b.tailVal, b.wr, b.d)
+	if err != nil {
+		return g, err
 	}
 
-	i := 0
-	for j, c := range p {
+	for _, c := range p {
 		t := c.GetTime()
 
-		if t.Sub(b.t) >= b.d {
-			var n int
-			n = copy(b.buf[b.n:], p[i:j])
-			b.n += n
-			b.Flush()
-
-			nn += n
-
-			// If the flush resulted in an error, abort the write
-			if b.err != nil {
-				return nn, b.err
+		if g.head == nil {
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
+		} else if t.Sub(g.tailVal.GetTime()) >= g.d {
+			g, err = g.Flush()
+			if err != nil {
+				return g, err
 			}
-
-			// Move beginning of next batch
-			i = j
-			b.resetFirstReadOfBatch(p[i])
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
+		} else {
+			g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.tailVal, g.wr, g.d)
 		}
 	}
 
-	n := copy(b.buf[b.n:], p[i:])
-	b.n += n
-	nn += n
-
-	return nn, nil
+	return g, err
 }
 
-func (b *GlucoseReadStreamer) resetFirstReadOfBatch(r model.GlucoseRead) {
-	b.t = r.GetTime().Truncate(b.d)
+func newGlucoseStreamerDuration(head *container.ImmutableList, tailVal *model.GlucoseRead, wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
+	w := new(GlucoseReadStreamer)
+	w.head = head
+	w.tailVal = tailVal
+	w.wr = wr
+	w.d = bufferDuration
+
+	return w
 }
 
 // NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.
 func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
 	w := new(GlucoseReadStreamer)
-	w.buf = make([]model.GlucoseRead, BUFFER_SIZE)
-
+	w.head = nil
 	w.wr = wr
 	w.d = bufferDuration
 
@@ -85,34 +73,45 @@ func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDurati
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
-func (b *GlucoseReadStreamer) Flush() error {
-	if b.err != nil {
-		return b.err
-	}
-	if b.n == 0 {
-		return nil
+func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
+	r, size := b.head.ReverseList()
+	batch := ListToArray(r, size)
+
+	if len(batch) > 0 {
+		innerWriter, err := b.wr.WriteGlucoseReadBatch(batch)
+		if err != nil {
+			return nil, err
+		} else {
+			return newGlucoseStreamerDuration(nil, nil, innerWriter, b.d), nil
+		}
 	}
 
-	n, err := b.wr.WriteGlucoseReadBatch(b.buf[:b.n])
-	if n < 1 && err == nil {
-		err = glukitio.ErrShortWrite
+	return newGlucoseStreamerDuration(nil, nil, b.wr, b.d), nil
+}
+
+func ListToArray(head *container.ImmutableList, size int) []model.GlucoseRead {
+	r := make([]model.GlucoseRead, size)
+	cursor := head
+	for i := 0; i < size; i++ {
+		r[i] = cursor.Value().(model.GlucoseRead)
+		cursor = cursor.Next()
 	}
-	b.n = 0
-	return err
+
+	return r
 }
 
 // Close flushes the buffer and the inner writer to effectively ensure nothing is left
 // unwritten
-func (b *GlucoseReadStreamer) Close() error {
-	err := b.Flush()
+func (b *GlucoseReadStreamer) Close() (*GlucoseReadStreamer, error) {
+	g, err := b.Flush()
 	if err != nil {
-		return err
+		return g, err
 	}
 
-	return b.wr.Flush()
-}
+	innerWriter, err := g.wr.Flush()
+	if err != nil {
+		return newGlucoseStreamerDuration(g.head, g.tailVal, innerWriter, b.d), err
+	}
 
-// Buffered returns the number of bytes that have been written into the current buffer.
-func (b *GlucoseReadStreamer) Buffered() int {
-	return b.n
+	return g, nil
 }

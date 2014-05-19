@@ -40,9 +40,9 @@ type CalibrationBatchWriter interface {
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type GlucoseReadBatchWriter interface {
-	WriteGlucoseReadBatch(p []model.GlucoseRead) (n int, err error)
-	WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (n int, err error)
-	Flush() error
+	WriteGlucoseReadBatch(p []model.GlucoseRead) (w GlucoseReadBatchWriter, err error)
+	WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (w GlucoseReadBatchWriter, err error)
+	Flush() (w GlucoseReadBatchWriter, err error)
 }
 
 // InjectionBatchWriter is the interface that wraps the basic
