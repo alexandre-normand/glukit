@@ -82,7 +82,7 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of reads", len(elementKeys), len(daysOfReads))
 	keys, error := datastore.PutMulti(context, elementKeys, daysOfReads)
 	if error != nil {
-		context.Criticalf("Error writing %d days of reads with keys [%s]: %v", len(elementKeys), elementKeys, error)
+		context.Warningf("Error writing %d days of reads with keys [%s]: %v", len(elementKeys), elementKeys, error)
 		return nil, error
 	}
 
@@ -260,7 +260,7 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 	carbSlice := model.CarbSlice(daysOfCarbs.Carbs)
 	startIndex, endIndex := model.GetBoundariesOfElementsInRange(carbSlice, lowerBound, upperBound)
 	filteredCarbs := daysOfCarbs.Carbs[startIndex : endIndex+1]
-	context.Debugf("Finished filterting with %d carbs", len(filteredCarbs))
+	context.Debugf("Finished filtering with %d carbs", len(filteredCarbs))
 
 	if err != datastore.Done {
 		util.Propagate(err)
