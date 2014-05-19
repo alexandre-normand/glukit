@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type writerState struct {
+type glucoseWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
@@ -17,17 +17,17 @@ type writerState struct {
 }
 
 type statsGlucoseReadWriter struct {
-	state *writerState
+	state *glucoseWriterState
 }
 
-func NewWriterState() *writerState {
-	s := new(writerState)
+func NewGlucoseWriterState() *glucoseWriterState {
+	s := new(glucoseWriterState)
 	s.batches = make(map[int64][]model.GlucoseRead)
 
 	return s
 }
 
-func NewStatsGlucoseReadWriter(s *writerState) *statsGlucoseReadWriter {
+func NewStatsGlucoseReadWriter(s *glucoseWriterState) *statsGlucoseReadWriter {
 	w := new(statsGlucoseReadWriter)
 	w.state = s
 
@@ -36,15 +36,13 @@ func NewStatsGlucoseReadWriter(s *writerState) *statsGlucoseReadWriter {
 
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
-	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}}
 
-	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
+	return w.WriteGlucoseReadBatches([]model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}})
 }
 
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
-		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
 		w.state.total += len(dayOfData.Reads)
 		w.state.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
 	}
@@ -61,7 +59,7 @@ func (w *statsGlucoseReadWriter) Flush() (glukitio.GlucoseReadBatchWriter, error
 }
 
 func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
 	batches := make([]model.DayOfGlucoseReads, 10)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
@@ -92,7 +90,7 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 }
 
 func TestIndividualGlucoseReadWrite(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
 	glucoseReads := make([]model.GlucoseRead, 24)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
@@ -119,7 +117,7 @@ func TestIndividualGlucoseReadWrite(t *testing.T) {
 }
 
 func TestSimpleWriteLargerThanOneGlucoseReadBatch(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
 	batches := make([]model.DayOfGlucoseReads, 19)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
@@ -164,7 +162,7 @@ func TestSimpleWriteLargerThanOneGlucoseReadBatch(t *testing.T) {
 }
 
 func TestWriteOverTwoFullGlucoseReadBatches(t *testing.T) {
-	state := NewWriterState()
+	state := NewGlucoseWriterState()
 	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 

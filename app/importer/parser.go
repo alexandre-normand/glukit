@@ -106,14 +106,25 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 			case "Meter":
 				var c apimodel.Calibration
 				decoder.DecodeElement(&c, &se)
-				calibrationStreamer.WriteCalibration(model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value})
+				calibrationStreamer, err = calibrationStreamer.WriteCalibration(model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value})
+
+				if err != nil {
+					return lastRead.GetTime(), err
+				}
 			}
 		}
 	}
 
 	// Close the streams and flush anything pending
-	glucoseStreamer.Close()
-	calibrationStreamer.Close()
+	glucoseStreamer, err = glucoseStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+	calibrationStreamer, err = calibrationStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+
 	injectionStreamer.Close()
 	carbStreamer.Close()
 	exerciseStreamer.Close()

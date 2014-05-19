@@ -2,6 +2,7 @@ package streaming_test
 
 import (
 	"github.com/alexandre-normand/glukit/app/bufio"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
@@ -9,157 +10,162 @@ import (
 	"time"
 )
 
-type statsCalibrationReadWriter struct {
+type calibrationWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
 	batches    map[int64][]model.CalibrationRead
 }
 
-func NewStatsCalibrationReadWriter() *statsCalibrationReadWriter {
+type statsCalibrationReadWriter struct {
+	state *calibrationWriterState
+}
+
+func NewCalibrationWriterState() *calibrationWriterState {
+	s := new(calibrationWriterState)
+	s.batches = make(map[int64][]model.CalibrationRead)
+
+	return s
+}
+
+func NewStatsCalibrationReadWriter(s *calibrationWriterState) *statsCalibrationReadWriter {
 	w := new(statsCalibrationReadWriter)
-	w.batches = make(map[int64][]model.CalibrationRead)
+	w.state = s
 
 	return w
 }
 
-func (w *statsCalibrationReadWriter) WriteCalibrationBatch(p []model.CalibrationRead) (n int, err error) {
-	log.Printf("WriteCalibrationBatch with [%d] elements: %v", len(p), p)
-	dayOfCalibrations := []model.DayOfCalibrationReads{model.DayOfCalibrationReads{p}}
+func (w *statsCalibrationReadWriter) WriteCalibrationBatch(p []model.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
+	log.Printf("WriteCalibrationReadBatch with [%d] elements: %v", len(p), p)
+	dayOfCalibrationReads := []model.DayOfCalibrationReads{model.DayOfCalibrationReads{p}}
 
-	return w.WriteCalibrationBatches(dayOfCalibrations)
+	return w.WriteCalibrationBatches(dayOfCalibrationReads)
 }
 
-func (w *statsCalibrationReadWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (n int, err error) {
-	log.Printf("WriteCalibrationBatch with [%d] batches: %v", len(p), p)
+func (w *statsCalibrationReadWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
+	log.Printf("WriteCalibrationReadBatches with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
-		w.total += len(dayOfData.Reads)
-		w.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
+		w.state.total += len(dayOfData.Reads)
+		w.state.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
 	}
 
-	log.Printf("WriteCalibrationBatch with total of %d", w.total)
-	w.batchCount += len(p)
-	w.writeCount++
+	log.Printf("WriteCalibrationReadBatches with total of %d", w.state.total)
+	w.state.batchCount += len(p)
+	w.state.writeCount++
 
-	return len(p), nil
+	return w, nil
 }
 
-func (w *statsCalibrationReadWriter) Flush() error {
-	return nil
+func (w *statsCalibrationReadWriter) Flush() (glukitio.CalibrationBatchWriter, error) {
+	return w, nil
 }
 
 func TestWriteOfDayCalibrationBatch(t *testing.T) {
-	statsWriter := NewStatsCalibrationReadWriter()
-	w := NewCalibrationReadStreamerDuration(statsWriter, time.Hour*24)
-	calibrations := make([]model.CalibrationRead, 25)
+	state := NewCalibrationWriterState()
+	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), time.Hour*24)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		calibrations[i] = model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, 75}
-	}
-	w.WriteCalibrations(calibrations)
-
-	if statsWriter.total != 24 {
-		t.Errorf("TestWriteOfDayCalibrationBatch failed: got a total of %d but expected %d", statsWriter.total, 24)
+		w, _ = w.WriteCalibration(model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, i})
 	}
 
-	if statsWriter.batchCount != 1 {
-		t.Errorf("TestWriteOfDayCalibrationBatch failed: got a batchCount of %d but expected %d", statsWriter.batchCount, 1)
+	if state.total != 24 {
+		t.Errorf("TestWriteOfDayCalibrationBatch failed: got a total of %d but expected %d", state.total, 24)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestWriteOfDayCalibrationBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 1)
+	if state.batchCount != 1 {
+		t.Errorf("TestWriteOfDayCalibrationBatch failed: got a batchCount of %d but expected %d", state.batchCount, 1)
+	}
+
+	if state.writeCount != 1 {
+		t.Errorf("TestWriteOfDayCalibrationBatch failed: got a writeCount of %d but expected %d", state.writeCount, 1)
 	}
 }
 
 func TestWriteOfHourlyCalibrationBatch(t *testing.T) {
-	statsWriter := NewStatsCalibrationReadWriter()
-	w := NewCalibrationReadStreamerDuration(statsWriter, time.Hour*1)
-	calibrations := make([]model.CalibrationRead, 13)
+	state := NewCalibrationWriterState()
+	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), time.Hour*1)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		calibrations[i] = model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, 75}
-	}
-	w.WriteCalibrations(calibrations)
-
-	if statsWriter.total != 12 {
-		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a total of %d but expected %d", statsWriter.total, 12)
+		w, _ = w.WriteCalibration(model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, i})
 	}
 
-	if statsWriter.batchCount != 1 {
-		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a batchCount of %d but expected %d", statsWriter.batchCount, 1)
+	if state.total != 12 {
+		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a total of %d but expected %d", state.total, 12)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 1)
+	if state.batchCount != 1 {
+		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a batchCount of %d but expected %d", state.batchCount, 1)
+	}
+
+	if state.writeCount != 1 {
+		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a writeCount of %d but expected %d", state.writeCount, 1)
 	}
 
 	// Flushing should trigger the trailing read to be written
-	w.Flush()
+	w, _ = w.Flush()
 
-	if statsWriter.total != 13 {
-		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a total of %d but expected %d", statsWriter.total, 13)
+	if state.total != 13 {
+		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a total of %d but expected %d", state.total, 13)
 	}
 
-	if statsWriter.batchCount != 2 {
-		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a batchCount of %d but expected %d", statsWriter.batchCount, 2)
+	if state.batchCount != 2 {
+		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a batchCount of %d but expected %d", state.batchCount, 2)
 	}
 
-	if statsWriter.writeCount != 2 {
-		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 2)
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteOfHourlyCalibrationBatch failed: got a writeCount of %d but expected %d", state.writeCount, 2)
 	}
 }
 
 func TestWriteOfMultipleCalibrationBatches(t *testing.T) {
-	statsWriter := NewStatsCalibrationReadWriter()
-	w := NewCalibrationReadStreamerDuration(statsWriter, time.Hour*1)
-	calibrations := make([]model.CalibrationRead, 25)
+	state := NewCalibrationWriterState()
+	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), time.Hour*1)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		calibrations[i] = model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, 75}
-	}
-	w.WriteCalibrations(calibrations)
-
-	if statsWriter.total != 24 {
-		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a total of %d but expected %d", statsWriter.total, 24)
+		w, _ = w.WriteCalibration(model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, i})
 	}
 
-	if statsWriter.batchCount != 2 {
-		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a batchCount of %d but expected %d", statsWriter.batchCount, 2)
+	if state.total != 24 {
+		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a total of %d but expected %d", state.total, 24)
 	}
 
-	if statsWriter.writeCount != 2 {
-		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 2)
+	if state.batchCount != 2 {
+		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a batchCount of %d but expected %d", state.batchCount, 2)
+	}
+
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a writeCount of %d but expected %d", state.writeCount, 2)
 	}
 
 	// Flushing should trigger the trailing read to be written
-	w.Flush()
+	w, _ = w.Flush()
 
-	if statsWriter.total != 25 {
-		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a total of %d but expected %d", statsWriter.total, 13)
+	if state.total != 25 {
+		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a total of %d but expected %d", state.total, 13)
 	}
 
-	if statsWriter.batchCount != 3 {
-		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a batchCount of %d but expected %d", statsWriter.batchCount, 3)
+	if state.batchCount != 3 {
+		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a batchCount of %d but expected %d", state.batchCount, 3)
 	}
 
-	if statsWriter.writeCount != 3 {
-		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 3)
+	if state.writeCount != 3 {
+		t.Errorf("TestWriteOfMultipleCalibrationBatches failed: got a writeCount of %d but expected %d", state.writeCount, 3)
 	}
 }
 
 func TestCalibrationStreamerWithBufferedIO(t *testing.T) {
-	statsWriter := NewStatsCalibrationReadWriter()
-	bufferedWriter := bufio.NewCalibrationWriterSize(statsWriter, 2)
+	state := NewCalibrationWriterState()
+	bufferedWriter := bufio.NewCalibrationWriterSize(NewStatsCalibrationReadWriter(state), 2)
 	w := NewCalibrationReadStreamerDuration(bufferedWriter, time.Hour*24)
 
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
@@ -167,29 +173,30 @@ func TestCalibrationStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w.WriteCalibration(model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, b*48 + i})
+			w, _ = w.WriteCalibration(model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, b*48 + i})
+
 		}
 	}
 
-	w.Close()
+	w, _ = w.Close()
 
 	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
-	if value, ok := statsWriter.batches[firstBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), statsWriter.batches)
+	if value, ok := state.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
-	if value, ok := statsWriter.batches[secondBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), statsWriter.batches)
+	if value, ok := state.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
-	if value, ok := statsWriter.batches[thirdBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), statsWriter.batches)
+	if value, ok := state.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}

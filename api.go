@@ -46,8 +46,8 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	}
 
 	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
-	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
+	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -64,7 +64,12 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 
 		reads := convertToCalibrationRead(c)
 		context.Debugf("Writing new calibration reads [%v]", reads)
-		calibrationStreamer.WriteCalibrations(reads)
+		calibrationStreamer, err = calibrationStreamer.WriteCalibrations(reads)
+		if err != nil {
+			context.Warningf("Error storing calibration data [%v]: %v", reads, err)
+			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+			return
+		}
 	}
 
 	if err != io.EOF {
@@ -73,7 +78,13 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	calibrationStreamer.Flush()
+	calibrationStreamer, err = calibrationStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing glucose read streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote calibrations to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
@@ -122,6 +133,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		if err != nil {
 			context.Warningf("Error storing user data [%v]: %v", reads, err)
 			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+			return
 		}
 	}
 
@@ -131,7 +143,13 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	glucoseReadStreamer.Close()
+	glucoseReadStreamer, err = glucoseReadStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing glucose read streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote glucose reads to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
