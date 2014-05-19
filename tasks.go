@@ -116,15 +116,17 @@ func processFileSearchResults(token *oauth.Token, files []*drive.File, context a
 	// use the Http Range header but that's unlikely to be possible since new event/read data is spreadout in the
 	// file
 	for i := range files {
-		enqueueFileImport(context, token, files[i], userEmail, userProfileKey)
+		enqueueFileImport(context, token, files[i], userEmail, userProfileKey, time.Duration(0))
 	}
 }
 
-func enqueueFileImport(context appengine.Context, token *oauth.Token, file *drive.File, userEmail string, userKey *datastore.Key) error {
+func enqueueFileImport(context appengine.Context, token *oauth.Token, file *drive.File, userEmail string, userKey *datastore.Key, delay time.Duration) error {
 	task, err := processFile.Task(token, file, userEmail, userKey)
 	if err != nil {
 		return err
 	}
+
+	task.ETA = time.Now().Add(delay)
 	_, err = taskqueue.Add(context, task, "store")
 
 	return err
@@ -164,7 +166,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 		errMessage := "Success"
 		if err != nil {
-			enqueueFileImport(context, token, file, userEmail, userProfileKey)
+			enqueueFileImport(context, token, file, userEmail, userProfileKey, time.Duration(1)*time.Hour)
 			errMessage = err.Error()
 		}
 
@@ -172,13 +174,15 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			LastDataProcessed: lastReadTime, ImportResult: errMessage})
 		reader.Close()
 
-		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
-			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", userEmail, err)
-		} else {
-			// Calculate Glukit Score batch here for the newly imported data
-			err := engine.CalculateGlukitScoreBatch(context, glukitUser)
-			if err != nil {
-				context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", userEmail, err)
+		if err == nil {
+			if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
+				context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", userEmail, err)
+			} else {
+				// Calculate Glukit Score batch here for the newly imported data
+				err := engine.CalculateGlukitScoreBatch(context, glukitUser)
+				if err != nil {
+					context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", userEmail, err)
+				}
 			}
 		}
 	}

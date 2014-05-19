@@ -65,7 +65,11 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				if read.Value > 0 {
 					glucoseRead := model.GlucoseRead{model.Timestamp{read.DisplayTime, util.GetTimeInSeconds(read.InternalTime)}, read.Value}
 					glucoseStreamer, err = glucoseStreamer.WriteGlucoseRead(glucoseRead)
-					// TODO: Handle errors by retrying or scheduling retry in the future
+
+					if err != nil {
+						return lastRead.GetTime(), err
+					}
+
 					lastRead = &glucoseRead
 				}
 			case "Event":
