@@ -24,13 +24,8 @@ func TestSimpleWriteOfSingleCalibrationBatch(t *testing.T) {
 	key := GetUserKey(c, "test@glukit.com")
 
 	w := NewDataStoreCalibrationBatchWriter(c, key)
-	n, err := w.WriteCalibrationBatch(r)
-	if err != nil {
+	if _, err = w.WriteCalibrationBatch(r); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 1 {
-		t.Errorf("TestSimpleWriteOfSingleCalibrationBatch failed, got batch write count of %d but expected %d", n, 1)
 	}
 }
 
@@ -55,12 +50,7 @@ func TestSimpleWriteOfCalibrationBatches(t *testing.T) {
 	key := GetUserKey(c, "test@glukit.com")
 
 	w := NewDataStoreCalibrationBatchWriter(c, key)
-	n, err := w.WriteCalibrationBatches(b)
-	if err != nil {
+	if _, err = w.WriteCalibrationBatches(b); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 10 {
-		t.Errorf("TestSimpleWriteOfCalibrationBatches failed, got batch write count of %d but expected %d", n, 10)
 	}
 }

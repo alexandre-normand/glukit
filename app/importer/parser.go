@@ -84,39 +84,73 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
 						carb := model.Carb{model.Timestamp{event.EventTime, internalEventTime}, float32(carbQuantityInGrams), model.UNDEFINED_READ}
 
-						carbStreamer.WriteCarb(carb)
+						carbStreamer, err = carbStreamer.WriteCarb(carb)
+						if err != nil {
+							return lastRead.GetTime(), err
+						}
+
 					} else if event.EventType == "Insulin" {
 						var insulinUnits float32
 						_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
 						if err != nil {
-							util.Propagate(err)
+							context.Warningf("Failed to parse event as injection [%s]: %v", event.Description, err)
+						} else {
+							injection := model.Injection{model.Timestamp{event.EventTime, internalEventTime}, float32(insulinUnits), model.UNDEFINED_READ}
+							injectionStreamer, err = injectionStreamer.WriteInjection(injection)
+
+							if err != nil {
+								return lastRead.GetTime(), err
+							}
 						}
-						injection := model.Injection{model.Timestamp{event.EventTime, internalEventTime}, float32(insulinUnits), model.UNDEFINED_READ}
-						injectionStreamer.WriteInjection(injection)
 					} else if strings.HasPrefix(event.EventType, "Exercise") {
 						var duration int
 						var intensity string
 						fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
 						exercise := model.Exercise{model.Timestamp{event.EventTime, internalEventTime}, duration, intensity}
 
-						exerciseStreamer.WriteExercise(exercise)
+						exerciseStreamer, err = exerciseStreamer.WriteExercise(exercise)
+						if err != nil {
+							return lastRead.GetTime(), err
+						}
 					}
 				}
 
 			case "Meter":
 				var c apimodel.Calibration
 				decoder.DecodeElement(&c, &se)
-				calibrationStreamer.WriteCalibration(model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value})
+				calibrationStreamer, err = calibrationStreamer.WriteCalibration(model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value})
+
+				if err != nil {
+					return lastRead.GetTime(), err
+				}
 			}
 		}
 	}
 
 	// Close the streams and flush anything pending
-	glucoseStreamer.Close()
-	calibrationStreamer.Close()
-	injectionStreamer.Close()
-	carbStreamer.Close()
-	exerciseStreamer.Close()
+	glucoseStreamer, err = glucoseStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+	calibrationStreamer, err = calibrationStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+
+	injectionStreamer, err = injectionStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+
+	carbStreamer, err = carbStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+
+	exerciseStreamer, err = exerciseStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
 
 	context.Infof("Done parsing and storing all data")
 	return lastRead.GetTime(), nil

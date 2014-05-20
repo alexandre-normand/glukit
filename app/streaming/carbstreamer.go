@@ -1,26 +1,36 @@
 package streaming
 
 import (
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"time"
 )
 
 type CarbStreamer struct {
-	buf []model.Carb
-	n   int
-	wr  glukitio.CarbBatchWriter
-	t   time.Time
-	d   time.Duration
-	err error
+	head    *container.ImmutableList
+	tailVal *model.Carb
+	wr      glukitio.CarbBatchWriter
+	d       time.Duration
+}
+
+// NewCarbStreamerDuration returns a new CarbStreamer whose buffer has the specified size.
+func NewCarbStreamerDuration(wr glukitio.CarbBatchWriter, bufferDuration time.Duration) *CarbStreamer {
+	return newCarbStreamerDuration(nil, nil, wr, bufferDuration)
+}
+
+func newCarbStreamerDuration(head *container.ImmutableList, tailVal *model.Carb, wr glukitio.CarbBatchWriter, bufferDuration time.Duration) *CarbStreamer {
+	w := new(CarbStreamer)
+	w.head = head
+	w.tailVal = tailVal
+	w.wr = wr
+	w.d = bufferDuration
+
+	return w
 }
 
 // WriteCarb writes a single Carb into the buffer.
-func (b *CarbStreamer) WriteCarb(c model.Carb) (nn int, err error) {
-	if b.err != nil {
-		return 0, b.err
-	}
-
+func (b *CarbStreamer) WriteCarb(c model.Carb) (s *CarbStreamer, err error) {
 	return b.WriteCarbs([]model.Carb{c})
 }
 
@@ -28,93 +38,71 @@ func (b *CarbStreamer) WriteCarb(c model.Carb) (nn int, err error) {
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *CarbStreamer) WriteCarbs(p []model.Carb) (nn int, err error) {
-	// Special case, we don't have a recorded value yet so we start our
-	// buffer with the date of the first element
-	if b.n == 0 {
-		b.resetFirstReadOfBatch(p[0])
+func (b *CarbStreamer) WriteCarbs(p []model.Carb) (s *CarbStreamer, err error) {
+	s = newCarbStreamerDuration(b.head, b.tailVal, b.wr, b.d)
+	if err != nil {
+		return s, err
 	}
 
-	i := 0
-	for j, c := range p {
+	for _, c := range p {
 		t := c.GetTime()
-		if t.Sub(b.t) >= b.d {
-			var n int
-			n = copy(b.buf[b.n:], p[i:j])
-			b.n += n
-			b.Flush()
 
-			nn += n
-
-			// If the flush resulted in an error, abort the write
-			if b.err != nil {
-				return nn, b.err
+		if s.head == nil {
+			s = newCarbStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
+		} else if t.Sub(s.tailVal.GetTime()) >= s.d {
+			s, err = s.Flush()
+			if err != nil {
+				return s, err
 			}
-
-			// Move beginning of next batch
-			i = j
-			b.resetFirstReadOfBatch(p[i])
+			s = newCarbStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
+		} else {
+			s = newCarbStreamerDuration(container.NewImmutableList(s.head, c), s.tailVal, s.wr, s.d)
 		}
 	}
 
-	n := copy(b.buf[b.n:], p[i:])
-	b.n += n
-	nn += n
-
-	return nn, nil
-}
-
-func (b *CarbStreamer) resetFirstReadOfBatch(r model.Carb) {
-	b.t = r.GetTime().Truncate(b.d)
-}
-
-// NewCarbStreamerDuration returns a new CarbStreamer whose buffer has the specified size.
-func NewCarbStreamerDuration(wr glukitio.CarbBatchWriter, bufferLength time.Duration) *CarbStreamer {
-	w := new(CarbStreamer)
-	w.buf = make([]model.Carb, BUFFER_SIZE)
-	w.wr = wr
-	w.d = bufferLength
-
-	return w
+	return s, err
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
-func (b *CarbStreamer) Flush() error {
-	if b.err != nil {
-		return b.err
-	}
-	if b.n == 0 {
-		return nil
+func (b *CarbStreamer) Flush() (s *CarbStreamer, err error) {
+	r, size := b.head.ReverseList()
+	batch := ListToArrayOfCarbReads(r, size)
+
+	if len(batch) > 0 {
+		innerWriter, err := b.wr.WriteCarbBatch(batch)
+		if err != nil {
+			return nil, err
+		} else {
+			return newCarbStreamerDuration(nil, nil, innerWriter, b.d), nil
+		}
 	}
 
-	n, err := b.wr.WriteCarbBatch(b.buf[0:b.n])
-	if n < 1 && err == nil {
-		err = glukitio.ErrShortWrite
+	return newCarbStreamerDuration(nil, nil, b.wr, b.d), nil
+}
+
+func ListToArrayOfCarbReads(head *container.ImmutableList, size int) []model.Carb {
+	r := make([]model.Carb, size)
+	cursor := head
+	for i := 0; i < size; i++ {
+		r[i] = cursor.Value().(model.Carb)
+		cursor = cursor.Next()
 	}
-	if err != nil {
-		if n > 0 && n < b.n {
-			copy(b.buf[0:b.n-n], b.buf[n:b.n])
-		}
-		b.n -= n
-		b.err = err
-		return err
-	}
-	b.n = 0
-	return nil
+
+	return r
 }
 
 // Close flushes the buffer and the inner writer to effectively ensure nothing is left
 // unwritten
-func (b *CarbStreamer) Close() error {
-	err := b.Flush()
+func (b *CarbStreamer) Close() (s *CarbStreamer, err error) {
+	g, err := b.Flush()
 	if err != nil {
-		return err
+		return g, err
 	}
 
-	return b.wr.Flush()
-}
+	innerWriter, err := g.wr.Flush()
+	if err != nil {
+		return newCarbStreamerDuration(g.head, g.tailVal, innerWriter, b.d), err
+	}
 
-// Buffered returns the number of bytes that have been written into the current buffer.
-func (b *CarbStreamer) Buffered() int {
-	return b.n
+	return g, nil
 }

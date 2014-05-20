@@ -2,169 +2,196 @@ package bufio_test
 
 import (
 	. "github.com/alexandre-normand/glukit/app/bufio"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"log"
 	"testing"
 )
 
-type statsCarbWriter struct {
+type carbWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
+	batches    map[int64][]model.Carb
 }
 
-func (w *statsCarbWriter) WriteCarbBatch(p []model.Carb) (n int, err error) {
+type statsCarbWriter struct {
+	state *carbWriterState
+}
+
+func NewCarbWriterState() *carbWriterState {
+	s := new(carbWriterState)
+	s.batches = make(map[int64][]model.Carb)
+
+	return s
+}
+
+func NewStatsCarbWriter(s *carbWriterState) *statsCarbWriter {
+	w := new(statsCarbWriter)
+	w.state = s
+
+	return w
+}
+
+func (w *statsCarbWriter) WriteCarbBatch(p []model.Carb) (glukitio.CarbBatchWriter, error) {
 	log.Printf("WriteCarbBatch with [%d] elements: %v", len(p), p)
-	dayOfCarbs := make([]model.DayOfCarbs, 1)
-	dayOfCarbs[0] = model.DayOfCarbs{p}
 
-	return w.WriteCarbBatches(dayOfCarbs)
+	return w.WriteCarbBatches([]model.DayOfCarbs{model.DayOfCarbs{p}})
 }
 
-func (w *statsCarbWriter) WriteCarbBatches(p []model.DayOfCarbs) (n int, err error) {
+func (w *statsCarbWriter) WriteCarbBatches(p []model.DayOfCarbs) (glukitio.CarbBatchWriter, error) {
 	log.Printf("WriteCarbBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
-		w.total += len(dayOfData.Carbs)
+		w.state.total += len(dayOfData.Carbs)
+		w.state.batches[dayOfData.Carbs[0].EpochTime] = dayOfData.Carbs
 	}
-	log.Printf("WriteCarbBatch with total of %d", w.total)
-	w.batchCount += len(p)
-	w.writeCount++
+	log.Printf("WriteCarbBatch with total of %d", w.state.total)
+	w.state.batchCount += len(p)
+	w.state.writeCount++
 
-	return len(p), nil
+	return w, nil
 }
 
-func (w *statsCarbWriter) Flush() error {
-	return nil
+func (w *statsCarbWriter) Flush() (glukitio.CarbBatchWriter, error) {
+	return w, nil
 }
 
 func TestSimpleWriteOfSingleCarbBatch(t *testing.T) {
-	statsWriter := new(statsCarbWriter)
-	w := NewCarbWriterSize(statsWriter, 10)
+	state := NewCarbWriterState()
+	w := NewCarbWriterSize(NewStatsCarbWriter(state), 10)
 	batches := make([]model.DayOfCarbs, 10)
 	for i := 0; i < 10; i++ {
-		Carbs := make([]model.Carb, 24)
+		carbs := make([]model.Carb, 24)
 		for j := 0; j < 24; j++ {
-			Carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
 		}
-		batches[i] = model.DayOfCarbs{Carbs}
+		batches[i] = model.DayOfCarbs{carbs}
 	}
-	w.WriteCarbBatches(batches)
-	w.Flush()
+	newWriter, _ := w.WriteCarbBatches(batches)
+	w = newWriter.(*BufferedCarbBatchWriter)
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedCarbBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestSimpleWriteOfSingleCarbBatch failed: got a total of %d but expected %d", statsWriter.total, 240)
-	}
-
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestSimpleWriteOfSingleCarbBatch failed: got a batchCount of %d but expected %d", statsWriter.total, 10)
+	if state.total != 240 {
+		t.Errorf("TestSimpleWriteOfSingleCarbBatch failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestSimpleWriteOfSingleCarbBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 1)
+	if state.batchCount != 10 {
+		t.Errorf("TestSimpleWriteOfSingleCarbBatch failed: got a batchCount of %d but expected %d", state.total, 10)
+	}
+
+	if state.writeCount != 1 {
+		t.Errorf("TestSimpleWriteOfSingleCarbBatch failed: got a writeCount of %d but expected %d", state.writeCount, 1)
 	}
 }
 
 func TestIndividualCarbWrite(t *testing.T) {
-	statsWriter := new(statsCarbWriter)
-	w := NewCarbWriterSize(statsWriter, 10)
-	Carbs := make([]model.Carb, 24)
+	state := NewCarbWriterState()
+	w := NewCarbWriterSize(NewStatsCarbWriter(state), 10)
+	carbs := make([]model.Carb, 24)
 	for j := 0; j < 24; j++ {
-		Carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+		carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
 	}
-	w.WriteCarbBatch(Carbs)
-	w.Flush()
+	newWriter, _ := w.WriteCarbBatch(carbs)
+	w = newWriter.(*BufferedCarbBatchWriter)
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedCarbBatchWriter)
 
-	if statsWriter.total != 24 {
-		t.Errorf("TestIndividualCarbWrite failed: got a total of %d but expected %d", statsWriter.total, 24)
-	}
-
-	if statsWriter.batchCount != 1 {
-		t.Errorf("TestIndividualCarbWrite failed: got a batchCount of %d but expected %d", statsWriter.total, 1)
+	if state.total != 24 {
+		t.Errorf("TestIndividualCarbWrite failed: got a total of %d but expected %d", state.total, 24)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestIndividualCarbWrite failed: got a writeCount of %d but expected %d", statsWriter.batchCount, 1)
+	if state.batchCount != 1 {
+		t.Errorf("TestIndividualCarbWrite failed: got a batchCount of %d but expected %d", state.total, 1)
+	}
+
+	if state.writeCount != 1 {
+		t.Errorf("TestIndividualCarbWrite failed: got a writeCount of %d but expected %d", state.batchCount, 1)
 	}
 }
 
 func TestSimpleWriteLargerThanOneCarbBatch(t *testing.T) {
-	statsWriter := new(statsCarbWriter)
-	w := NewCarbWriterSize(statsWriter, 10)
+	state := NewCarbWriterState()
+	w := NewCarbWriterSize(NewStatsCarbWriter(state), 10)
 	batches := make([]model.DayOfCarbs, 11)
 	for i := 0; i < 11; i++ {
-		Carbs := make([]model.Carb, 24)
+		carbs := make([]model.Carb, 24)
 		for j := 0; j < 24; j++ {
-			Carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
 		}
-		batches[i] = model.DayOfCarbs{Carbs}
+		batches[i] = model.DayOfCarbs{carbs}
 	}
-	w.WriteCarbBatches(batches)
+	newWriter, _ := w.WriteCarbBatches(batches)
+	w = newWriter.(*BufferedCarbBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a total of %d but expected %d", statsWriter.total, 240)
-	}
-
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test: got a batchCount of %d but expected %d", statsWriter.batchCount, 10)
+	if state.total != 240 {
+		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a writeCount of %d but expected %d", statsWriter.total, 1)
+	if state.batchCount != 10 {
+		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test: got a batchCount of %d but expected %d", state.batchCount, 10)
+	}
+
+	if state.writeCount != 1 {
+		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a writeCount of %d but expected %d", state.total, 1)
 	}
 
 	// Flushing should cause the extra Carb to be written
-	w.Flush()
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedCarbBatchWriter)
 
-	if statsWriter.total != 264 {
-		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a total of %d but expected %d", statsWriter.total, 264)
+	if state.total != 264 {
+		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a total of %d but expected %d", state.total, 264)
 	}
 
-	if statsWriter.batchCount != 11 {
-		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test: got a batchCount of %d but expected %d", statsWriter.batchCount, 11)
+	if state.batchCount != 11 {
+		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test: got a batchCount of %d but expected %d", state.batchCount, 11)
 	}
 
-	if statsWriter.writeCount != 2 {
-		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a writeCount of %d but expected %d", statsWriter.total, 2)
+	if state.writeCount != 2 {
+		t.Errorf("TestSimpleWriteLargerThanOneCarbBatch test failed: got a writeCount of %d but expected %d", state.total, 2)
 	}
 }
 
 func TestWriteTwoFullCarbBatches(t *testing.T) {
-	statsWriter := new(statsCarbWriter)
-	w := NewCarbWriterSize(statsWriter, 10)
+	state := NewCarbWriterState()
+	w := NewCarbWriterSize(NewStatsCarbWriter(state), 10)
 	batches := make([]model.DayOfCarbs, 20)
 	for i := 0; i < 20; i++ {
-		Carbs := make([]model.Carb, 24)
+		carbs := make([]model.Carb, 24)
 		for j := 0; j < 24; j++ {
-			Carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			carbs[j] = model.Carb{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
 		}
-		batches[i] = model.DayOfCarbs{Carbs}
+		batches[i] = model.DayOfCarbs{carbs}
 	}
-	w.WriteCarbBatches(batches)
+	newWriter, _ := w.WriteCarbBatches(batches)
+	w = newWriter.(*BufferedCarbBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a total of %d but expected %d", statsWriter.total, 240)
-	}
-
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestWriteTwoFullCarbBatches test: got a batchCount of %d but expected %d", statsWriter.batchCount, 10)
+	if state.total != 240 {
+		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a writeCount of %d but expected %d", statsWriter.total, 1)
+	if state.batchCount != 10 {
+		t.Errorf("TestWriteTwoFullCarbBatches test: got a batchCount of %d but expected %d", state.batchCount, 10)
+	}
+
+	if state.writeCount != 1 {
+		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a writeCount of %d but expected %d", state.total, 1)
 	}
 
 	// Flushing should cause the extra batch to be written
-	w.Flush()
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedCarbBatchWriter)
 
-	if statsWriter.total != 480 {
-		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a total of %d but expected %d", statsWriter.total, 240)
+	if state.total != 480 {
+		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.batchCount != 20 {
-		t.Errorf("TestWriteTwoFullCarbBatches test: got a batchCount of %d but expected %d", statsWriter.batchCount, 20)
+	if state.batchCount != 20 {
+		t.Errorf("TestWriteTwoFullCarbBatches test: got a batchCount of %d but expected %d", state.batchCount, 20)
 	}
 
-	if statsWriter.writeCount != 2 {
-		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a writeCount of %d but expected %d", statsWriter.total, 2)
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteTwoFullCarbBatches test failed: got a writeCount of %d but expected %d", state.total, 2)
 	}
 }

@@ -25,13 +25,8 @@ func TestSimpleWriteOfSingleCarbBatch(t *testing.T) {
 	key := GetUserKey(c, "test@glukit.com")
 
 	w := NewDataStoreCarbBatchWriter(c, key)
-	n, err := w.WriteCarbBatch(carbs)
-	if err != nil {
+	if _, err = w.WriteCarbBatch(carbs); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 1 {
-		t.Errorf("TestSimpleWriteOfSingleCarbBatch failed, got batch write count of %d but expected %d", n, 1)
 	}
 }
 
@@ -56,12 +51,7 @@ func TestSimpleWriteOfCarbBatches(t *testing.T) {
 	key := GetUserKey(c, "test@glukit.com")
 
 	w := NewDataStoreCarbBatchWriter(c, key)
-	n, err := w.WriteCarbBatches(b)
-	if err != nil {
+	if _, err = w.WriteCarbBatches(b); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 10 {
-		t.Errorf("TestSimpleWriteOfCarbBatches failed, got batch write count of %d but expected %d", n, 10)
 	}
 }

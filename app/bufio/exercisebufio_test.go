@@ -2,169 +2,196 @@ package bufio_test
 
 import (
 	. "github.com/alexandre-normand/glukit/app/bufio"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"log"
 	"testing"
 )
 
-type statsExerciseWriter struct {
+type exerciseWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
+	batches    map[int64][]model.Exercise
 }
 
-func (w *statsExerciseWriter) WriteExerciseBatch(p []model.Exercise) (n int, err error) {
+type statsExerciseWriter struct {
+	state *exerciseWriterState
+}
+
+func NewExerciseWriterState() *exerciseWriterState {
+	s := new(exerciseWriterState)
+	s.batches = make(map[int64][]model.Exercise)
+
+	return s
+}
+
+func NewStatsExerciseWriter(s *exerciseWriterState) *statsExerciseWriter {
+	w := new(statsExerciseWriter)
+	w.state = s
+
+	return w
+}
+
+func (w *statsExerciseWriter) WriteExerciseBatch(p []model.Exercise) (glukitio.ExerciseBatchWriter, error) {
 	log.Printf("WriteExerciseBatch with [%d] elements: %v", len(p), p)
-	dayOfExercises := make([]model.DayOfExercises, 1)
-	dayOfExercises[0] = model.DayOfExercises{p}
 
-	return w.WriteExerciseBatches(dayOfExercises)
+	return w.WriteExerciseBatches([]model.DayOfExercises{model.DayOfExercises{p}})
 }
 
-func (w *statsExerciseWriter) WriteExerciseBatches(p []model.DayOfExercises) (n int, err error) {
+func (w *statsExerciseWriter) WriteExerciseBatches(p []model.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
 	log.Printf("WriteExerciseBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
-		w.total += len(dayOfData.Exercises)
+		w.state.total += len(dayOfData.Exercises)
+		w.state.batches[dayOfData.Exercises[0].EpochTime] = dayOfData.Exercises
 	}
-	log.Printf("WriteExerciseBatch with total of %d", w.total)
-	w.batchCount += len(p)
-	w.writeCount++
+	log.Printf("WriteExerciseBatch with total of %d", w.state.total)
+	w.state.batchCount += len(p)
+	w.state.writeCount++
 
-	return len(p), nil
+	return w, nil
 }
 
-func (w *statsExerciseWriter) Flush() error {
-	return nil
+func (w *statsExerciseWriter) Flush() (glukitio.ExerciseBatchWriter, error) {
+	return w, nil
 }
 
 func TestSimpleWriteOfSingleExerciseBatch(t *testing.T) {
-	statsWriter := new(statsExerciseWriter)
-	w := NewExerciseWriterSize(statsWriter, 10)
+	state := NewExerciseWriterState()
+	w := NewExerciseWriterSize(NewStatsExerciseWriter(state), 10)
 	batches := make([]model.DayOfExercises, 10)
 	for i := 0; i < 10; i++ {
 		exercises := make([]model.Exercise, 24)
 		for j := 0; j < 24; j++ {
-			exercises[j] = model.Exercise{model.Timestamp{"", 0}, 10, "Light"}
+			exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
 		}
 		batches[i] = model.DayOfExercises{exercises}
 	}
-	w.WriteExerciseBatches(batches)
-	w.Flush()
+	newWriter, _ := w.WriteExerciseBatches(batches)
+	w = newWriter.(*BufferedExerciseBatchWriter)
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedExerciseBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestSimpleWriteOfSingleExerciseBatch failed: got a total of %d but expected %d", statsWriter.total, 240)
+	if state.total != 240 {
+		t.Errorf("TestSimpleWriteOfSingleExerciseBatch failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestSimpleWriteOfSingleExerciseBatch failed: got a batchCount of %d but expected %d", statsWriter.total, 10)
+	if state.batchCount != 10 {
+		t.Errorf("TestSimpleWriteOfSingleExerciseBatch failed: got a batchCount of %d but expected %d", state.total, 10)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestSimpleWriteOfSingleExerciseBatch failed: got a writeCount of %d but expected %d", statsWriter.writeCount, 1)
+	if state.writeCount != 1 {
+		t.Errorf("TestSimpleWriteOfSingleExerciseBatch failed: got a writeCount of %d but expected %d", state.writeCount, 1)
 	}
 }
 
 func TestIndividualExerciseWrite(t *testing.T) {
-	statsWriter := new(statsExerciseWriter)
-	w := NewExerciseWriterSize(statsWriter, 10)
+	state := NewExerciseWriterState()
+	w := NewExerciseWriterSize(NewStatsExerciseWriter(state), 10)
 	exercises := make([]model.Exercise, 24)
 	for j := 0; j < 24; j++ {
-		exercises[j] = model.Exercise{model.Timestamp{"", 0}, 10, "Light"}
+		exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
 	}
-	w.WriteExerciseBatch(exercises)
-	w.Flush()
+	newWriter, _ := w.WriteExerciseBatch(exercises)
+	w = newWriter.(*BufferedExerciseBatchWriter)
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedExerciseBatchWriter)
 
-	if statsWriter.total != 24 {
-		t.Errorf("TestIndividualExerciseWrite failed: got a total of %d but expected %d", statsWriter.total, 24)
-	}
-
-	if statsWriter.batchCount != 1 {
-		t.Errorf("TestIndividualExerciseWrite failed: got a batchCount of %d but expected %d", statsWriter.total, 1)
+	if state.total != 24 {
+		t.Errorf("TestIndividualExerciseWrite failed: got a total of %d but expected %d", state.total, 24)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestIndividualExerciseWrite failed: got a writeCount of %d but expected %d", statsWriter.batchCount, 1)
+	if state.batchCount != 1 {
+		t.Errorf("TestIndividualExerciseWrite failed: got a batchCount of %d but expected %d", state.total, 1)
+	}
+
+	if state.writeCount != 1 {
+		t.Errorf("TestIndividualExerciseWrite failed: got a writeCount of %d but expected %d", state.batchCount, 1)
 	}
 }
 
 func TestSimpleWriteLargerThanOneExerciseBatch(t *testing.T) {
-	statsWriter := new(statsExerciseWriter)
-	w := NewExerciseWriterSize(statsWriter, 10)
+	state := NewExerciseWriterState()
+	w := NewExerciseWriterSize(NewStatsExerciseWriter(state), 10)
 	batches := make([]model.DayOfExercises, 11)
 	for i := 0; i < 11; i++ {
 		exercises := make([]model.Exercise, 24)
 		for j := 0; j < 24; j++ {
-			exercises[j] = model.Exercise{model.Timestamp{"", 0}, 10, "Light"}
+			exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
 		}
 		batches[i] = model.DayOfExercises{exercises}
 	}
-	w.WriteExerciseBatches(batches)
+	newWriter, _ := w.WriteExerciseBatches(batches)
+	w = newWriter.(*BufferedExerciseBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a total of %d but expected %d", statsWriter.total, 240)
+	if state.total != 240 {
+		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test: got a batchCount of %d but expected %d", statsWriter.batchCount, 10)
+	if state.batchCount != 10 {
+		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test: got a batchCount of %d but expected %d", state.batchCount, 10)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a writeCount of %d but expected %d", statsWriter.total, 1)
+	if state.writeCount != 1 {
+		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a writeCount of %d but expected %d", state.total, 1)
 	}
 
 	// Flushing should cause the extra Exercise to be written
-	w.Flush()
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedExerciseBatchWriter)
 
-	if statsWriter.total != 264 {
-		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a total of %d but expected %d", statsWriter.total, 264)
+	if state.total != 264 {
+		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a total of %d but expected %d", state.total, 264)
 	}
 
-	if statsWriter.batchCount != 11 {
-		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test: got a batchCount of %d but expected %d", statsWriter.batchCount, 11)
+	if state.batchCount != 11 {
+		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test: got a batchCount of %d but expected %d", state.batchCount, 11)
 	}
 
-	if statsWriter.writeCount != 2 {
-		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a writeCount of %d but expected %d", statsWriter.total, 2)
+	if state.writeCount != 2 {
+		t.Errorf("TestSimpleWriteLargerThanOneExerciseBatch test failed: got a writeCount of %d but expected %d", state.total, 2)
 	}
 }
 
 func TestWriteTwoFullExerciseBatches(t *testing.T) {
-	statsWriter := new(statsExerciseWriter)
-	w := NewExerciseWriterSize(statsWriter, 10)
+	state := NewExerciseWriterState()
+	w := NewExerciseWriterSize(NewStatsExerciseWriter(state), 10)
 	batches := make([]model.DayOfExercises, 20)
 	for i := 0; i < 20; i++ {
 		exercises := make([]model.Exercise, 24)
 		for j := 0; j < 24; j++ {
-			exercises[j] = model.Exercise{model.Timestamp{"", 0}, 10, "Light"}
+			exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
 		}
 		batches[i] = model.DayOfExercises{exercises}
 	}
-	w.WriteExerciseBatches(batches)
+	newWriter, _ := w.WriteExerciseBatches(batches)
+	w = newWriter.(*BufferedExerciseBatchWriter)
 
-	if statsWriter.total != 240 {
-		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a total of %d but expected %d", statsWriter.total, 240)
+	if state.total != 240 {
+		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.batchCount != 10 {
-		t.Errorf("TestWriteTwoFullExerciseBatches test: got a batchCount of %d but expected %d", statsWriter.batchCount, 10)
+	if state.batchCount != 10 {
+		t.Errorf("TestWriteTwoFullExerciseBatches test: got a batchCount of %d but expected %d", state.batchCount, 10)
 	}
 
-	if statsWriter.writeCount != 1 {
-		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a writeCount of %d but expected %d", statsWriter.total, 1)
+	if state.writeCount != 1 {
+		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a writeCount of %d but expected %d", state.total, 1)
 	}
 
 	// Flushing should cause the extra batch to be written
-	w.Flush()
+	newWriter, _ = w.Flush()
+	w = newWriter.(*BufferedExerciseBatchWriter)
 
-	if statsWriter.total != 480 {
-		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a total of %d but expected %d", statsWriter.total, 240)
+	if state.total != 480 {
+		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a total of %d but expected %d", state.total, 240)
 	}
 
-	if statsWriter.batchCount != 20 {
-		t.Errorf("TestWriteTwoFullExerciseBatches test: got a batchCount of %d but expected %d", statsWriter.batchCount, 20)
+	if state.batchCount != 20 {
+		t.Errorf("TestWriteTwoFullExerciseBatches test: got a batchCount of %d but expected %d", state.batchCount, 20)
 	}
 
-	if statsWriter.writeCount != 2 {
-		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a writeCount of %d but expected %d", statsWriter.total, 2)
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteTwoFullExerciseBatches test failed: got a writeCount of %d but expected %d", state.total, 2)
 	}
 }
