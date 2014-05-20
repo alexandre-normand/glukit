@@ -176,8 +176,8 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 	}
 
 	dataStoreWriter := store.NewDataStoreInjectionBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, 200)
-	injectionStreamer := streaming.NewInjectionStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, 200)
+	injectionStreamer := streaming.NewInjectionStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -194,7 +194,12 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 
 		injections := convertToInjection(p)
 		context.Debugf("Writing [%d] new injections", len(injections))
-		injectionStreamer.WriteInjections(injections)
+		injectionStreamer, err = injectionStreamer.WriteInjections(injections)
+		if err != nil {
+			context.Warningf("Error storing injection data [%v]: %v", injections, err)
+			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+			return
+		}
 	}
 
 	if err != io.EOF {
@@ -203,7 +208,13 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	injectionStreamer.Close()
+	injectionStreamer, err = injectionStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing injection streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote injections to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }

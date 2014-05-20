@@ -3,6 +3,7 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
@@ -19,20 +20,20 @@ func NewDataStoreInjectionBatchWriter(context appengine.Context, userProfileKey 
 	return w
 }
 
-func (w *DataStoreInjectionBatchWriter) WriteInjectionBatches(p []model.DayOfInjections) (n int, err error) {
-	if keys, err := StoreDaysOfInjections(w.c, w.k, p); err != nil {
-		return 0, err
+func (w *DataStoreInjectionBatchWriter) WriteInjectionBatches(p []model.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
+	if _, err := StoreDaysOfInjections(w.c, w.k, p); err != nil {
+		return w, err
 	} else {
-		return len(keys), nil
+		return w, nil
 	}
 }
 
-func (w *DataStoreInjectionBatchWriter) WriteInjectionBatch(p []model.Injection) (n int, err error) {
+func (w *DataStoreInjectionBatchWriter) WriteInjectionBatch(p []model.Injection) (glukitio.InjectionBatchWriter, error) {
 	dayOfInjections := make([]model.DayOfInjections, 1)
 	dayOfInjections[0] = model.DayOfInjections{p}
 	return w.WriteInjectionBatches(dayOfInjections)
 }
 
-func (w *DataStoreInjectionBatchWriter) Flush() error {
-	return nil
+func (w *DataStoreInjectionBatchWriter) Flush() (glukitio.InjectionBatchWriter, error) {
+	return w, nil
 }

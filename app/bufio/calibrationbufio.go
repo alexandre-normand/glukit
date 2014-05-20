@@ -25,9 +25,6 @@ func newCalibrationWriterSize(wr glukitio.CalibrationBatchWriter, head *containe
 		return b
 	}
 
-	if flushSize <= 0 {
-		flushSize = defaultBufSize
-	}
 	w := new(BufferedCalibrationBatchWriter)
 	w.size = size
 	w.flushSize = flushSize
