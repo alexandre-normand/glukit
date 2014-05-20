@@ -3,6 +3,7 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
@@ -19,20 +20,20 @@ func NewDataStoreCarbBatchWriter(context appengine.Context, userProfileKey *data
 	return w
 }
 
-func (w *DataStoreCarbBatchWriter) WriteCarbBatches(p []model.DayOfCarbs) (n int, err error) {
-	if keys, err := StoreDaysOfCarbs(w.c, w.k, p); err != nil {
-		return 0, err
+func (w *DataStoreCarbBatchWriter) WriteCarbBatches(p []model.DayOfCarbs) (glukitio.CarbBatchWriter, error) {
+	if _, err := StoreDaysOfCarbs(w.c, w.k, p); err != nil {
+		return w, err
 	} else {
-		return len(keys), nil
+		return w, nil
 	}
 }
 
-func (w *DataStoreCarbBatchWriter) WriteCarbBatch(p []model.Carb) (n int, err error) {
+func (w *DataStoreCarbBatchWriter) WriteCarbBatch(p []model.Carb) (glukitio.CarbBatchWriter, error) {
 	dayOfCarbs := make([]model.DayOfCarbs, 1)
 	dayOfCarbs[0] = model.DayOfCarbs{p}
 	return w.WriteCarbBatches(dayOfCarbs)
 }
 
-func (w *DataStoreCarbBatchWriter) Flush() error {
-	return nil
+func (w *DataStoreCarbBatchWriter) Flush() (glukitio.CarbBatchWriter, error) {
+	return w, nil
 }
