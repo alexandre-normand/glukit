@@ -64,18 +64,13 @@ func newGlucoseStreamerDuration(head *container.ImmutableList, tailVal *model.Gl
 
 // NewGlucoseStreamerDuration returns a new GlucoseReadStreamer whose buffer has the specified size.
 func NewGlucoseStreamerDuration(wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
-	w := new(GlucoseReadStreamer)
-	w.head = nil
-	w.wr = wr
-	w.d = bufferDuration
-
-	return w
+	return newGlucoseStreamerDuration(nil, nil, wr, bufferDuration)
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.
 func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	r, size := b.head.ReverseList()
-	batch := ListToArray(r, size)
+	batch := ListToArrayOfGlucoseReads(r, size)
 
 	if len(batch) > 0 {
 		innerWriter, err := b.wr.WriteGlucoseReadBatch(batch)
@@ -89,7 +84,7 @@ func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	return newGlucoseStreamerDuration(nil, nil, b.wr, b.d), nil
 }
 
-func ListToArray(head *container.ImmutableList, size int) []model.GlucoseRead {
+func ListToArrayOfGlucoseReads(head *container.ImmutableList, size int) []model.GlucoseRead {
 	r := make([]model.GlucoseRead, size)
 	cursor := head
 	for i := 0; i < size; i++ {

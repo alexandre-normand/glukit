@@ -25,9 +25,6 @@ func newGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, head *containe
 		return b
 	}
 
-	if flushSize <= 0 {
-		flushSize = defaultBufSize
-	}
 	w := new(BufferedGlucoseReadBatchWriter)
 	w.size = size
 	w.flushSize = flushSize
@@ -38,7 +35,7 @@ func newGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, head *containe
 }
 
 // WriteGlucose writes a single model.DayOfGlucoseReads
-func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (w glukitio.GlucoseReadBatchWriter, err error) {
+func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	return b.WriteGlucoseReadBatches([]model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}})
 }
 
@@ -69,7 +66,7 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() (w glukitio.GlucoseReadBatchWri
 		return newGlucoseReadWriterSize(b.wr, nil, 0, b.flushSize), nil
 	}
 	r, size := b.head.ReverseList()
-	batch := ListToArray(r, size)
+	batch := ListToArrayOfGlucoseReadBatch(r, size)
 
 	if len(batch) > 0 {
 		innerWriter, err := b.wr.WriteGlucoseReadBatches(batch)
@@ -83,7 +80,7 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() (w glukitio.GlucoseReadBatchWri
 	return newGlucoseReadWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-func ListToArray(head *container.ImmutableList, size int) []model.DayOfGlucoseReads {
+func ListToArrayOfGlucoseReadBatch(head *container.ImmutableList, size int) []model.DayOfGlucoseReads {
 	r := make([]model.DayOfGlucoseReads, size)
 	cursor := head
 	for i := 0; i < size; i++ {

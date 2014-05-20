@@ -3,6 +3,7 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
@@ -19,20 +20,20 @@ func NewDataStoreExerciseBatchWriter(context appengine.Context, userProfileKey *
 	return w
 }
 
-func (w *DataStoreExerciseBatchWriter) WriteExerciseBatches(p []model.DayOfExercises) (n int, err error) {
-	if keys, err := StoreDaysOfExercises(w.c, w.k, p); err != nil {
-		return 0, err
+func (w *DataStoreExerciseBatchWriter) WriteExerciseBatches(p []model.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
+	if _, err := StoreDaysOfExercises(w.c, w.k, p); err != nil {
+		return w, err
 	} else {
-		return len(keys), nil
+		return w, nil
 	}
 }
 
-func (w *DataStoreExerciseBatchWriter) WriteExerciseBatch(p []model.Exercise) (n int, err error) {
+func (w *DataStoreExerciseBatchWriter) WriteExerciseBatch(p []model.Exercise) (glukitio.ExerciseBatchWriter, error) {
 	dayOfExercises := make([]model.DayOfExercises, 1)
 	dayOfExercises[0] = model.DayOfExercises{p}
 	return w.WriteExerciseBatches(dayOfExercises)
 }
 
-func (w *DataStoreExerciseBatchWriter) Flush() error {
-	return nil
+func (w *DataStoreExerciseBatchWriter) Flush() (glukitio.ExerciseBatchWriter, error) {
+	return w, nil
 }

@@ -46,8 +46,8 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	}
 
 	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
-	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, 200)
+	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -64,7 +64,12 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 
 		reads := convertToCalibrationRead(c)
 		context.Debugf("Writing new calibration reads [%v]", reads)
-		calibrationStreamer.WriteCalibrations(reads)
+		calibrationStreamer, err = calibrationStreamer.WriteCalibrations(reads)
+		if err != nil {
+			context.Warningf("Error storing calibration data [%v]: %v", reads, err)
+			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+			return
+		}
 	}
 
 	if err != io.EOF {
@@ -73,7 +78,13 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	calibrationStreamer.Flush()
+	calibrationStreamer, err = calibrationStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing glucose read streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote calibrations to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
@@ -122,6 +133,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		if err != nil {
 			context.Warningf("Error storing user data [%v]: %v", reads, err)
 			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+			return
 		}
 	}
 
@@ -131,7 +143,13 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	glucoseReadStreamer.Close()
+	glucoseReadStreamer, err = glucoseReadStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing glucose read streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote glucose reads to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
@@ -158,8 +176,8 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 	}
 
 	dataStoreWriter := store.NewDataStoreInjectionBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, 200)
-	injectionStreamer := streaming.NewInjectionStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, 200)
+	injectionStreamer := streaming.NewInjectionStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -176,7 +194,12 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 
 		injections := convertToInjection(p)
 		context.Debugf("Writing [%d] new injections", len(injections))
-		injectionStreamer.WriteInjections(injections)
+		injectionStreamer, err = injectionStreamer.WriteInjections(injections)
+		if err != nil {
+			context.Warningf("Error storing injection data [%v]: %v", injections, err)
+			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+			return
+		}
 	}
 
 	if err != io.EOF {
@@ -185,7 +208,13 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	injectionStreamer.Close()
+	injectionStreamer, err = injectionStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing injection streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote injections to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
@@ -212,8 +241,8 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
-	carbStreamer := streaming.NewCarbStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
+	carbStreamer := streaming.NewCarbStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -230,7 +259,12 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 
 		meals := convertToMeal(p)
 		context.Debugf("Writing [%d] new meals", len(meals))
-		carbStreamer.WriteCarbs(meals)
+		carbStreamer, err = carbStreamer.WriteCarbs(meals)
+		if err != nil {
+			context.Warningf("Error storing meal data [%v]: %v", meals, err)
+			http.Error(writer, fmt.Sprintf("Error storing meal data: %v", err), 502)
+			return
+		}
 	}
 
 	if err != io.EOF {
@@ -239,7 +273,13 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	carbStreamer.Close()
+	carbStreamer, err = carbStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing injection streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote meals to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
@@ -266,8 +306,8 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	dataStoreWriter := store.NewDataStoreExerciseBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewExerciseWriterSize(dataStoreWriter, 200)
-	exerciseStreamer := streaming.NewExerciseStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewExerciseWriterSize(dataStoreWriter, 200)
+	exerciseStreamer := streaming.NewExerciseStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -284,7 +324,12 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 
 		exercises := convertToExercise(p)
 		context.Debugf("Writing [%d] new Exercises", len(exercises))
-		exerciseStreamer.WriteExercises(exercises)
+		exerciseStreamer, err = exerciseStreamer.WriteExercises(exercises)
+		if err != nil {
+			context.Warningf("Error storing exercise data [%v]: %v", exercises, err)
+			http.Error(writer, fmt.Sprintf("Error storing exercise data: %v", err), 502)
+			return
+		}
 	}
 
 	if err != io.EOF {
@@ -293,7 +338,13 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	exerciseStreamer.Close()
+	exerciseStreamer, err = exerciseStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing injection streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote exercises to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
