@@ -60,9 +60,6 @@ func NewCarbWriterSize(wr glukitio.CarbBatchWriter, size int) *BufferedCarbBatch
 		return b
 	}
 
-	if size <= 0 {
-		size = defaultBufSize
-	}
 	w := new(BufferedCarbBatchWriter)
 	w.buf = make([]model.DayOfCarbs, size)
 	w.wr = wr

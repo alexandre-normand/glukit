@@ -61,9 +61,6 @@ func NewExerciseWriterSize(wr glukitio.ExerciseBatchWriter, size int) *BufferedE
 		return b
 	}
 
-	if size <= 0 {
-		size = defaultBufSize
-	}
 	w := new(BufferedExerciseBatchWriter)
 	w.buf = make([]model.DayOfExercises, size)
 	w.wr = wr

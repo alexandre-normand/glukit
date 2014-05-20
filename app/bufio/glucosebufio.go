@@ -25,9 +25,6 @@ func newGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, head *containe
 		return b
 	}
 
-	if flushSize <= 0 {
-		flushSize = defaultBufSize
-	}
 	w := new(BufferedGlucoseReadBatchWriter)
 	w.size = size
 	w.flushSize = flushSize

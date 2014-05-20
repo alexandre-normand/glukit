@@ -25,13 +25,8 @@ func TestSimpleWriteOfSingleInjectionBatch(t *testing.T) {
 	key := GetUserKey(c, "test@glukit.com")
 
 	w := NewDataStoreInjectionBatchWriter(c, key)
-	n, err := w.WriteInjectionBatch(injections)
-	if err != nil {
+	if _, err = w.WriteInjectionBatch(injections); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 1 {
-		t.Errorf("TestSimpleWriteOfSingleInjectionBatch failed, got batch write count of %d but expected %d", n, 1)
 	}
 }
 
@@ -56,12 +51,7 @@ func TestSimpleWriteOfInjectionBatches(t *testing.T) {
 	key := GetUserKey(c, "test@glukit.com")
 
 	w := NewDataStoreInjectionBatchWriter(c, key)
-	n, err := w.WriteInjectionBatches(b)
-	if err != nil {
+	if _, err = w.WriteInjectionBatches(b); err != nil {
 		t.Fatal(err)
-	}
-
-	if n != 10 {
-		t.Errorf("TestSimpleWriteOfInjectionBatches failed, got batch write count of %d but expected %d", n, 10)
 	}
 }

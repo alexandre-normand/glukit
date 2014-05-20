@@ -89,10 +89,15 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						var insulinUnits float32
 						_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
 						if err != nil {
-							util.Propagate(err)
+							context.Warningf("Failed to parse event as injection [%s]: %v", event.Description, err)
+						} else {
+							injection := model.Injection{model.Timestamp{event.EventTime, internalEventTime}, float32(insulinUnits), model.UNDEFINED_READ}
+							injectionStreamer, err = injectionStreamer.WriteInjection(injection)
+
+							if err != nil {
+								return lastRead.GetTime(), err
+							}
 						}
-						injection := model.Injection{model.Timestamp{event.EventTime, internalEventTime}, float32(insulinUnits), model.UNDEFINED_READ}
-						injectionStreamer.WriteInjection(injection)
 					} else if strings.HasPrefix(event.EventType, "Exercise") {
 						var duration int
 						var intensity string
@@ -125,7 +130,11 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 		return lastRead.GetTime(), err
 	}
 
-	injectionStreamer.Close()
+	injectionStreamer, err = injectionStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+
 	carbStreamer.Close()
 	exerciseStreamer.Close()
 

@@ -58,9 +58,9 @@ type GlucoseReadBatchWriter interface {
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type InjectionBatchWriter interface {
-	WriteInjectionBatch(p []model.Injection) (n int, err error)
-	WriteInjectionBatches(p []model.DayOfInjections) (n int, err error)
-	Flush() error
+	WriteInjectionBatch(p []model.Injection) (w InjectionBatchWriter, err error)
+	WriteInjectionBatches(p []model.DayOfInjections) (w InjectionBatchWriter, err error)
+	Flush() (w InjectionBatchWriter, err error)
 }
 
 // CarbBatchWriter is the interface that wraps the basic

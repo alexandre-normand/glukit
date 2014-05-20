@@ -14,6 +14,21 @@ type CalibrationReadStreamer struct {
 	d       time.Duration
 }
 
+// NewCalibrationReadStreamerDuration returns a new CalibrationReadStreamer whose buffer has the specified size.
+func NewCalibrationReadStreamerDuration(wr glukitio.CalibrationBatchWriter, bufferDuration time.Duration) *CalibrationReadStreamer {
+	return newCalibrationStreamerDuration(nil, nil, wr, bufferDuration)
+}
+
+func newCalibrationStreamerDuration(head *container.ImmutableList, tailVal *model.CalibrationRead, wr glukitio.CalibrationBatchWriter, bufferDuration time.Duration) *CalibrationReadStreamer {
+	w := new(CalibrationReadStreamer)
+	w.head = head
+	w.tailVal = tailVal
+	w.wr = wr
+	w.d = bufferDuration
+
+	return w
+}
+
 // WriteCalibration writes a single CalibrationRead into the buffer.
 func (b *CalibrationReadStreamer) WriteCalibration(c model.CalibrationRead) (s *CalibrationReadStreamer, err error) {
 	return b.WriteCalibrations([]model.CalibrationRead{c})
@@ -24,7 +39,6 @@ func (b *CalibrationReadStreamer) WriteCalibration(c model.CalibrationRead) (s *
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
 func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (s *CalibrationReadStreamer, err error) {
-
 	s = newCalibrationStreamerDuration(b.head, b.tailVal, b.wr, b.d)
 	if err != nil {
 		return s, err
@@ -47,21 +61,6 @@ func (b *CalibrationReadStreamer) WriteCalibrations(p []model.CalibrationRead) (
 	}
 
 	return s, err
-}
-
-// NewCalibrationReadStreamerDuration returns a new CalibrationReadStreamer whose buffer has the specified size.
-func NewCalibrationReadStreamerDuration(wr glukitio.CalibrationBatchWriter, bufferDuration time.Duration) *CalibrationReadStreamer {
-	return newCalibrationStreamerDuration(nil, nil, wr, bufferDuration)
-}
-
-func newCalibrationStreamerDuration(head *container.ImmutableList, tailVal *model.CalibrationRead, wr glukitio.CalibrationBatchWriter, bufferDuration time.Duration) *CalibrationReadStreamer {
-	w := new(CalibrationReadStreamer)
-	w.head = head
-	w.tailVal = tailVal
-	w.wr = wr
-	w.d = bufferDuration
-
-	return w
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer as a batch.

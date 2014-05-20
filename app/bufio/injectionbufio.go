@@ -1,106 +1,92 @@
 package bufio
 
 import (
-	"errors"
-	"fmt"
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedInjectionBatchWriter struct {
-	buf []model.DayOfInjections
-	n   int
-	wr  glukitio.InjectionBatchWriter
-	err error
+	head      *container.ImmutableList
+	size      int
+	flushSize int
+	wr        glukitio.InjectionBatchWriter
+}
+
+// NewInjectionWriterSize returns a new Writer whose buffer has the specified size.
+func NewInjectionWriterSize(wr glukitio.InjectionBatchWriter, flushSize int) *BufferedInjectionBatchWriter {
+	return newInjectionWriterSize(wr, nil, 0, flushSize)
+}
+
+func newInjectionWriterSize(wr glukitio.InjectionBatchWriter, head *container.ImmutableList, size int, flushSize int) *BufferedInjectionBatchWriter {
+	// Is it already a Writer?
+	b, ok := wr.(*BufferedInjectionBatchWriter)
+	if ok && b.flushSize >= flushSize {
+		return b
+	}
+
+	w := new(BufferedInjectionBatchWriter)
+	w.size = size
+	w.flushSize = flushSize
+	w.wr = wr
+	w.head = head
+
+	return w
 }
 
 // WriteInjection writes a single model.DayOfInjections
-func (b *BufferedInjectionBatchWriter) WriteInjectionBatch(p []model.Injection) (nn int, err error) {
-	c := make([]model.Injection, len(p))
-	if copied := copy(c, p); copied != len(p) {
-		return 0, errors.New(fmt.Sprintf("Failed to create copy of injection batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
-	}
-
-	n, err := b.WriteInjectionBatches([]model.DayOfInjections{model.DayOfInjections{c}})
-	if err != nil {
-		return n * len(p), err
-	}
-
-	return len(p), nil
+func (b *BufferedInjectionBatchWriter) WriteInjectionBatch(p []model.Injection) (glukitio.InjectionBatchWriter, error) {
+	return b.WriteInjectionBatches([]model.DayOfInjections{model.DayOfInjections{p}})
 }
 
 // WriteInjectionBatches writes the contents of p into the buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedInjectionBatchWriter) WriteInjectionBatches(p []model.DayOfInjections) (nn int, err error) {
-	for len(p) > b.Available() && b.err == nil {
-		var n int
-		n = copy(b.buf[b.n:], p)
-		b.n += n
-		b.Flush()
+func (b *BufferedInjectionBatchWriter) WriteInjectionBatches(p []model.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
+	w := b
+	for _, batch := range p {
+		if w.size >= w.flushSize {
+			fw, err := w.Flush()
+			if err != nil {
+				return fw, err
+			}
+			w = fw.(*BufferedInjectionBatchWriter)
+		}
 
-		nn += n
-		p = p[n:]
-	}
-	if b.err != nil {
-		return nn, b.err
-	}
-	n := copy(b.buf[b.n:], p)
-	b.n += n
-	nn += n
-	return nn, nil
-}
-
-// NewInjectionWriterSize returns a new Writer whose buffer has the specified size.
-func NewInjectionWriterSize(wr glukitio.InjectionBatchWriter, size int) *BufferedInjectionBatchWriter {
-	// Is it already a Writer?
-	b, ok := wr.(*BufferedInjectionBatchWriter)
-	if ok && len(b.buf) >= size {
-		return b
+		w = newInjectionWriterSize(w.wr, container.NewImmutableList(w.head, batch), w.size+1, w.flushSize)
 	}
 
-	if size <= 0 {
-		size = defaultBufSize
-	}
-	w := new(BufferedInjectionBatchWriter)
-	w.buf = make([]model.DayOfInjections, size)
-	w.wr = wr
-
-	return w
+	return w, nil
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer.
-func (b *BufferedInjectionBatchWriter) Flush() error {
-	if b.err != nil {
-		return b.err
+func (b *BufferedInjectionBatchWriter) Flush() (glukitio.InjectionBatchWriter, error) {
+	if b.size == 0 {
+		return newInjectionWriterSize(b.wr, nil, 0, b.flushSize), nil
 	}
-	if b.n == 0 {
-		return nil
-	}
+	r, size := b.head.ReverseList()
+	batch := ListToArrayOfInjectionBatch(r, size)
 
-	n, err := b.wr.WriteInjectionBatches(b.buf[0:b.n])
-	if n < b.n && err == nil {
-		err = glukitio.ErrShortWrite
-	}
-	if err != nil {
-		if n > 0 && n < b.n {
-			copy(b.buf[0:b.n-n], b.buf[n:b.n])
+	if len(batch) > 0 {
+		innerWriter, err := b.wr.WriteInjectionBatches(batch)
+		if err != nil {
+			return nil, err
 		}
-		b.n -= n
-		b.err = err
-		return err
+
+		return newInjectionWriterSize(innerWriter, nil, 0, b.flushSize), nil
 	}
-	b.n = 0
-	return nil
+
+	return newInjectionWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-// Available returns how many bytes are unused in the buffer.
-func (b *BufferedInjectionBatchWriter) Available() int {
-	return len(b.buf) - b.n
-}
+func ListToArrayOfInjectionBatch(head *container.ImmutableList, size int) []model.DayOfInjections {
+	r := make([]model.DayOfInjections, size)
+	cursor := head
+	for i := 0; i < size; i++ {
+		r[i] = cursor.Value().(model.DayOfInjections)
+		cursor = cursor.Next()
+	}
 
-// Buffered returns the number of bytes that have been written into the current buffer.
-func (b *BufferedInjectionBatchWriter) Buffered() int {
-	return b.n
+	return r
 }
