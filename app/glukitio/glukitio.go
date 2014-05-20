@@ -94,7 +94,7 @@ type CarbBatchWriter interface {
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type ExerciseBatchWriter interface {
-	WriteExerciseBatch(p []model.Exercise) (n int, err error)
-	WriteExerciseBatches(p []model.DayOfExercises) (n int, err error)
-	Flush() error
+	WriteExerciseBatch(p []model.Exercise) (w ExerciseBatchWriter, err error)
+	WriteExerciseBatches(p []model.DayOfExercises) (w ExerciseBatchWriter, err error)
+	Flush() (w ExerciseBatchWriter, err error)
 }

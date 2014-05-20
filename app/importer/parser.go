@@ -108,7 +108,10 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
 						exercise := model.Exercise{model.Timestamp{event.EventTime, internalEventTime}, duration, intensity}
 
-						exerciseStreamer.WriteExercise(exercise)
+						exerciseStreamer, err = exerciseStreamer.WriteExercise(exercise)
+						if err != nil {
+							return lastRead.GetTime(), err
+						}
 					}
 				}
 
@@ -144,7 +147,10 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 		return lastRead.GetTime(), err
 	}
 
-	exerciseStreamer.Close()
+	exerciseStreamer, err = exerciseStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
 
 	context.Infof("Done parsing and storing all data")
 	return lastRead.GetTime(), nil
