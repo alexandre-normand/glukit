@@ -1,103 +1,92 @@
 package bufio
 
 import (
-	"errors"
-	"fmt"
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
 	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedCarbBatchWriter struct {
-	buf []model.DayOfCarbs
-	n   int
-	wr  glukitio.CarbBatchWriter
-	err error
+	head      *container.ImmutableList
+	size      int
+	flushSize int
+	wr        glukitio.CarbBatchWriter
+}
+
+// NewCarbWriterSize returns a new Writer whose buffer has the specified size.
+func NewCarbWriterSize(wr glukitio.CarbBatchWriter, flushSize int) *BufferedCarbBatchWriter {
+	return newCarbWriterSize(wr, nil, 0, flushSize)
+}
+
+func newCarbWriterSize(wr glukitio.CarbBatchWriter, head *container.ImmutableList, size int, flushSize int) *BufferedCarbBatchWriter {
+	// Is it already a Writer?
+	b, ok := wr.(*BufferedCarbBatchWriter)
+	if ok && b.flushSize >= flushSize {
+		return b
+	}
+
+	w := new(BufferedCarbBatchWriter)
+	w.size = size
+	w.flushSize = flushSize
+	w.wr = wr
+	w.head = head
+
+	return w
 }
 
 // WriteCarb writes a single model.DayOfCarbs
-func (b *BufferedCarbBatchWriter) WriteCarbBatch(p []model.Carb) (nn int, err error) {
-	c := make([]model.Carb, len(p))
-	if copied := copy(c, p); copied != len(p) {
-		return 0, errors.New(fmt.Sprintf("Failed to create copy of carb batch to buffer write, copied [%d] elements but expected [%d]", copied, len(p)))
-	}
-
-	n, err := b.WriteCarbBatches([]model.DayOfCarbs{model.DayOfCarbs{c}})
-	if err != nil {
-		return n * len(p), err
-	}
-
-	return len(p), nil
+func (b *BufferedCarbBatchWriter) WriteCarbBatch(p []model.Carb) (glukitio.CarbBatchWriter, error) {
+	return b.WriteCarbBatches([]model.DayOfCarbs{model.DayOfCarbs{p}})
 }
 
 // WriteCarbBatches writes the contents of p into the buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedCarbBatchWriter) WriteCarbBatches(p []model.DayOfCarbs) (nn int, err error) {
-	for len(p) > b.Available() && b.err == nil {
-		var n int
-		n = copy(b.buf[b.n:], p)
-		b.n += n
-		b.Flush()
+func (b *BufferedCarbBatchWriter) WriteCarbBatches(p []model.DayOfCarbs) (glukitio.CarbBatchWriter, error) {
+	w := b
+	for _, batch := range p {
+		if w.size >= w.flushSize {
+			fw, err := w.Flush()
+			if err != nil {
+				return fw, err
+			}
+			w = fw.(*BufferedCarbBatchWriter)
+		}
 
-		nn += n
-		p = p[n:]
-	}
-	if b.err != nil {
-		return nn, b.err
-	}
-	n := copy(b.buf[b.n:], p)
-	b.n += n
-	nn += n
-	return nn, nil
-}
-
-// NewCarbWriterSize returns a new Writer whose buffer has the specified size.
-func NewCarbWriterSize(wr glukitio.CarbBatchWriter, size int) *BufferedCarbBatchWriter {
-	// Is it already a Writer?
-	b, ok := wr.(*BufferedCarbBatchWriter)
-	if ok && len(b.buf) >= size {
-		return b
+		w = newCarbWriterSize(w.wr, container.NewImmutableList(w.head, batch), w.size+1, w.flushSize)
 	}
 
-	w := new(BufferedCarbBatchWriter)
-	w.buf = make([]model.DayOfCarbs, size)
-	w.wr = wr
-
-	return w
+	return w, nil
 }
 
 // Flush writes any buffered data to the underlying glukitio.Writer.
-func (b *BufferedCarbBatchWriter) Flush() error {
-	if b.err != nil {
-		return b.err
+func (b *BufferedCarbBatchWriter) Flush() (glukitio.CarbBatchWriter, error) {
+	if b.size == 0 {
+		return newCarbWriterSize(b.wr, nil, 0, b.flushSize), nil
 	}
-	if b.n == 0 {
-		return nil
-	}
+	r, size := b.head.ReverseList()
+	batch := ListToArrayOfCarbBatch(r, size)
 
-	n, err := b.wr.WriteCarbBatches(b.buf[0:b.n])
-	if n < b.n && err == nil {
-		err = glukitio.ErrShortWrite
-	}
-	if err != nil {
-		if n > 0 && n < b.n {
-			copy(b.buf[0:b.n-n], b.buf[n:b.n])
+	if len(batch) > 0 {
+		innerWriter, err := b.wr.WriteCarbBatches(batch)
+		if err != nil {
+			return nil, err
 		}
-		b.n -= n
-		b.err = err
-		return err
+
+		return newCarbWriterSize(innerWriter, nil, 0, b.flushSize), nil
 	}
-	b.n = 0
-	return nil
+
+	return newCarbWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-// Available returns how many bytes are unused in the buffer.
-func (b *BufferedCarbBatchWriter) Available() int {
-	return len(b.buf) - b.n
-}
+func ListToArrayOfCarbBatch(head *container.ImmutableList, size int) []model.DayOfCarbs {
+	r := make([]model.DayOfCarbs, size)
+	cursor := head
+	for i := 0; i < size; i++ {
+		r[i] = cursor.Value().(model.DayOfCarbs)
+		cursor = cursor.Next()
+	}
 
-// Buffered returns the number of bytes that have been written into the current buffer.
-func (b *BufferedCarbBatchWriter) Buffered() int {
-	return b.n
+	return r
 }

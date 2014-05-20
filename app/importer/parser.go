@@ -84,7 +84,11 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						fmt.Sscanf(event.Description, "Carbs %d grams", &carbQuantityInGrams)
 						carb := model.Carb{model.Timestamp{event.EventTime, internalEventTime}, float32(carbQuantityInGrams), model.UNDEFINED_READ}
 
-						carbStreamer.WriteCarb(carb)
+						carbStreamer, err = carbStreamer.WriteCarb(carb)
+						if err != nil {
+							return lastRead.GetTime(), err
+						}
+
 					} else if event.EventType == "Insulin" {
 						var insulinUnits float32
 						_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
@@ -135,7 +139,11 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 		return lastRead.GetTime(), err
 	}
 
-	carbStreamer.Close()
+	carbStreamer, err = carbStreamer.Close()
+	if err != nil {
+		return lastRead.GetTime(), err
+	}
+
 	exerciseStreamer.Close()
 
 	context.Infof("Done parsing and storing all data")

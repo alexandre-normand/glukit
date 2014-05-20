@@ -241,8 +241,8 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
-	//batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
-	carbStreamer := streaming.NewCarbStreamerDuration(dataStoreWriter, time.Hour*24)
+	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
+	carbStreamer := streaming.NewCarbStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -259,7 +259,12 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 
 		meals := convertToMeal(p)
 		context.Debugf("Writing [%d] new meals", len(meals))
-		carbStreamer.WriteCarbs(meals)
+		carbStreamer, err = carbStreamer.WriteCarbs(meals)
+		if err != nil {
+			context.Warningf("Error storing meal data [%v]: %v", meals, err)
+			http.Error(writer, fmt.Sprintf("Error storing meal data: %v", err), 502)
+			return
+		}
 	}
 
 	if err != io.EOF {
@@ -268,7 +273,13 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	carbStreamer.Close()
+	carbStreamer, err = carbStreamer.Close()
+	if err != nil {
+		context.Warningf("Error closing injection streamer: %v", err)
+		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
+		return
+	}
+
 	context.Infof("Wrote meals to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
 }
