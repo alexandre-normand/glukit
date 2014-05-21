@@ -36,6 +36,7 @@ var refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, func(context a
 const (
 	REFRESH_USER_DATA_FUNCTION_NAME = "refreshUserData"
 	PROCESS_FILE_FUNCTION_NAME      = "processSingleFile"
+	DATASTORE_WRITES_QUEUE_NAME     = "datastore-writes"
 )
 
 func disabledUpdateUserData(context appengine.Context, userEmail string, autoScheduleNextRun bool) {
@@ -129,7 +130,7 @@ func enqueueFileImport(context appengine.Context, token *oauth.Token, file *driv
 	}
 
 	task.ETA = time.Now().Add(delay)
-	_, err = taskqueue.Add(context, task, "store")
+	_, err = taskqueue.Add(context, task, DATASTORE_WRITES_QUEUE_NAME)
 
 	return err
 }

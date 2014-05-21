@@ -1,6 +1,6 @@
 queue:
-- name: store
-  rate: 35/s
+- name: datastore-writes
+  rate: 10/s
 
 - name: refresh
   rate: 10/s
