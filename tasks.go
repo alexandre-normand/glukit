@@ -121,6 +121,8 @@ func processFileSearchResults(token *oauth.Token, files []*drive.File, context a
 }
 
 func enqueueFileImport(context appengine.Context, token *oauth.Token, file *drive.File, userEmail string, userKey *datastore.Key, delay time.Duration) error {
+	context.Debugf("Enqueuing import of file [%v] in %v", file, delay)
+
 	task, err := processFile.Task(token, file, userEmail, userKey)
 	if err != nil {
 		return err
