@@ -5,33 +5,36 @@ import (
 	"time"
 )
 
-// Timestamp represents hold a timestamp and a localtime string
-type Timestamp struct {
-	LocalTime string `json:"label" datastore:"localtime,noindex"`
-	EpochTime int64  `json:"x" datastore:"timestamp"`
+type Time struct {
+	Timestamp  int64  `json:"timestamp"`
+	TimeZoneId string `json:"timezone"`
 }
 
 // GetTime gets the time of a Timestamp value
-func (element Timestamp) GetTime() (timeValue time.Time) {
-	value := time.Unix(int64(element.EpochTime), 0)
+func (element Time) GetTime() (timeValue time.Time) {
+	value := time.Unix(int64(element.Timestamp/1000), 0)
 	return value
 }
 
-type TimestampSlice []Timestamp
+func (element Time) Format() (formatted string, err error) {
+	return element.GetTime().In(location).Format(TIMEFORMAT)
+}
 
-func (slice TimestampSlice) Len() int {
+type TimeSlice []Time
+
+func (slice TimeSlice) Len() int {
 	return len(slice)
 }
 
-func (slice TimestampSlice) Less(i, j int) bool {
+func (slice TimeSlice) Less(i, j int) bool {
 	return slice[i].EpochTime < slice[j].EpochTime
 }
 
-func (slice TimestampSlice) Swap(i, j int) {
+func (slice TimeSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (slice TimestampSlice) GetEpochTime(i int) (epochTime int64) {
+func (slice TimeSlice) GetEpochTime(i int) (epochTime int64) {
 	return slice[i].EpochTime
 }
 

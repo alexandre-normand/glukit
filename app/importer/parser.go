@@ -42,7 +42,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 	exerciseBatchingWriter := bufio.NewExerciseWriterSize(exerciseDataStoreWriter, IMPORT_BATCH_SIZE)
 	exerciseStreamer := streaming.NewExerciseStreamerDuration(exerciseBatchingWriter, time.Hour*24)
 
-	var lastRead *model.GlucoseRead
+	var lastRead *apimodel.Glucose
 	for {
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
@@ -58,12 +58,12 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 			// ...and its name is "Glucose"
 			switch se.Name.Local {
 			case "Glucose":
-				var read apimodel.Glucose
+				var read Glucose
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
-
-				if read.Value > 0 {
-					glucoseRead := model.GlucoseRead{model.Timestamp{read.DisplayTime, util.GetTimeInSeconds(read.InternalTime)}, read.Value}
+				if glucoseRead, err := convertXmlGlucoseRead(read); err != nil {
+					return lastRead.GetTime(), err
+				} else if glucoseRead.Value > 0 {
 					glucoseStreamer, err = glucoseStreamer.WriteGlucoseRead(glucoseRead)
 
 					if err != nil {

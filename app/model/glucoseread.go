@@ -6,13 +6,18 @@ import (
 
 const (
 	GLUCOSE_READ_TAG = "GlucoseRead"
+
+	// Units
+	MMOL_PER_L = "mmolPerL"
+	MG_PER_DL  = "mgPerDL"
 )
 
 // GlucoseRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external
 // meter
 type GlucoseRead struct {
-	Timestamp
-	Value int `json:"y" datastore:"value,noindex"`
+	Time  Time    `json:"time"`
+	Unit  string  `json:"unit"`
+	Value float32 `json:"value"`
 }
 
 // This holds an array of reads for a whole day
@@ -30,7 +35,7 @@ func (slice GlucoseReadSlice) Len() int {
 }
 
 func (slice GlucoseReadSlice) Less(i, j int) bool {
-	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+	return slice[i].Time.Timestamp < slice[j].Time.EpochTime
 }
 
 func (slice GlucoseReadSlice) Swap(i, j int) {
@@ -42,14 +47,14 @@ func (slice GlucoseReadSlice) Get(i int) float64 {
 }
 
 func (slice GlucoseReadSlice) GetEpochTime(i int) (epochTime int64) {
-	return slice[i].Timestamp.EpochTime
+	return slice[i].Time.Timestamp / 1000
 }
 
 // ToDataPointSlice converts a GlucoseReadSlice into a generic DataPoint array
 func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].Timestamp.LocalTime, slice[i].Timestamp.EpochTime, slice[i].Value, float32(slice[i].Value), GLUCOSE_READ_TAG}
+		dataPoint := DataPoint{slice[i].Time.LocalTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints

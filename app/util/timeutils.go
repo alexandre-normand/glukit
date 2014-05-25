@@ -46,6 +46,13 @@ func GetTimeInSeconds(timeValue string) (value int64) {
 	return 0
 }
 
+// GetTimeInSeconds parses a datetime string and returns its unix timestamp.
+func GetTimeUTC(timeValue string) (time.Time, error) {
+	// time values without timezone info are interpreted as UTC, which is perfect
+	return time.Parse(TIMEFORMAT_NO_TZ, timeValue)
+
+}
+
 // GetEndOfDayBoundaryBefore returns the boundary of very last "end of day" before the given time.
 // To give an example, if the given time is July 17th 8h00 PST, the boundary returned is going to be
 // July 17th 06h00. If the time is July 17th 05h00 PST, the boundary returned is July 16th 06h00.
