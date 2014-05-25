@@ -1,41 +1,44 @@
 package model
 
 const (
-	CARB_TAG = "Carbs"
+	CARB_TAG = "Meals"
 )
 
-// Represents a carbohydrate intake
-type Carb struct {
-	Timestamp
-	Grams              float32 `json:"carbs" datastore:"grams,noindex"`
-	ReferenceReadValue int     `json:"y" datastore:"referenceReadValue,noindex"`
+// Meal is the data structure that represents a meal of food intake. Only carbohydrates
+// are fully supported at the moment.
+type Meal struct {
+	Time          Time    `json:"time"`
+	Mealohydrates float32 `json:"carbohydrates"`
+	Proteins      float32 `json:"proteins"`
+	Fat           float32 `json:"fat"`
+	SaturatedFat  float32 `json:"saturatedFat"`
 }
 
 // This holds an array of injections for a whole day
-type DayOfCarbs struct {
-	Carbs []Carb
+type DayOfMeals struct {
+	Meals []Meal
 }
 
-type CarbSlice []Carb
+type MealSlice []Meal
 
-func (slice CarbSlice) Len() int {
+func (slice MealSlice) Len() int {
 	return len(slice)
 }
 
-func (slice CarbSlice) Less(i, j int) bool {
+func (slice MealSlice) Less(i, j int) bool {
 	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
 }
 
-func (slice CarbSlice) Swap(i, j int) {
+func (slice MealSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (slice CarbSlice) GetEpochTime(i int) (epochTime int64) {
+func (slice MealSlice) GetEpochTime(i int) (epochTime int64) {
 	return slice[i].Timestamp.EpochTime
 }
 
-// ToDataPointSlice converts an CarbSlice into a generic DataPoint array
-func (slice CarbSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
+// ToDataPointSlice converts an MealSlice into a generic DataPoint array
+func (slice MealSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		dataPoint := DataPoint{slice[i].Timestamp.LocalTime, slice[i].Timestamp.EpochTime,

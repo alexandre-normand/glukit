@@ -4,12 +4,11 @@ const (
 	EXERCISE_TAG = "Exercise"
 )
 
-// Represents an exercise event
 type Exercise struct {
-	Timestamp
-	DurationInMinutes int `json:"duration" datastore:"duration,noindex"`
-	// One of: light, medium, heavy
-	Intensity string `json:"intensity" datastore:"intensity,noindex"`
+	Time            Time   `json:"time"`
+	DurationMinutes int    `json:"durationInMinutes"`
+	Intensity       string `json:"intensity"`
+	Description     string `json:"description"`
 }
 
 // This holds an array of exercise events for a whole day
@@ -24,7 +23,7 @@ func (slice ExerciseSlice) Len() int {
 }
 
 func (slice ExerciseSlice) Less(i, j int) bool {
-	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+	return slice[i].Time.Timestamp < slice[j].Time.Timestamp
 }
 
 func (slice ExerciseSlice) Swap(i, j int) {
@@ -32,7 +31,7 @@ func (slice ExerciseSlice) Swap(i, j int) {
 }
 
 func (slice ExerciseSlice) GetEpochTime(i int) (epochTime int64) {
-	return slice[i].Timestamp.EpochTime
+	return slice[i].Time.Timestamp
 }
 
 // ToDataPointSlice converts an ExerciseSlice into a generic DataPoint array

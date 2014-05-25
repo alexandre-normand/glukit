@@ -11,7 +11,7 @@ const (
 // CalibrationRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external
 // meter
 type CalibrationRead struct {
-	Timestamp
+	Time
 	Value int `json:"y" datastore:"value,noindex"`
 }
 
