@@ -1,5 +1,9 @@
 package model
 
+import (
+	"time"
+)
+
 const (
 	CARB_TAG = "Meals"
 )
@@ -8,7 +12,7 @@ const (
 // are fully supported at the moment.
 type Meal struct {
 	Time          Time    `json:"time"`
-	Mealohydrates float32 `json:"carbohydrates"`
+	Carbohydrates float32 `json:"carbohydrates"`
 	Proteins      float32 `json:"proteins"`
 	Fat           float32 `json:"fat"`
 	SaturatedFat  float32 `json:"saturatedFat"`
@@ -19,6 +23,11 @@ type DayOfMeals struct {
 	Meals []Meal
 }
 
+// GetTime gets the time of a Timestamp value
+func (element Meal) GetTime() time.Time {
+	return element.Time.GetTime()
+}
+
 type MealSlice []Meal
 
 func (slice MealSlice) Len() int {
@@ -26,7 +35,7 @@ func (slice MealSlice) Len() int {
 }
 
 func (slice MealSlice) Less(i, j int) bool {
-	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+	return slice[i].Time.Timestamp < slice[j].Time.Timestamp
 }
 
 func (slice MealSlice) Swap(i, j int) {
@@ -34,17 +43,22 @@ func (slice MealSlice) Swap(i, j int) {
 }
 
 func (slice MealSlice) GetEpochTime(i int) (epochTime int64) {
-	return slice[i].Timestamp.EpochTime
+	return slice[i].Time.Timestamp / 1000
 }
 
 // ToDataPointSlice converts an MealSlice into a generic DataPoint array
-func (slice MealSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
+func (slice MealSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint, err error) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].Timestamp.LocalTime, slice[i].Timestamp.EpochTime,
-			linearInterpolateY(matchingReads, slice[i].Timestamp), slice[i].Grams, CARB_TAG}
+		localTime, err := slice[i].Time.Format()
+		if err != nil {
+			return nil, err
+		}
+
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i),
+			linearInterpolateY(matchingReads, slice[i].Time), slice[i].Carbohydrates, CARB_TAG}
 		dataPoints[i] = dataPoint
 	}
 
-	return dataPoints
+	return dataPoints, nil
 }

@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/alexandre-normand/glukit/app/util"
+	"time"
 )
 
 const (
@@ -25,6 +26,11 @@ type DayOfGlucoseReads struct {
 	Reads []GlucoseRead
 }
 
+// GetTime gets the time of a Timestamp value
+func (element GlucoseRead) GetTime() time.Time {
+	return element.Time.GetTime()
+}
+
 // func (slice GlucoseReadSlice) Len() int {
 // 	return len(slice)
 // }
@@ -35,7 +41,7 @@ func (slice GlucoseReadSlice) Len() int {
 }
 
 func (slice GlucoseReadSlice) Less(i, j int) bool {
-	return slice[i].Time.Timestamp < slice[j].Time.EpochTime
+	return slice[i].Time.Timestamp < slice[j].Time.Timestamp
 }
 
 func (slice GlucoseReadSlice) Swap(i, j int) {
@@ -51,13 +57,18 @@ func (slice GlucoseReadSlice) GetEpochTime(i int) (epochTime int64) {
 }
 
 // ToDataPointSlice converts a GlucoseReadSlice into a generic DataPoint array
-func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
+func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint, err error) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].Time.LocalTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG}
+		localTime, err := slice[i].Time.Format()
+		if err != nil {
+			return nil, err
+		}
+
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG}
 		dataPoints[i] = dataPoint
 	}
-	return dataPoints
+	return dataPoints, nil
 }
 
-var UNDEFINED_GLUCOSE_READ = GlucoseRead{Timestamp{"2004-01-01 00:00:00 UTC", util.GLUKIT_EPOCH_TIME.Unix()}, UNDEFINED_READ}
+var UNDEFINED_GLUCOSE_READ = GlucoseRead{Time{util.GLUKIT_EPOCH_TIME.Unix() * 1000, "NONE"}, "NONE", UNDEFINED_READ}
