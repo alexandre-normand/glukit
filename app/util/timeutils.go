@@ -30,6 +30,8 @@ const (
 // This maps to 01 Jan 2004 00:00:00 GMT.
 var GLUKIT_EPOCH_TIME = time.Unix(1072915200, 0)
 
+var locationCache = make(map[string]*time.Location)
+
 // ParseGoogleDriveDate parses a Google Drive API time value
 func ParseGoogleDriveDate(value string) (timeValue time.Time, err error) {
 	return time.Parse(DRIVE_TIMEFORMAT, value)
@@ -103,4 +105,18 @@ func GetLocalTimeInProperLocation(localTime string, internalTime time.Time) (loc
 	location := GetLocaltimeOffset(localTime, internalTime)
 	localTimeWithLocation, _ = time.ParseInLocation(TIMEFORMAT_NO_TZ, localTime, location)
 	return
+}
+
+func GetOrLoadLocationForName(locationName string) (location *time.Location, err error) {
+	if location, ok := locationCache[locationName]; !ok {
+		location, err = time.LoadLocation(locationName)
+		if err != nil {
+			return nil, err
+		}
+
+		locationCache[locationName] = location
+		return location, nil
+	} else {
+		return location, nil
+	}
 }

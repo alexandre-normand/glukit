@@ -3,38 +3,37 @@ package model
 import (
 	"appengine/datastore"
 	"fmt"
-	"github.com/alexandre-normand/glukit/app/util"
 	"strconv"
 	"time"
 )
 
 func (dayOfReads *DayOfGlucoseReads) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
-	var startTimeLocal string
-	var userLocation *time.Location
+	var unit string
+	var locationName string
 
 	for property := range channel {
 		switch columnName, columnValue := property.Name, property.Value; {
 		case columnName == "startTime":
 			startTime = columnValue.(time.Time)
+		case columnName == "unit":
+			unit = columnValue.(string)
+		case columnName == "timezone":
+			locationName = columnValue.(string)
 		case columnName == "endTime":
 			// We ignore it on load
 			_ = columnValue.(time.Time)
-		case columnName == "startTimeLocal":
-			startTimeLocal = columnValue.(string)
-			userLocation = util.GetLocaltimeOffset(startTimeLocal, startTime)
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				util.Propagate(err)
+				return err
 			}
 
 			readTime := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We need to convert value to int64 and cast it as int
-			value := int(columnValue.(int64))
+			value := columnValue.(float64)
 
-			localTime := readTime.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			read := GlucoseRead{Timestamp{localTime, readTime.Unix()}, value}
+			read := GlucoseRead{Time{readTime.Unix() * 1000, locationName}, unit, float32(value)}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -52,11 +51,9 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 		return nil
 	}
 	reads := dayOfReads.Reads
-	startTimestamp := int64(reads[0].Timestamp.EpochTime)
-	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := reads[0].Timestamp.LocalTime
-	endTimestamp := int64(reads[size-1].Timestamp.EpochTime)
-	endTime := time.Unix(endTimestamp, 0)
+	startTimestamp := reads[0].Time.Timestamp
+	startTime := reads[0].Time.GetTime()
+	endTime := reads[size-1].Time.GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -67,16 +64,19 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 		Value: endTime,
 	}
 	channel <- datastore.Property{
-		Name:  "startTimeLocal",
-		Value: startTimeLocal,
+		Name:  "timezone",
+		Value: reads[0].Time.TimeZoneId,
+	}
+	channel <- datastore.Property{
+		Name:  "unit",
+		Value: reads[0].Unit,
 	}
 
 	for i := range reads {
-		readTimestamp := int64(reads[i].Timestamp.EpochTime)
-		readOffset := readTimestamp - startTimestamp
+		readOffset := reads[i].Time.Timestamp - startTimestamp
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
-			Value:   int64(reads[i].Value),
+			Value:   float32(reads[i].Value),
 			NoIndex: true,
 		}
 	}
@@ -86,8 +86,8 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 
 func (dayOfReads *DayOfCalibrationReads) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
-	var startTimeLocal string
-	var userLocation *time.Location
+	var unit string
+	var locationName string
 
 	for property := range channel {
 		switch columnName, columnValue := property.Name, property.Value; {
@@ -96,21 +96,21 @@ func (dayOfReads *DayOfCalibrationReads) Load(channel <-chan datastore.Property)
 		case columnName == "endTime":
 			// We ignore it on load
 			_ = columnValue.(time.Time)
-		case columnName == "startTimeLocal":
-			startTimeLocal = columnValue.(string)
-			userLocation = util.GetLocaltimeOffset(startTimeLocal, startTime)
+		case columnName == "unit":
+			unit = columnValue.(string)
+		case columnName == "timezone":
+			locationName = columnValue.(string)
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				util.Propagate(err)
+				return err
 			}
 
 			readTime := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We need to convert value to int64 and cast it as int
-			value := int(columnValue.(int64))
+			value := columnValue.(float64)
 
-			localTime := readTime.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			read := CalibrationRead{Timestamp{localTime, readTime.Unix()}, value}
+			read := CalibrationRead{Time{readTime.Unix() * 1000, locationName}, unit, float32(value)}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -128,11 +128,9 @@ func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property)
 		return nil
 	}
 	reads := dayOfReads.Reads
-	startTimestamp := int64(reads[0].Timestamp.EpochTime)
-	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := reads[0].Timestamp.LocalTime
-	endTimestamp := int64(reads[size-1].Timestamp.EpochTime)
-	endTime := time.Unix(endTimestamp, 0)
+	startTimestamp := reads[0].Time.Timestamp
+	startTime := reads[0].Time.GetTime()
+	endTime := reads[size-1].Time.GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -143,16 +141,19 @@ func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property)
 		Value: endTime,
 	}
 	channel <- datastore.Property{
-		Name:  "startTimeLocal",
-		Value: startTimeLocal,
+		Name:  "timezone",
+		Value: reads[0].Time.TimeZoneId,
+	}
+	channel <- datastore.Property{
+		Name:  "unit",
+		Value: reads[0].Unit,
 	}
 
 	for i := range reads {
-		readTimestamp := int64(reads[i].Timestamp.EpochTime)
-		readOffset := readTimestamp - startTimestamp
+		readOffset := reads[i].Time.Timestamp - startTimestamp
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
-			Value:   int64(reads[i].Value),
+			Value:   reads[i].Value,
 			NoIndex: true,
 		}
 	}
@@ -162,8 +163,7 @@ func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property)
 
 func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
-	var startTimeLocal string
-	var userLocation *time.Location
+	var locationName string
 
 	for property := range channel {
 		switch columnName, columnValue := property.Name, property.Value; {
@@ -172,13 +172,12 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 		case columnName == "endTime":
 			// We ignore it on load
 			_ = columnValue.(time.Time)
-		case columnName == "startTimeLocal":
-			startTimeLocal = columnValue.(string)
-			userLocation = util.GetLocaltimeOffset(startTimeLocal, startTime)
+		case columnName == "timezone":
+			locationName = columnValue.(string)
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				util.Propagate(err)
+				return err
 			}
 
 			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
@@ -186,8 +185,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 			// the store
 			value := float32(columnValue.(float64))
 
-			localTime := timestamp.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			injection := Injection{Timestamp{localTime, timestamp.Unix()}, value, UNDEFINED_READ}
+			injection := Injection{Time{timestamp.Unix() * 1000, locationName}, value, "Not implemented", "Not implemented"}
 			dayOfInjections.Injections = append(dayOfInjections.Injections, injection)
 		}
 	}
@@ -205,11 +203,9 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 		return nil
 	}
 	injections := dayOfInjections.Injections
-	startTimestamp := int64(injections[0].Timestamp.EpochTime)
-	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := injections[0].Timestamp.LocalTime
-	endTimestamp := int64(injections[size-1].Timestamp.EpochTime)
-	endTime := time.Unix(endTimestamp, 0)
+	startTimestamp := injections[0].Time.Timestamp
+	startTime := injections[0].Time.GetTime()
+	endTime := injections[size-1].Time.GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -220,13 +216,12 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 		Value: endTime,
 	}
 	channel <- datastore.Property{
-		Name:  "startTimeLocal",
-		Value: startTimeLocal,
+		Name:  "timezone",
+		Value: injections[0].Time.TimeZoneId,
 	}
 
 	for i := range injections {
-		timestamp := int64(injections[i].Timestamp.EpochTime)
-		offset := timestamp - startTimestamp
+		offset := injections[i].Time.Timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
@@ -238,10 +233,9 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 	return nil
 }
 
-func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
+func (dayOfMeals *DayOfMeals) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
-	var startTimeLocal string
-	var userLocation *time.Location
+	var locationName string
 
 	for property := range channel {
 		switch columnName, columnValue := property.Name, property.Value; {
@@ -250,44 +244,40 @@ func (dayOfCarbs *DayOfCarbs) Load(channel <-chan datastore.Property) error {
 		case columnName == "endTime":
 			// We ignore it on load
 			_ = columnValue.(time.Time)
-		case columnName == "startTimeLocal":
-			startTimeLocal = columnValue.(string)
-			userLocation = util.GetLocaltimeOffset(startTimeLocal, startTime)
+		case columnName == "timezone":
+			locationName = columnValue.(string)
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				util.Propagate(err)
+				return err
 			}
 
 			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
 			// We need to convert value to float64 and we downcast to float32 (it's safe since we only up-casted it for
 			// the store
-			value := float32(columnValue.(float64))
+			carbs := float32(columnValue.(float64))
 
-			localTime := timestamp.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			carb := Carb{Timestamp{localTime, timestamp.Unix()}, value, UNDEFINED_READ}
-			dayOfCarbs.Carbs = append(dayOfCarbs.Carbs, carb)
+			meal := Meal{Time{timestamp.Unix(), locationName}, carbs, 0., 0., 0.}
+			dayOfMeals.Meals = append(dayOfMeals.Meals, meal)
 		}
 	}
 
 	return nil
 }
 
-func (dayOfCarbs *DayOfCarbs) Save(channel chan<- datastore.Property) error {
+func (dayOfMeals *DayOfMeals) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
-	size := len(dayOfCarbs.Carbs)
+	size := len(dayOfMeals.Meals)
 
 	// Nothing to do if the slice has zero elements
 	if size == 0 {
 		return nil
 	}
-	carbs := dayOfCarbs.Carbs
-	startTimestamp := int64(carbs[0].Timestamp.EpochTime)
-	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := carbs[0].Timestamp.LocalTime
-	endTimestamp := int64(carbs[size-1].Timestamp.EpochTime)
-	endTime := time.Unix(endTimestamp, 0)
+	meals := dayOfMeals.Meals
+	startTimestamp := meals[0].Time.Timestamp
+	startTime := meals[0].Time.GetTime()
+	endTime := meals[size-1].Time.GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -298,17 +288,16 @@ func (dayOfCarbs *DayOfCarbs) Save(channel chan<- datastore.Property) error {
 		Value: endTime,
 	}
 	channel <- datastore.Property{
-		Name:  "startTimeLocal",
-		Value: startTimeLocal,
+		Name:  "timezone",
+		Value: meals[0].Time.TimeZoneId,
 	}
 
-	for i := range carbs {
-		timestamp := int64(carbs[i].Timestamp.EpochTime)
-		offset := timestamp - startTimestamp
+	for i := range meals {
+		offset := meals[i].Time.Timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
-			Value:   float64(carbs[i].Grams),
+			Value:   float64(meals[i].Carbohydrates),
 			NoIndex: true,
 		}
 	}
@@ -318,8 +307,7 @@ func (dayOfCarbs *DayOfCarbs) Save(channel chan<- datastore.Property) error {
 
 func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
-	var startTimeLocal string
-	var userLocation *time.Location
+	var locationName string
 
 	for property := range channel {
 		switch columnName, columnValue := property.Name, property.Value; {
@@ -328,13 +316,12 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 		case columnName == "endTime":
 			// We ignore it on load
 			_ = columnValue.(time.Time)
-		case columnName == "startTimeLocal":
-			startTimeLocal = columnValue.(string)
-			userLocation = util.GetLocaltimeOffset(startTimeLocal, startTime)
+		case columnName == "timezone":
+			locationName = columnValue.(string)
 		default:
 			offsetInSeconds, err := strconv.ParseInt(columnName, 10, 64)
 			if err != nil {
-				util.Propagate(err)
+				return err
 			}
 
 			timestamp := time.Unix(startTime.Unix()+offsetInSeconds, 0)
@@ -344,8 +331,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 			var intensity string
 			fmt.Sscanf(value, EXERCISE_VALUE_FORMAT, &duration, &intensity)
 
-			localTime := timestamp.In(userLocation).Format(util.TIMEFORMAT_NO_TZ)
-			exercise := Exercise{Timestamp{localTime, timestamp.Unix()}, duration, intensity}
+			exercise := Exercise{Time{timestamp.Unix() * 1000, locationName}, duration, intensity, ""}
 			dayOfExercises.Exercises = append(dayOfExercises.Exercises, exercise)
 		}
 	}
@@ -363,11 +349,9 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 		return nil
 	}
 	exercises := dayOfExercises.Exercises
-	startTimestamp := int64(exercises[0].Timestamp.EpochTime)
-	startTime := time.Unix(startTimestamp, 0)
-	startTimeLocal := exercises[0].Timestamp.LocalTime
-	endTimestamp := int64(exercises[size-1].Timestamp.EpochTime)
-	endTime := time.Unix(endTimestamp, 0)
+	startTimestamp := exercises[0].Time.Timestamp
+	startTime := exercises[0].Time.GetTime()
+	endTime := exercises[size-1].Time.GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -378,17 +362,16 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 		Value: endTime,
 	}
 	channel <- datastore.Property{
-		Name:  "startTimeLocal",
-		Value: startTimeLocal,
+		Name:  "timezone",
+		Value: exercises[0].Time.TimeZoneId,
 	}
 
 	for i := range exercises {
-		timestamp := int64(exercises[i].Timestamp.EpochTime)
-		offset := timestamp - startTimestamp
+		offset := exercises[i].Time.Timestamp - startTimestamp
 		// We need to store two values so we use a string and format each value inside of a single cell value
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
-			Value:   fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercises[i].DurationInMinutes, exercises[i].Intensity),
+			Value:   fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercises[i].DurationMinutes, exercises[i].Intensity),
 			NoIndex: true,
 		}
 	}

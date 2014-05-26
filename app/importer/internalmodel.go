@@ -1,7 +1,6 @@
 package importer
 
 import (
-	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/util"
 	"regexp"
@@ -38,7 +37,7 @@ type EventTimestamp struct {
 
 var mmolValueRegExp = regexp.MustCompile("\\d\\.\\d\\d")
 
-func convertXmlGlucoseRead(read Glucose) (*apimodel.Glucose, error) {
+func convertXmlGlucoseRead(read Glucose) (*model.GlucoseRead, error) {
 	// Convert display/internal to timestamp with timezone extracted
 	if timeUTC, err := util.GetTimeUTC(read.InternalTime); err != nil {
 		return nil, err
@@ -50,7 +49,7 @@ func convertXmlGlucoseRead(read Glucose) (*apimodel.Glucose, error) {
 		if value, err := strconv.ParseFloat(read.Value, 32); err != nil {
 			return nil, err
 		} else {
-			return &apimodel.Glucose{apimodel.Time{timestamp, timeLocation.String()}, unit, float32(value)}, nil
+			return &model.GlucoseRead{model.Time{timestamp, timeLocation.String()}, unit, float32(value)}, nil
 		}
 	}
 }
@@ -64,7 +63,7 @@ func getUnitFromValue(value string) (unit string) {
 	return unit
 }
 
-func convertXmlCalibrationRead(calibration Calibration) (*apimodel.Calibration, error) {
+func convertXmlCalibrationRead(calibration Calibration) (*model.CalibrationRead, error) {
 	// Convert display/internal to timestamp with timezone extracted
 	if timeUTC, err := util.GetTimeUTC(calibration.InternalTime); err != nil {
 		return nil, err
@@ -76,7 +75,7 @@ func convertXmlCalibrationRead(calibration Calibration) (*apimodel.Calibration, 
 		if value, err := strconv.ParseFloat(calibration.Value, 32); err != nil {
 			return nil, err
 		} else {
-			return &apimodel.Calibration{apimodel.Time{timestamp, timeLocation.String()}, unit, float32(value)}, nil
+			return &model.CalibrationRead{model.Time{timestamp, timeLocation.String()}, unit, float32(value)}, nil
 		}
 
 	}

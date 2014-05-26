@@ -4,7 +4,7 @@ package model
 type DataPoint struct {
 	LocalTime string  `json:"label"`
 	EpochTime int64   `json:"x"`
-	Y         int     `json:"y"`
+	Y         float32 `json:"y"`
 	Value     float32 `json:"value"`
 	Tag       string  `json:"tag"`
 }
