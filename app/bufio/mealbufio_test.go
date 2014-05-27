@@ -43,7 +43,7 @@ func (w *statsMealWriter) WriteMealBatches(p []model.DayOfMeals) (glukitio.MealB
 	log.Printf("WriteMealBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.state.total += len(dayOfData.Meals)
-		w.state.batches[dayOfData.Meals[0].EpochTime] = dayOfData.Meals
+		w.state.batches[dayOfData.Meals[0].GetTime().Unix()] = dayOfData.Meals
 	}
 	log.Printf("WriteMealBatch with total of %d", w.state.total)
 	w.state.batchCount += len(p)
@@ -63,7 +63,7 @@ func TestSimpleWriteOfSingleMealBatch(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		meals := make([]model.Meal, 24)
 		for j := 0; j < 24; j++ {
-			meals[j] = model.Meal{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
 		batches[i] = model.DayOfMeals{meals}
 	}
@@ -90,7 +90,7 @@ func TestIndividualMealWrite(t *testing.T) {
 	w := NewMealWriterSize(NewStatsMealWriter(state), 10)
 	meals := make([]model.Meal, 24)
 	for j := 0; j < 24; j++ {
-		meals[j] = model.Meal{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+		meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 	}
 	newWriter, _ := w.WriteMealBatch(meals)
 	w = newWriter.(*BufferedMealBatchWriter)
@@ -117,7 +117,7 @@ func TestSimpleWriteLargerThanOneMealBatch(t *testing.T) {
 	for i := 0; i < 11; i++ {
 		meals := make([]model.Meal, 24)
 		for j := 0; j < 24; j++ {
-			meals[j] = model.Meal{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
 		batches[i] = model.DayOfMeals{meals}
 	}
@@ -160,7 +160,7 @@ func TestWriteTwoFullMealBatches(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		meals := make([]model.Meal, 24)
 		for j := 0; j < 24; j++ {
-			meals[j] = model.Meal{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
 		batches[i] = model.DayOfMeals{meals}
 	}
