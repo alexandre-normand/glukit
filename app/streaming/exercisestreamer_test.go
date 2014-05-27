@@ -47,7 +47,7 @@ func (w *statsExerciseReadWriter) WriteExerciseBatches(p []model.DayOfExercises)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Exercises[0].GetTime())
 		w.state.total += len(dayOfData.Exercises)
-		w.state.batches[dayOfData.Exercises[0].EpochTime] = dayOfData.Exercises
+		w.state.batches[dayOfData.Exercises[0].GetTime().Unix()] = dayOfData.Exercises
 	}
 
 	log.Printf("WriteExerciseReadBatches with total of %d", w.state.total)
@@ -69,7 +69,7 @@ func TestWriteOfDayExerciseBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteExercise(model.Exercise{model.Timestamp{"", readTime.Unix()}, i, "Light"})
+		w, _ = w.WriteExercise(model.Exercise{model.Time{readTime.Unix(), "America/Montreal"}, i, "Light", "details"})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyExerciseBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteExercise(model.Exercise{model.Timestamp{"", readTime.Unix()}, i, "Light"})
+		w, _ = w.WriteExercise(model.Exercise{model.Time{readTime.Unix(), "America/Montreal"}, i, "Light", "details"})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleExerciseBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteExercise(model.Exercise{model.Timestamp{"", readTime.Unix()}, i, "Light"})
+		w, _ = w.WriteExercise(model.Exercise{model.Time{readTime.Unix(), "America/Montreal"}, i, "Light", "details"})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestExerciseStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteExercise(model.Exercise{model.Timestamp{"", readTime.Unix()}, b*48 + i, "Light"})
+			w, _ = w.WriteExercise(model.Exercise{model.Time{readTime.Unix(), "America/Montreal"}, b*48 + i, "Light", "details"})
 		}
 	}
 
