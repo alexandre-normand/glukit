@@ -72,11 +72,11 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 		Value: reads[0].Unit,
 	}
 
-	for i := range reads {
-		readOffset := reads[i].Time.Timestamp - startTimestamp
+	for _, read := range reads {
+		readOffset := read.Time.Timestamp - startTimestamp
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
-			Value:   float32(reads[i].Value),
+			Value:   float64(read.Value),
 			NoIndex: true,
 		}
 	}
@@ -149,11 +149,11 @@ func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property)
 		Value: reads[0].Unit,
 	}
 
-	for i := range reads {
-		readOffset := reads[i].Time.Timestamp - startTimestamp
+	for _, read := range reads {
+		readOffset := read.Time.Timestamp - startTimestamp
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
-			Value:   reads[i].Value,
+			Value:   float64(read.Value),
 			NoIndex: true,
 		}
 	}
@@ -220,12 +220,12 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 		Value: injections[0].Time.TimeZoneId,
 	}
 
-	for i := range injections {
-		offset := injections[i].Time.Timestamp - startTimestamp
+	for _, injection := range injections {
+		offset := injection.Time.Timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
-			Value:   float64(injections[i].Units),
+			Value:   float64(injection.Units),
 			NoIndex: true,
 		}
 	}
@@ -292,12 +292,12 @@ func (dayOfMeals *DayOfMeals) Save(channel chan<- datastore.Property) error {
 		Value: meals[0].Time.TimeZoneId,
 	}
 
-	for i := range meals {
-		offset := meals[i].Time.Timestamp - startTimestamp
+	for _, meal := range meals {
+		offset := meal.Time.Timestamp - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
-			Value:   float64(meals[i].Carbohydrates),
+			Value:   float64(meal.Carbohydrates),
 			NoIndex: true,
 		}
 	}
@@ -366,12 +366,12 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 		Value: exercises[0].Time.TimeZoneId,
 	}
 
-	for i := range exercises {
-		offset := exercises[i].Time.Timestamp - startTimestamp
+	for _, exercise := range exercises {
+		offset := exercise.Time.Timestamp - startTimestamp
 		// We need to store two values so we use a string and format each value inside of a single cell value
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
-			Value:   fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercises[i].DurationMinutes, exercises[i].Intensity),
+			Value:   fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercise.DurationMinutes, exercise.Intensity),
 			NoIndex: true,
 		}
 	}
