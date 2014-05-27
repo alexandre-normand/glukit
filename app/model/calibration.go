@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/alexandre-normand/glukit/app/util"
 	"time"
 )
 
@@ -49,18 +50,18 @@ func (slice CalibrationReadSlice) GetEpochTime(i int) (epochTime int64) {
 }
 
 // ToDataPointSlice converts a CalibrationReadSlice into a generic DataPoint array
-func (slice CalibrationReadSlice) ToDataPointSlice() (dataPoints []DataPoint, err error) {
+func (slice CalibrationReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		localTime, err := slice[i].Time.Format()
 		if err != nil {
-			return nil, err
+			util.Propagate(err)
 		}
 
 		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, float32(slice[i].Value), CALIBRATION_READ_TAG}
 		dataPoints[i] = dataPoint
 	}
-	return dataPoints, nil
+	return dataPoints
 }
 
 var UNDEFINED_CALIBRATION_READ = CalibrationRead{Time{0, "GMT"}, "NONE", -1.}

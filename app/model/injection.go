@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/alexandre-normand/glukit/app/util"
 	"time"
 )
 
@@ -45,13 +46,13 @@ func (slice InjectionSlice) GetEpochTime(i int) (epochTime int64) {
 }
 
 // ToDataPointSlice converts an InjectionSlice into a generic DataPoint array
-func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint, err error) {
+func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 
 	for i := range slice {
 		localTime, err := slice[i].Time.Format()
 		if err != nil {
-			return nil, err
+			util.Propagate(err)
 		}
 
 		dataPoint := DataPoint{localTime, slice.GetEpochTime(i),
@@ -59,5 +60,5 @@ func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataP
 		dataPoints[i] = dataPoint
 	}
 
-	return dataPoints, nil
+	return dataPoints
 }
