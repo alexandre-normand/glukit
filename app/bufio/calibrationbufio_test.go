@@ -43,7 +43,7 @@ func (w *statsCalibrationWriter) WriteCalibrationBatches(p []model.DayOfCalibrat
 	log.Printf("WriteCalibrationBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.state.total += len(dayOfData.Reads)
-		w.state.batches[dayOfData.Reads[0].EpochTime] = dayOfData.Reads
+		w.state.batches[dayOfData.Reads[0].GetTime().Unix()] = dayOfData.Reads
 	}
 	log.Printf("WriteCalibrationBatch with total of %d", w.state.total)
 	w.state.batchCount += len(p)
@@ -63,7 +63,7 @@ func TestSimpleWriteOfSingleCalibrationBatch(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		calibrations := make([]model.CalibrationRead, 24)
 		for j := 0; j < 24; j++ {
-			calibrations[j] = model.CalibrationRead{model.Timestamp{"", 0}, 75}
+			calibrations[j] = model.CalibrationRead{model.Time{0, "America/Montreal"}, model.MG_PER_DL, 75}
 		}
 		batches[i] = model.DayOfCalibrationReads{calibrations}
 	}
@@ -90,7 +90,7 @@ func TestIndividualCalibrationWrite(t *testing.T) {
 	w := NewCalibrationWriterSize(NewStatsCalibrationWriter(state), 10)
 	calibrations := make([]model.CalibrationRead, 24)
 	for j := 0; j < 24; j++ {
-		calibrations[j] = model.CalibrationRead{model.Timestamp{"", 0}, 75}
+		calibrations[j] = model.CalibrationRead{model.Time{0, "America/Montreal"}, model.MG_PER_DL, 75}
 	}
 	newWriter, _ := w.WriteCalibrationBatch(calibrations)
 	w = newWriter.(*BufferedCalibrationBatchWriter)
@@ -117,7 +117,7 @@ func TestSimpleWriteLargerThanOneCalibrationBatch(t *testing.T) {
 	for i := 0; i < 11; i++ {
 		calibrations := make([]model.CalibrationRead, 24)
 		for j := 0; j < 24; j++ {
-			calibrations[j] = model.CalibrationRead{model.Timestamp{"", 0}, 75}
+			calibrations[j] = model.CalibrationRead{model.Time{0, "America/Montreal"}, model.MG_PER_DL, 75}
 		}
 		batches[i] = model.DayOfCalibrationReads{calibrations}
 	}
@@ -160,7 +160,7 @@ func TestWriteTwoFullCalibrationBatches(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		calibrations := make([]model.CalibrationRead, 24)
 		for j := 0; j < 24; j++ {
-			calibrations[j] = model.CalibrationRead{model.Timestamp{"", 0}, 75}
+			calibrations[j] = model.CalibrationRead{model.Time{0, "America/Montreal"}, model.MG_PER_DL, 75}
 		}
 		batches[i] = model.DayOfCalibrationReads{calibrations}
 	}

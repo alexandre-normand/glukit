@@ -43,7 +43,7 @@ func (w *statsInjectionWriter) WriteInjectionBatches(p []model.DayOfInjections) 
 	log.Printf("WriteInjectionBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.state.total += len(dayOfData.Injections)
-		w.state.batches[dayOfData.Injections[0].EpochTime] = dayOfData.Injections
+		w.state.batches[dayOfData.Injections[0].GetTime().Unix()] = dayOfData.Injections
 	}
 	log.Printf("WriteInjectionBatch with total of %d", w.state.total)
 	w.state.batchCount += len(p)
@@ -63,7 +63,7 @@ func TestSimpleWriteOfSingleInjectionBatch(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		injections := make([]model.Injection, 24)
 		for j := 0; j < 24; j++ {
-			injections[j] = model.Injection{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 		}
 		batches[i] = model.DayOfInjections{injections}
 	}
@@ -90,7 +90,7 @@ func TestIndividualInjectionWrite(t *testing.T) {
 	w := NewInjectionWriterSize(NewStatsInjectionWriter(state), 10)
 	injections := make([]model.Injection, 24)
 	for j := 0; j < 24; j++ {
-		injections[j] = model.Injection{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+		injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 	}
 	newWriter, _ := w.WriteInjectionBatch(injections)
 	w = newWriter.(*BufferedInjectionBatchWriter)
@@ -117,7 +117,7 @@ func TestSimpleWriteLargerThanOneInjectionBatch(t *testing.T) {
 	for i := 0; i < 11; i++ {
 		injections := make([]model.Injection, 24)
 		for j := 0; j < 24; j++ {
-			injections[j] = model.Injection{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 		}
 		batches[i] = model.DayOfInjections{injections}
 	}
@@ -160,7 +160,7 @@ func TestWriteTwoFullInjectionBatches(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		injections := make([]model.Injection, 24)
 		for j := 0; j < 24; j++ {
-			injections[j] = model.Injection{model.Timestamp{"", 0}, float32(1.5), model.UNDEFINED_READ}
+			injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 		}
 		batches[i] = model.DayOfInjections{injections}
 	}

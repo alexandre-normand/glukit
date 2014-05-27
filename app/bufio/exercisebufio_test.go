@@ -43,7 +43,7 @@ func (w *statsExerciseWriter) WriteExerciseBatches(p []model.DayOfExercises) (gl
 	log.Printf("WriteExerciseBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.state.total += len(dayOfData.Exercises)
-		w.state.batches[dayOfData.Exercises[0].EpochTime] = dayOfData.Exercises
+		w.state.batches[dayOfData.Exercises[0].GetTime().Unix()] = dayOfData.Exercises
 	}
 	log.Printf("WriteExerciseBatch with total of %d", w.state.total)
 	w.state.batchCount += len(p)
@@ -63,7 +63,7 @@ func TestSimpleWriteOfSingleExerciseBatch(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		exercises := make([]model.Exercise, 24)
 		for j := 0; j < 24; j++ {
-			exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
+			exercises[j] = model.Exercise{model.Time{0, "America/Montreal"}, j, "Light", "details"}
 		}
 		batches[i] = model.DayOfExercises{exercises}
 	}
@@ -90,7 +90,7 @@ func TestIndividualExerciseWrite(t *testing.T) {
 	w := NewExerciseWriterSize(NewStatsExerciseWriter(state), 10)
 	exercises := make([]model.Exercise, 24)
 	for j := 0; j < 24; j++ {
-		exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
+		exercises[j] = model.Exercise{model.Time{0, "America/Montreal"}, j, "Light", "details"}
 	}
 	newWriter, _ := w.WriteExerciseBatch(exercises)
 	w = newWriter.(*BufferedExerciseBatchWriter)
@@ -117,7 +117,7 @@ func TestSimpleWriteLargerThanOneExerciseBatch(t *testing.T) {
 	for i := 0; i < 11; i++ {
 		exercises := make([]model.Exercise, 24)
 		for j := 0; j < 24; j++ {
-			exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
+			exercises[j] = model.Exercise{model.Time{0, "America/Montreal"}, j, "Light", "details"}
 		}
 		batches[i] = model.DayOfExercises{exercises}
 	}
@@ -160,7 +160,7 @@ func TestWriteTwoFullExerciseBatches(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		exercises := make([]model.Exercise, 24)
 		for j := 0; j < 24; j++ {
-			exercises[j] = model.Exercise{model.Timestamp{"", 0}, j, "Light"}
+			exercises[j] = model.Exercise{model.Time{0, "America/Montreal"}, j, "Light", "details"}
 		}
 		batches[i] = model.DayOfExercises{exercises}
 	}
