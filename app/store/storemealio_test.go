@@ -4,7 +4,6 @@ import (
 	"appengine/aetest"
 	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/store"
-	"github.com/alexandre-normand/glukit/app/util"
 	"testing"
 	"time"
 )
@@ -14,7 +13,7 @@ func TestSimpleWriteOfSingleMealBatch(t *testing.T) {
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		meals[i] = model.Meal{model.Timestamp{readTime.Format(util.TIMEFORMAT_NO_TZ), readTime.Unix()}, float32(1.5), model.UNDEFINED_READ}
+		meals[i] = model.Meal{model.Time{readTime.Unix(), "America/Los_Angeles"}, float32(i), 0., 0., 0.}
 	}
 
 	c, err := aetest.NewContext(nil)
@@ -38,7 +37,7 @@ func TestSimpleWriteOfMealBatches(t *testing.T) {
 		meals := make([]model.Meal, 24)
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(i*24+j) * time.Hour)
-			meals[j] = model.Meal{model.Timestamp{readTime.Format(util.TIMEFORMAT_NO_TZ), readTime.Unix()}, float32(1.5), model.UNDEFINED_READ}
+			meals[j] = model.Meal{model.Time{readTime.Unix(), "America/Los_Angeles"}, float32(i*24 + j), 0., 0., 0.}
 		}
 		b[i] = model.DayOfMeals{meals}
 	}
