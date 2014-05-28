@@ -68,7 +68,7 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 		glucoseReads := make([]model.GlucoseRead, 24)
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
-			glucoseReads[j] = model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(j)}
+			glucoseReads[j] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(j)}
 		}
 		batches[i] = model.DayOfGlucoseReads{glucoseReads}
 	}
@@ -97,7 +97,7 @@ func TestIndividualGlucoseReadWrite(t *testing.T) {
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	for j := 0; j < 24; j++ {
 		readTime := ct.Add(time.Duration(j) * 1 * time.Hour)
-		glucoseReads[j] = model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(j)}
+		glucoseReads[j] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(j)}
 	}
 	newWriter, _ := w.WriteGlucoseReadBatch(glucoseReads)
 	w = newWriter.(*BufferedGlucoseReadBatchWriter)
@@ -126,7 +126,7 @@ func TestSimpleWriteLargerThanOneGlucoseReadBatch(t *testing.T) {
 		glucoseReads := make([]model.GlucoseRead, 24)
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
-			glucoseReads[j] = model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(i*24 + j)}
+			glucoseReads[j] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i*24 + j)}
 		}
 		batches[i] = model.DayOfGlucoseReads{glucoseReads}
 	}
@@ -172,7 +172,7 @@ func TestWriteOverTwoFullGlucoseReadBatches(t *testing.T) {
 
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			glucoseReads[i] = model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)}
+			glucoseReads[i] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)}
 		}
 
 		newWriter, _ := w.WriteGlucoseReadBatch(glucoseReads)
