@@ -51,9 +51,9 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 		return nil
 	}
 	reads := dayOfReads.Reads
-	startTimestamp := reads[0].Time.Timestamp
-	startTime := reads[0].Time.GetTime()
-	endTime := reads[size-1].Time.GetTime()
+	startTimestamp := reads[0].GetTime().Unix()
+	startTime := reads[0].GetTime()
+	endTime := reads[size-1].GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -73,7 +73,7 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 	}
 
 	for _, read := range reads {
-		readOffset := read.Time.Timestamp - startTimestamp
+		readOffset := read.GetTime().Unix() - startTimestamp
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
 			Value:   float64(read.Value),
@@ -128,9 +128,9 @@ func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property)
 		return nil
 	}
 	reads := dayOfReads.Reads
-	startTimestamp := reads[0].Time.Timestamp
-	startTime := reads[0].Time.GetTime()
-	endTime := reads[size-1].Time.GetTime()
+	startTimestamp := reads[0].GetTime().Unix()
+	startTime := reads[0].GetTime()
+	endTime := reads[size-1].GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -150,7 +150,7 @@ func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property)
 	}
 
 	for _, read := range reads {
-		readOffset := read.Time.Timestamp - startTimestamp
+		readOffset := read.GetTime().Unix() - startTimestamp
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(readOffset, 10),
 			Value:   float64(read.Value),
@@ -203,9 +203,9 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 		return nil
 	}
 	injections := dayOfInjections.Injections
-	startTimestamp := injections[0].Time.Timestamp
-	startTime := injections[0].Time.GetTime()
-	endTime := injections[size-1].Time.GetTime()
+	startTimestamp := injections[0].GetTime().Unix()
+	startTime := injections[0].GetTime()
+	endTime := injections[size-1].GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -221,7 +221,7 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 	}
 
 	for _, injection := range injections {
-		offset := injection.Time.Timestamp - startTimestamp
+		offset := injection.GetTime().Unix() - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
@@ -275,9 +275,9 @@ func (dayOfMeals *DayOfMeals) Save(channel chan<- datastore.Property) error {
 		return nil
 	}
 	meals := dayOfMeals.Meals
-	startTimestamp := meals[0].Time.Timestamp
-	startTime := meals[0].Time.GetTime()
-	endTime := meals[size-1].Time.GetTime()
+	startTimestamp := meals[0].GetTime().Unix()
+	startTime := meals[0].GetTime()
+	endTime := meals[size-1].GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -293,7 +293,7 @@ func (dayOfMeals *DayOfMeals) Save(channel chan<- datastore.Property) error {
 	}
 
 	for _, meal := range meals {
-		offset := meal.Time.Timestamp - startTimestamp
+		offset := meal.GetTime().Unix() - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),
@@ -349,9 +349,9 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 		return nil
 	}
 	exercises := dayOfExercises.Exercises
-	startTimestamp := exercises[0].Time.Timestamp
-	startTime := exercises[0].Time.GetTime()
-	endTime := exercises[size-1].Time.GetTime()
+	startTimestamp := exercises[0].GetTime().Unix()
+	startTime := exercises[0].GetTime()
+	endTime := exercises[size-1].GetTime()
 
 	channel <- datastore.Property{
 		Name:  "startTime",
@@ -367,7 +367,7 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 	}
 
 	for _, exercise := range exercises {
-		offset := exercise.Time.Timestamp - startTimestamp
+		offset := exercise.GetTime().Unix() - startTimestamp
 		// We need to store two values so we use a string and format each value inside of a single cell value
 		channel <- datastore.Property{
 			Name:    strconv.FormatInt(offset, 10),

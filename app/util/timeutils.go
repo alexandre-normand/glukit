@@ -1,8 +1,11 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"math"
+	"regexp"
 	"time"
 )
 
@@ -22,6 +25,8 @@ const (
 	// Let's make days end at 18h00
 	HOUR_OF_END_OF_DAY = 18
 )
+
+var zoneNameRegexp = regexp.MustCompile("[+-](\\d){4}")
 
 // Beginning of time should be unix epoch 0 but, to optimize some processing
 // may iterate overtime starting at this value, we just define the notion
@@ -90,12 +95,28 @@ func TimeInUTCNoTz(timevalue time.Time) (localTime string) {
 // of the localtime and the internal time in UTC
 func GetLocaltimeOffset(localTime string, internalTime time.Time) (location *time.Location) {
 	// Get the local time as if it was UTC (it's not)
-	localTimeUTC, _ := time.Parse(TIMEFORMAT_NO_TZ, localTime)
+	localTimeUTC, err := time.Parse(TIMEFORMAT_NO_TZ, localTime)
+	if err != nil {
+		Propagate(err)
+	}
 
 	// Get the difference between the internal time (actual UTC) and the local time
 	durationOffset := localTimeUTC.Sub(internalTime)
+	offsetMinutesRemainder := (int64(durationOffset) - int64(durationOffset.Hours())*int64(time.Hour))
+	absoluteOffsetMinutesRemainder := int64(math.Abs(float64(offsetMinutesRemainder)))
 
-	locationName := fmt.Sprintf("%+03d%02d", int64(durationOffset.Hours()), (int64(durationOffset)-int64(durationOffset.Hours())*int64(time.Hour))/int64(time.Minute))
+	fullQuarterHourRemainder := (absoluteOffsetMinutesRemainder / int64(time.Minute) / 15)
+	minutesRemainder := (absoluteOffsetMinutesRemainder / int64(time.Minute) % 15)
+
+	quarterHourMultiple := fullQuarterHourRemainder
+	if minutesRemainder > 7 {
+		quarterHourMultiple++
+	}
+
+	if quarterHourMultiple == 4 {
+		quarterHourMultiple = 0
+	}
+	locationName := fmt.Sprintf("%+03d%02d", int64(durationOffset.Hours()), quarterHourMultiple*15)
 	return time.FixedZone(locationName, int(durationOffset.Seconds()))
 }
 
@@ -111,7 +132,16 @@ func GetOrLoadLocationForName(locationName string) (location *time.Location, err
 	if location, ok := locationCache[locationName]; !ok {
 		location, err = time.LoadLocation(locationName)
 		if err != nil {
-			return nil, err
+			if !zoneNameRegexp.MatchString(locationName) {
+				return nil, errors.New(fmt.Sprintf("Invalid location name, not a valid timezone location [%s]", locationName))
+			} else {
+				var hours, minutes int64
+				fmt.Sscanf(locationName, "%+03d%02d", &hours, &minutes)
+				offsetInMinutes := hours*int64(time.Duration(60)*time.Minute) + minutes
+				offsetInSeconds := offsetInMinutes + minutes*int64(time.Duration(60)*time.Second)
+				location = time.FixedZone(locationName, int(offsetInSeconds))
+				locationCache[locationName] = location
+			}
 		}
 
 		locationCache[locationName] = location

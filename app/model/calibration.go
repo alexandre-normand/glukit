@@ -64,4 +64,4 @@ func (slice CalibrationReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	return dataPoints
 }
 
-var UNDEFINED_CALIBRATION_READ = CalibrationRead{Time{0, "GMT"}, "NONE", -1.}
+var UNDEFINED_CALIBRATION_READ = CalibrationRead{Time{0, "UTC"}, "NONE", -1.}

@@ -42,14 +42,13 @@ func convertXmlGlucoseRead(read Glucose) (*model.GlucoseRead, error) {
 	if timeUTC, err := util.GetTimeUTC(read.InternalTime); err != nil {
 		return nil, err
 	} else {
-		timestamp := timeUTC.Unix()
 		timeLocation := util.GetLocaltimeOffset(read.DisplayTime, timeUTC)
 
 		unit := getUnitFromValue(read.Value)
 		if value, err := strconv.ParseFloat(read.Value, 32); err != nil {
 			return nil, err
 		} else {
-			return &model.GlucoseRead{model.Time{timestamp, timeLocation.String()}, unit, float32(value)}, nil
+			return &model.GlucoseRead{model.Time{model.GetTimeMillis(timeUTC), timeLocation.String()}, unit, float32(value)}, nil
 		}
 	}
 }
@@ -68,14 +67,13 @@ func convertXmlCalibrationRead(calibration Calibration) (*model.CalibrationRead,
 	if timeUTC, err := util.GetTimeUTC(calibration.InternalTime); err != nil {
 		return nil, err
 	} else {
-		timestamp := timeUTC.Unix()
 		timeLocation := util.GetLocaltimeOffset(calibration.DisplayTime, timeUTC)
 
 		unit := getUnitFromValue(calibration.Value)
 		if value, err := strconv.ParseFloat(calibration.Value, 32); err != nil {
 			return nil, err
 		} else {
-			return &model.CalibrationRead{model.Time{timestamp, timeLocation.String()}, unit, float32(value)}, nil
+			return &model.CalibrationRead{model.Time{model.GetTimeMillis(timeUTC), timeLocation.String()}, unit, float32(value)}, nil
 		}
 
 	}

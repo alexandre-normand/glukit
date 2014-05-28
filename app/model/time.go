@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/alexandre-normand/glukit/app/util"
-	"log"
 	"sort"
 	"time"
 )
@@ -15,8 +14,8 @@ type Time struct {
 // GetTime gets the time of a Timestamp value
 func (element Time) GetTime() (timeValue time.Time) {
 	rawValue := time.Unix(element.Timestamp/1000, 0)
-	log.Printf("timestamp is [%d], in second [%d, in time [%v]", element.Timestamp, element.Timestamp/1000, rawValue)
 	if location, err := util.GetOrLoadLocationForName(element.TimeZoneId); err != nil {
+		util.Propagate(err)
 		return time.Unix(0, 0)
 	} else {
 		return rawValue.In(location)

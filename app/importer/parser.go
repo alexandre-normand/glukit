@@ -107,7 +107,8 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						if err != nil {
 							context.Warningf("Failed to parse event as injection [%s]: %v", event.Description, err)
 						} else {
-							injection := model.Injection{model.GetTimeMillis(eventTime), location.String()}, float32(insulinUnits), "", ""}
+							injection := model.Injection{model.Time{model.GetTimeMillis(eventTime), location.String()}, float32(insulinUnits), "", ""}
+
 							injectionStreamer, err = injectionStreamer.WriteInjection(injection)
 
 							if err != nil {
@@ -126,7 +127,6 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						}
 					}
 				}
-
 			case "Meter":
 				var c Calibration
 				decoder.DecodeElement(&c, &se)

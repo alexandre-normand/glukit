@@ -25,6 +25,11 @@ indexes:
   properties:
   - name: startTime
 
+- kind: DayOfMeals
+  ancestor: yes
+  properties:
+  - name: startTime
+
 - kind: DayOfReads
   ancestor: yes
   properties:
