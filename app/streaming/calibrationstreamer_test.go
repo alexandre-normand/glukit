@@ -69,7 +69,7 @@ func TestWriteOfDayCalibrationBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyCalibrationBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleCalibrationBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestCalibrationStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)})
+			w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)})
 
 		}
 	}

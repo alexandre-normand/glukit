@@ -69,7 +69,7 @@ func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyGlucoseReadBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
 	}
 
 	t.Logf("state is %p: %v", state, state)
@@ -134,7 +134,7 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -175,7 +175,7 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)})
+			w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)})
 		}
 	}
 
@@ -208,7 +208,7 @@ func BenchmarkStreamerWithBufferedIO(b *testing.B) {
 		for j := 0; j < 3; j++ {
 			for i := 0; i < 288; i++ {
 				readTime := ct.Add(time.Duration(j*288+i) * 5 * time.Minute)
-				w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{readTime.Unix(), "America/Montreal"}, model.MG_PER_DL, float32(j*288 + i)})
+				w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(j*288 + i)})
 			}
 		}
 
