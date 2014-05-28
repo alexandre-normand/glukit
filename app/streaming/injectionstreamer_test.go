@@ -69,7 +69,7 @@ func TestWriteOfDayInjectionBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteInjection(model.Injection{model.Time{readTime.Unix(), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
+		w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyInjectionBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteInjection(model.Injection{model.Time{readTime.Unix(), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
+		w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleInjectionBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteInjection(model.Injection{model.Time{readTime.Unix(), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
+		w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestInjectionStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteInjection(model.Injection{model.Time{readTime.Unix(), "America/Montreal"}, float32(b*48 + i), "Humalog", "Bolus"})
+			w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(b*48 + i), "Humalog", "Bolus"})
 		}
 	}
 

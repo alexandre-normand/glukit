@@ -69,7 +69,7 @@ func TestWriteOfDayMealBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteMeal(model.Meal{model.Time{readTime.Unix(), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+		w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyMealBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteMeal(model.Meal{model.Time{readTime.Unix(), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+		w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleMealBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteMeal(model.Meal{model.Time{readTime.Unix(), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+		w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestMealStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteMeal(model.Meal{model.Time{readTime.Unix(), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+			w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 		}
 	}
 
