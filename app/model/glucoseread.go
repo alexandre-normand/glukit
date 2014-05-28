@@ -71,4 +71,4 @@ func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	return dataPoints
 }
 
-var UNDEFINED_GLUCOSE_READ = GlucoseRead{Time{GetTimeMillis(util.GLUKIT_EPOCH_TIME), "NONE"}, "NONE", UNDEFINED_READ}
+var UNDEFINED_GLUCOSE_READ = GlucoseRead{Time{GetTimeMillis(util.GLUKIT_EPOCH_TIME), "UTC"}, "NONE", UNDEFINED_READ}
