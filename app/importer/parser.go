@@ -94,7 +94,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						var mealQuantityInGrams int
 						fmt.Sscanf(event.Description, "Carbs %d grams", &mealQuantityInGrams)
 
-						meal := model.Meal{model.Time{eventTime.Unix() * 1000, location.String()}, float32(mealQuantityInGrams), 0., 0., 0.}
+						meal := model.Meal{model.Time{model.GetTimeMillis(eventTime), location.String()}, float32(mealQuantityInGrams), 0., 0., 0.}
 
 						mealStreamer, err = mealStreamer.WriteMeal(meal)
 						if err != nil {
@@ -107,7 +107,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						if err != nil {
 							context.Warningf("Failed to parse event as injection [%s]: %v", event.Description, err)
 						} else {
-							injection := model.Injection{model.Time{eventTime.Unix() * 1000, location.String()}, float32(insulinUnits), "", ""}
+							injection := model.Injection{model.GetTimeMillis(eventTime), location.String()}, float32(insulinUnits), "", ""}
 							injectionStreamer, err = injectionStreamer.WriteInjection(injection)
 
 							if err != nil {
@@ -119,7 +119,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 						var intensity string
 						fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
 
-						exercise := model.Exercise{model.Time{eventTime.Unix() * 1000, location.String()}, duration, intensity, ""}
+						exercise := model.Exercise{model.Time{model.GetTimeMillis(eventTime), location.String()}, duration, intensity, ""}
 						exerciseStreamer, err = exerciseStreamer.WriteExercise(exercise)
 						if err != nil {
 							return lastRead.GetTime(), err

@@ -33,7 +33,7 @@ func (dayOfReads *DayOfGlucoseReads) Load(channel <-chan datastore.Property) err
 			// We need to convert value to int64 and cast it as int
 			value := columnValue.(float64)
 
-			read := GlucoseRead{Time{readTime.Unix() * 1000, locationName}, unit, float32(value)}
+			read := GlucoseRead{Time{GetTimeMillis(readTime), locationName}, unit, float32(value)}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -110,7 +110,7 @@ func (dayOfReads *DayOfCalibrationReads) Load(channel <-chan datastore.Property)
 			// We need to convert value to int64 and cast it as int
 			value := columnValue.(float64)
 
-			read := CalibrationRead{Time{readTime.Unix() * 1000, locationName}, unit, float32(value)}
+			read := CalibrationRead{Time{GetTimeMillis(readTime), locationName}, unit, float32(value)}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -185,7 +185,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 			// the store
 			value := float32(columnValue.(float64))
 
-			injection := Injection{Time{timestamp.Unix() * 1000, locationName}, value, "Not implemented", "Not implemented"}
+			injection := Injection{Time{GetTimeMillis(timestamp), locationName}, value, "Not implemented", "Not implemented"}
 			dayOfInjections.Injections = append(dayOfInjections.Injections, injection)
 		}
 	}
@@ -257,7 +257,7 @@ func (dayOfMeals *DayOfMeals) Load(channel <-chan datastore.Property) error {
 			// the store
 			carbs := float32(columnValue.(float64))
 
-			meal := Meal{Time{timestamp.Unix(), locationName}, carbs, 0., 0., 0.}
+			meal := Meal{Time{GetTimeMillis(timestamp), locationName}, carbs, 0., 0., 0.}
 			dayOfMeals.Meals = append(dayOfMeals.Meals, meal)
 		}
 	}
@@ -331,7 +331,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 			var intensity string
 			fmt.Sscanf(value, EXERCISE_VALUE_FORMAT, &duration, &intensity)
 
-			exercise := Exercise{Time{timestamp.Unix() * 1000, locationName}, duration, intensity, ""}
+			exercise := Exercise{Time{GetTimeMillis(timestamp), locationName}, duration, intensity, ""}
 			dayOfExercises.Exercises = append(dayOfExercises.Exercises, exercise)
 		}
 	}
