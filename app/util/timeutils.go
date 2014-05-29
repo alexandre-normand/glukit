@@ -91,6 +91,10 @@ func TimeInUTCNoTz(timevalue time.Time) (localTime string) {
 	return timevalue.UTC().Format(TIMEFORMAT_NO_TZ)
 }
 
+func GetTimeWithImpliedLocation(localTime string, location *time.Location) (time.Time, error) {
+	return time.ParseInLocation(TIMEFORMAT_NO_TZ, localTime, location)
+}
+
 // GetLocaltimeOffset returns the Fixed location extrapolated by calculating the offset
 // of the localtime and the internal time in UTC
 func GetLocaltimeOffset(localTime string, internalTime time.Time) (location *time.Location) {

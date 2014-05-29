@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	CARB_TAG = "Meals"
+	CARB_TAG = "Carbs"
 )
 
 // Meal is the data structure that represents a meal of food intake. Only carbohydrates

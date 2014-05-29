@@ -84,7 +84,7 @@ func ParseContent(context appengine.Context, reader io.Reader, batchSize int, pa
 				if internalEventTime.Unix() > startTime.Unix() {
 					location := util.GetLocaltimeOffset(event.EventTime, internalEventTime)
 
-					eventTime, err := util.GetTimeUTC(event.EventTime)
+					eventTime, err := util.GetTimeWithImpliedLocation(event.EventTime, location)
 					if err != nil {
 						context.Warningf("Skipping [%s] event [%v], bad event time [%s]: %v", event.EventType, event, event.EventTime, err)
 						continue
