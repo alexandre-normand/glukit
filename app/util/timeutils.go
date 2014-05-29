@@ -102,21 +102,18 @@ func GetLocaltimeOffset(localTime string, internalTime time.Time) (location *tim
 
 	// Get the difference between the internal time (actual UTC) and the local time
 	durationOffset := localTimeUTC.Sub(internalTime)
-	offsetMinutesRemainder := (int64(durationOffset) - int64(durationOffset.Hours())*int64(time.Hour))
-	absoluteOffsetMinutesRemainder := int64(math.Abs(float64(offsetMinutesRemainder)))
 
-	fullQuarterHourRemainder := (absoluteOffsetMinutesRemainder / int64(time.Minute) / 15)
-	minutesRemainder := (absoluteOffsetMinutesRemainder / int64(time.Minute) % 15)
-
-	quarterHourMultiple := fullQuarterHourRemainder
-	if minutesRemainder > 7 {
-		quarterHourMultiple++
+	var truncatedDuration time.Duration
+	if math.Signbit(durationOffset.Hours()) {
+		minutesOffsetTruncated := int64(math.Ceil(durationOffset.Minutes()/15.-0.5) * 15.)
+		truncatedDuration = time.Duration(minutesOffsetTruncated) * time.Minute
+	} else {
+		minutesOffsetTruncated := int64(math.Floor(durationOffset.Minutes()/15.+0.5) * 15.)
+		truncatedDuration = time.Duration(minutesOffsetTruncated) * time.Minute
 	}
 
-	if quarterHourMultiple == 4 {
-		quarterHourMultiple = 0
-	}
-	locationName := fmt.Sprintf("%+03d%02d", int64(durationOffset.Hours()), quarterHourMultiple*15)
+	minutesOffsetPortion := float64((int64(truncatedDuration) - int64(truncatedDuration.Hours())*int64(time.Hour)) / int64(time.Minute))
+	locationName := fmt.Sprintf("%+03d%02d", int(truncatedDuration.Hours()), int64(math.Abs(minutesOffsetPortion)))
 	return time.FixedZone(locationName, int(durationOffset.Seconds()))
 }
 
