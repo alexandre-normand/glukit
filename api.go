@@ -5,12 +5,10 @@ import (
 	"appengine/user"
 	"encoding/json"
 	"fmt"
-	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
-	"github.com/alexandre-normand/glukit/app/util"
 	"io"
 	"net/http"
 	"time"
@@ -52,7 +50,7 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var c []apimodel.Calibration
+		var c []model.CalibrationRead
 
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
@@ -62,11 +60,10 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 			break
 		}
 
-		reads := convertToCalibrationRead(c)
-		context.Debugf("Writing new calibration reads [%v]", reads)
-		calibrationStreamer, err = calibrationStreamer.WriteCalibrations(reads)
+		context.Debugf("Writing new calibration reads [%v]", c)
+		calibrationStreamer, err = calibrationStreamer.WriteCalibrations(c)
 		if err != nil {
-			context.Warningf("Error storing calibration data [%v]: %v", reads, err)
+			context.Warningf("Error storing calibration data [%v]: %v", c, err)
 			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
 			return
 		}
@@ -89,14 +86,6 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	writer.WriteHeader(200)
 }
 
-func convertToCalibrationRead(p []apimodel.Calibration) []model.CalibrationRead {
-	r := make([]model.CalibrationRead, len(p))
-	for i, c := range p {
-		r[i] = model.CalibrationRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
-	}
-	return r
-}
-
 // processNewGlucoseReadData Handles a Post to the glucosereads endpoint and
 // handles all data to be stored for a given user
 func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request) {
@@ -117,7 +106,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var c []apimodel.Glucose
+		var c []model.GlucoseRead
 
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
@@ -127,11 +116,10 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 			break
 		}
 
-		reads := convertToGlucoseRead(c)
-		context.Debugf("Writing [%d] new glucose reads", len(reads))
-		glucoseReadStreamer, err = glucoseReadStreamer.WriteGlucoseReads(reads)
+		context.Debugf("Writing [%d] new glucose reads", len(c))
+		glucoseReadStreamer, err = glucoseReadStreamer.WriteGlucoseReads(c)
 		if err != nil {
-			context.Warningf("Error storing user data [%v]: %v", reads, err)
+			context.Warningf("Error storing user data [%v]: %v", c, err)
 			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
 			return
 		}
@@ -154,14 +142,6 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	writer.WriteHeader(200)
 }
 
-func convertToGlucoseRead(p []apimodel.Glucose) []model.GlucoseRead {
-	r := make([]model.GlucoseRead, len(p))
-	for i, c := range p {
-		r[i] = model.GlucoseRead{model.Timestamp{c.DisplayTime, util.GetTimeInSeconds(c.InternalTime)}, c.Value}
-	}
-	return r
-}
-
 // processNewInjectionData Handles a Post to the injections endpoint and
 // handles all data to be stored for a given user
 func processNewInjectionData(writer http.ResponseWriter, request *http.Request) {
@@ -182,7 +162,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var p []apimodel.Injection
+		var p []model.Injection
 
 		if err = decoder.Decode(&p); err == io.EOF {
 			break
@@ -192,11 +172,10 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 			break
 		}
 
-		injections := convertToInjection(p)
-		context.Debugf("Writing [%d] new injections", len(injections))
-		injectionStreamer, err = injectionStreamer.WriteInjections(injections)
+		context.Debugf("Writing [%d] new injections", len(p))
+		injectionStreamer, err = injectionStreamer.WriteInjections(p)
 		if err != nil {
-			context.Warningf("Error storing injection data [%v]: %v", injections, err)
+			context.Warningf("Error storing injection data [%v]: %v", p, err)
 			http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
 			return
 		}
@@ -219,14 +198,6 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 	writer.WriteHeader(200)
 }
 
-func convertToInjection(p []apimodel.Injection) []model.Injection {
-	r := make([]model.Injection, len(p))
-	for i, e := range p {
-		r[i] = model.Injection{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Units, model.UNDEFINED_READ}
-	}
-	return r
-}
-
 // processNewMealData Handles a Post to the Meals endpoint and
 // handles all data to be stored for a given user
 func processNewMealData(writer http.ResponseWriter, request *http.Request) {
@@ -240,16 +211,16 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	dataStoreWriter := store.NewDataStoreCarbBatchWriter(context, userProfileKey)
-	batchingWriter := bufio.NewCarbWriterSize(dataStoreWriter, 200)
-	carbStreamer := streaming.NewCarbStreamerDuration(batchingWriter, time.Hour*24)
+	dataStoreWriter := store.NewDataStoreMealBatchWriter(context, userProfileKey)
+	batchingWriter := bufio.NewMealWriterSize(dataStoreWriter, 200)
+	mealStreamer := streaming.NewMealStreamerDuration(batchingWriter, time.Hour*24)
 
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var p []apimodel.Meal
+		var meals []model.Meal
 
-		if err = decoder.Decode(&p); err == io.EOF {
+		if err = decoder.Decode(&meals); err == io.EOF {
 			break
 		} else if err != nil {
 			context.Warningf("Error getting user to process meal data, user email is [%s]", user.Email)
@@ -257,9 +228,8 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 			break
 		}
 
-		meals := convertToMeal(p)
 		context.Debugf("Writing [%d] new meals", len(meals))
-		carbStreamer, err = carbStreamer.WriteCarbs(meals)
+		mealStreamer, err = mealStreamer.WriteMeals(meals)
 		if err != nil {
 			context.Warningf("Error storing meal data [%v]: %v", meals, err)
 			http.Error(writer, fmt.Sprintf("Error storing meal data: %v", err), 502)
@@ -273,7 +243,7 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	carbStreamer, err = carbStreamer.Close()
+	mealStreamer, err = mealStreamer.Close()
 	if err != nil {
 		context.Warningf("Error closing injection streamer: %v", err)
 		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
@@ -282,14 +252,6 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 
 	context.Infof("Wrote meals to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
-}
-
-func convertToMeal(p []apimodel.Meal) []model.Carb {
-	r := make([]model.Carb, len(p))
-	for i, e := range p {
-		r[i] = model.Carb{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.Carbohydrates, model.UNDEFINED_READ}
-	}
-	return r
 }
 
 // processNewExerciseData Handles a Post to the exercises endpoint and
@@ -312,9 +274,9 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var p []apimodel.Exercise
+		var exercises []model.Exercise
 
-		if err = decoder.Decode(&p); err == io.EOF {
+		if err = decoder.Decode(&exercises); err == io.EOF {
 			break
 		} else if err != nil {
 			context.Warningf("Error getting user to process exercise data, user email is [%s]", user.Email)
@@ -322,7 +284,6 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 			break
 		}
 
-		exercises := convertToExercise(p)
 		context.Debugf("Writing [%d] new Exercises", len(exercises))
 		exerciseStreamer, err = exerciseStreamer.WriteExercises(exercises)
 		if err != nil {
@@ -347,12 +308,4 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 
 	context.Infof("Wrote exercises to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
-}
-
-func convertToExercise(p []apimodel.Exercise) []model.Exercise {
-	r := make([]model.Exercise, len(p))
-	for i, e := range p {
-		r[i] = model.Exercise{model.Timestamp{e.EventTime, util.GetTimeInSeconds(e.InternalTime)}, e.DurationMinutes, e.Intensity}
-	}
-	return r
 }

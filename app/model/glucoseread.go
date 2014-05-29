@@ -2,22 +2,33 @@ package model
 
 import (
 	"github.com/alexandre-normand/glukit/app/util"
+	"time"
 )
 
 const (
 	GLUCOSE_READ_TAG = "GlucoseRead"
+
+	// Units
+	MMOL_PER_L = "mmolPerL"
+	MG_PER_DL  = "mgPerDL"
 )
 
 // GlucoseRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external
 // meter
 type GlucoseRead struct {
-	Timestamp
-	Value int `json:"y" datastore:"value,noindex"`
+	Time  Time    `json:"time"`
+	Unit  string  `json:"unit"`
+	Value float32 `json:"value"`
 }
 
 // This holds an array of reads for a whole day
 type DayOfGlucoseReads struct {
 	Reads []GlucoseRead
+}
+
+// GetTime gets the time of a Timestamp value
+func (element GlucoseRead) GetTime() time.Time {
+	return element.Time.GetTime()
 }
 
 // func (slice GlucoseReadSlice) Len() int {
@@ -30,7 +41,7 @@ func (slice GlucoseReadSlice) Len() int {
 }
 
 func (slice GlucoseReadSlice) Less(i, j int) bool {
-	return slice[i].Timestamp.EpochTime < slice[j].Timestamp.EpochTime
+	return slice[i].Time.Timestamp < slice[j].Time.Timestamp
 }
 
 func (slice GlucoseReadSlice) Swap(i, j int) {
@@ -42,17 +53,22 @@ func (slice GlucoseReadSlice) Get(i int) float64 {
 }
 
 func (slice GlucoseReadSlice) GetEpochTime(i int) (epochTime int64) {
-	return slice[i].Timestamp.EpochTime
+	return slice[i].Time.Timestamp / 1000
 }
 
 // ToDataPointSlice converts a GlucoseReadSlice into a generic DataPoint array
 func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
-		dataPoint := DataPoint{slice[i].Timestamp.LocalTime, slice[i].Timestamp.EpochTime, slice[i].Value, float32(slice[i].Value), GLUCOSE_READ_TAG}
+		localTime, err := slice[i].Time.Format()
+		if err != nil {
+			util.Propagate(err)
+		}
+
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints
 }
 
-var UNDEFINED_GLUCOSE_READ = GlucoseRead{Timestamp{"2004-01-01 00:00:00 UTC", util.GLUKIT_EPOCH_TIME.Unix()}, UNDEFINED_READ}
+var UNDEFINED_GLUCOSE_READ = GlucoseRead{Time{GetTimeMillis(util.GLUKIT_EPOCH_TIME), "UTC"}, "NONE", UNDEFINED_READ}

@@ -72,7 +72,7 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 		if err != nil {
 			util.Propagate(err)
 		}
-		carbs, err := store.GetCarbs(context, email, lowerBound, time.Now())
+		carbs, err := store.GetMeals(context, email, lowerBound, time.Now())
 		if err != nil {
 			util.Propagate(err)
 		}
@@ -127,14 +127,14 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	}
 }
 
-// writeAsJson writes a DataResponse with its set of GlucoseReads, Injections, Carbs and Exercises as json. This is what is called from the javascript
+// writeAsJson writes a DataResponse with its set of GlucoseReads, Injections, Meals and Exercises as json. This is what is called from the javascript
 // front-end to get the data.
 func writeAsJson(writer http.ResponseWriter, response DataResponse) {
 	enc := json.NewEncoder(writer)
 	enc.Encode(response)
 }
 
-func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.Injection, carbs []model.Carb, exercises []model.Exercise) (dataSeries []DataSeries) {
+func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.Injection, carbs []model.Meal, exercises []model.Exercise) (dataSeries []DataSeries) {
 	data := make([]DataSeries, 1)
 
 	data[0] = DataSeries{"GlucoseReads", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
@@ -144,7 +144,7 @@ func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.In
 	}
 
 	if carbs != nil {
-		userEvents = model.MergeDataPointArrays(userEvents, model.CarbSlice(carbs).ToDataPointSlice(reads))
+		userEvents = model.MergeDataPointArrays(userEvents, model.MealSlice(carbs).ToDataPointSlice(reads))
 	}
 
 	// TODO: clean up exercise from all the app or restore it. We won't be using it at the moment as we don't think the exercise data

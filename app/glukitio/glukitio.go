@@ -63,22 +63,22 @@ type InjectionBatchWriter interface {
 	Flush() (w InjectionBatchWriter, err error)
 }
 
-// CarbBatchWriter is the interface that wraps the basic
-// WriteCarbBatch and WriteCarbBatches methods.
+// MealBatchWriter is the interface that wraps the basic
+// WriteMealBatch and WriteMealBatches methods.
 //
-// WriteCarbBatch writes len(p) model.Carb from p to the
+// WriteMealBatch writes len(p) model.Meal from p to the
 // underlying data stream. It returns the number of elements written
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 //
-// WriteCarbBatches writes len(p) model.DayOfCarbss from p to the
+// WriteMealBatches writes len(p) model.DayOfMealss from p to the
 // underlying data stream. It returns the number of batch elements written
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
-type CarbBatchWriter interface {
-	WriteCarbBatch(p []model.Carb) (w CarbBatchWriter, err error)
-	WriteCarbBatches(p []model.DayOfCarbs) (w CarbBatchWriter, err error)
-	Flush() (w CarbBatchWriter, err error)
+type MealBatchWriter interface {
+	WriteMealBatch(p []model.Meal) (w MealBatchWriter, err error)
+	WriteMealBatches(p []model.DayOfMeals) (w MealBatchWriter, err error)
+	Flush() (w MealBatchWriter, err error)
 }
 
 // ExerciseBatchWriter is the interface that wraps the basic

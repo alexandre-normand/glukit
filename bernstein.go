@@ -24,7 +24,7 @@ const (
 
 var BERNSTEIN_EARLIEST_READ, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2013-06-01 12:00:00")
 var BERNSTEIN_MOST_RECENT_READ_TIME, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2014-03-11 12:00:00")
-var BERNSTEIN_MOST_RECENT_READ = model.GlucoseRead{model.Timestamp{BERNSTEIN_EARLIEST_READ.Format(util.TIMEFORMAT), BERNSTEIN_EARLIEST_READ.Unix()}, PERFECT_SCORE}
+var BERNSTEIN_MOST_RECENT_READ = model.GlucoseRead{model.Time{BERNSTEIN_EARLIEST_READ.Unix(), "America/New_York"}, model.MG_PER_DL, PERFECT_SCORE}
 var BERNSTEIN_BIRTH_DATE, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "1934-06-17 00:00:00")
 
 // initializeGlukitBernstein does lazy initialization of the "perfect" glukit user.
@@ -45,7 +45,7 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 
 		reader := generateBernsteinData(context)
 		lastReadTime, err := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.GLUKIT_EPOCH_TIME,
-			store.StoreDaysOfReads, store.StoreDaysOfCarbs, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
+			store.StoreDaysOfReads, store.StoreDaysOfMeals, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 
 		if err != nil {
 			util.Propagate(err)
