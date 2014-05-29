@@ -42,7 +42,7 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		r[i] = model.GlucoseRead{model.Time{readTime.Unix(), "America/Los_Angeles"}, model.MG_PER_DL, float32(i)}
+		r[i] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Los_Angeles"}, model.MG_PER_DL, float32(i)}
 	}
 
 	w := NewDataStoreGlucoseReadBatchWriter(c, key)
@@ -62,7 +62,7 @@ func TestSimpleWriteOfGlucoseReadBatches(t *testing.T) {
 		ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(j) * time.Hour)
-			calibrations[j] = model.GlucoseRead{model.Time{readTime.Unix(), "America/Los_Angeles"}, model.MG_PER_DL, float32(i*24 + j)}
+			calibrations[j] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Los_Angeles"}, model.MG_PER_DL, float32(i*24 + j)}
 		}
 		b[i] = model.DayOfGlucoseReads{calibrations}
 	}

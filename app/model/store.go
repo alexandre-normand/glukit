@@ -224,9 +224,10 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 		offset := injection.GetTime().Unix() - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
-			Name:    strconv.FormatInt(offset, 10),
-			Value:   float64(injection.Units),
-			NoIndex: true,
+			Name:     strconv.FormatInt(offset, 10),
+			Value:    float64(injection.Units),
+			NoIndex:  true,
+			Multiple: true,
 		}
 	}
 
@@ -296,9 +297,10 @@ func (dayOfMeals *DayOfMeals) Save(channel chan<- datastore.Property) error {
 		offset := meal.GetTime().Unix() - startTimestamp
 		// The datastore only supports float64 so we up-cast it to float64
 		channel <- datastore.Property{
-			Name:    strconv.FormatInt(offset, 10),
-			Value:   float64(meal.Carbohydrates),
-			NoIndex: true,
+			Name:     strconv.FormatInt(offset, 10),
+			Value:    float64(meal.Carbohydrates),
+			NoIndex:  true,
+			Multiple: true,
 		}
 	}
 
@@ -370,9 +372,10 @@ func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) er
 		offset := exercise.GetTime().Unix() - startTimestamp
 		// We need to store two values so we use a string and format each value inside of a single cell value
 		channel <- datastore.Property{
-			Name:    strconv.FormatInt(offset, 10),
-			Value:   fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercise.DurationMinutes, exercise.Intensity),
-			NoIndex: true,
+			Name:     strconv.FormatInt(offset, 10),
+			Value:    fmt.Sprintf(EXERCISE_VALUE_FORMAT, exercise.DurationMinutes, exercise.Intensity),
+			NoIndex:  true,
+			Multiple: true,
 		}
 	}
 

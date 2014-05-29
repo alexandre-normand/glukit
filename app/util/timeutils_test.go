@@ -39,6 +39,24 @@ func TestGetTimezoneNegativeOffset(t *testing.T) {
 func TestKnownLocationLoading(t *testing.T) {
 	location := "America/Montreal"
 	if _, err := GetOrLoadLocationForName(location); err != nil {
-		t.Errorf("Invalid location [%s]: [%v]", location, err)
+		t.Errorf("Should be a valid location location [%s] but got error: [%v]", location, err)
+	}
+}
+
+func TestGetTimeWithImpliedLocation(t *testing.T) {
+	locationName := "America/Los_Angeles"
+	location, err := GetOrLoadLocationForName(locationName)
+	if err != nil {
+		t.Errorf("Should be a valid location location [%s] but got error: [%v]", locationName, err)
+	}
+
+	timeValue, err := GetTimeWithImpliedLocation("2014-04-23 13:33:57", location)
+	if err != nil {
+		t.Errorf("Should be able to parse time but got error: [%v]", err)
+	}
+
+	expected := int64(1398285237)
+	if timeValue.Unix() != expected {
+		t.Errorf("Expected timestamp [%d] but got [%d]", expected, timeValue.Unix())
 	}
 }
