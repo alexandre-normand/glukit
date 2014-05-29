@@ -2,12 +2,12 @@ package model
 
 // linearInterpolateY does a linear interpolation of the Y value of a given GlucoseRead for a given
 // time value
-func linearInterpolateY(reads []GlucoseRead, timeValue Timestamp) (yValue int) {
+func linearInterpolateY(reads []GlucoseRead, timeValue Time) (yValue float32) {
 	lowerIndex := 0
 	upperIndex := len(reads) - 1
 
 	for i := range reads {
-		if reads[i].Timestamp.EpochTime > timeValue.EpochTime {
+		if reads[i].Time.Timestamp > timeValue.Timestamp {
 			upperIndex = i
 			break
 		}
@@ -20,13 +20,13 @@ func linearInterpolateY(reads []GlucoseRead, timeValue Timestamp) (yValue int) {
 		lowerIndex = upperIndex - 1
 	}
 
-	lowerTimeValue := reads[lowerIndex].Timestamp
-	upperTimeValue := reads[upperIndex].Timestamp
+	lowerTimeValue := reads[lowerIndex].Time
+	upperTimeValue := reads[upperIndex].Time
 	lowerYValue := reads[lowerIndex].Value
 	upperYValue := reads[upperIndex].Value
 
-	relativeTimePosition := float32((timeValue.EpochTime - lowerTimeValue.EpochTime)) / float32((upperTimeValue.EpochTime - lowerTimeValue.EpochTime))
-	yValue = int(relativeTimePosition*float32(upperYValue-lowerYValue) + float32(lowerYValue))
+	relativeTimePosition := float32((timeValue.Timestamp - lowerTimeValue.Timestamp)) / float32((upperTimeValue.Timestamp - lowerTimeValue.Timestamp))
+	yValue = relativeTimePosition*float32(upperYValue-lowerYValue) + float32(lowerYValue)
 
 	return yValue
 }

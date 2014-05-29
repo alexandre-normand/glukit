@@ -1,8 +1,11 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"math"
+	"regexp"
 	"time"
 )
 
@@ -23,12 +26,16 @@ const (
 	HOUR_OF_END_OF_DAY = 18
 )
 
+var zoneNameRegexp = regexp.MustCompile("[+-](\\d){4}")
+
 // Beginning of time should be unix epoch 0 but, to optimize some processing
 // may iterate overtime starting at this value, we just define the notion
 // of Glukit epoch time and have this value be set to something less far back
 // but still before anything interesting happened in the Glukit world.
 // This maps to 01 Jan 2004 00:00:00 GMT.
 var GLUKIT_EPOCH_TIME = time.Unix(1072915200, 0)
+
+var locationCache = make(map[string]*time.Location)
 
 // ParseGoogleDriveDate parses a Google Drive API time value
 func ParseGoogleDriveDate(value string) (timeValue time.Time, err error) {
@@ -44,6 +51,13 @@ func GetTimeInSeconds(timeValue string) (value int64) {
 		log.Printf("Error parsing string", err)
 	}
 	return 0
+}
+
+// GetTimeInSeconds parses a datetime string and returns its unix timestamp.
+func GetTimeUTC(timeValue string) (time.Time, error) {
+	// time values without timezone info are interpreted as UTC, which is perfect
+	return time.Parse(TIMEFORMAT_NO_TZ, timeValue)
+
 }
 
 // GetEndOfDayBoundaryBefore returns the boundary of very last "end of day" before the given time.
@@ -77,16 +91,33 @@ func TimeInUTCNoTz(timevalue time.Time) (localTime string) {
 	return timevalue.UTC().Format(TIMEFORMAT_NO_TZ)
 }
 
+func GetTimeWithImpliedLocation(localTime string, location *time.Location) (time.Time, error) {
+	return time.ParseInLocation(TIMEFORMAT_NO_TZ, localTime, location)
+}
+
 // GetLocaltimeOffset returns the Fixed location extrapolated by calculating the offset
 // of the localtime and the internal time in UTC
 func GetLocaltimeOffset(localTime string, internalTime time.Time) (location *time.Location) {
 	// Get the local time as if it was UTC (it's not)
-	localTimeUTC, _ := time.Parse(TIMEFORMAT_NO_TZ, localTime)
+	localTimeUTC, err := time.Parse(TIMEFORMAT_NO_TZ, localTime)
+	if err != nil {
+		Propagate(err)
+	}
 
 	// Get the difference between the internal time (actual UTC) and the local time
 	durationOffset := localTimeUTC.Sub(internalTime)
 
-	locationName := fmt.Sprintf("%+03d%02d", int64(durationOffset.Hours()), (int64(durationOffset)-int64(durationOffset.Hours())*int64(time.Hour))/int64(time.Minute))
+	var truncatedDuration time.Duration
+	if math.Signbit(durationOffset.Hours()) {
+		minutesOffsetTruncated := int64(math.Ceil(durationOffset.Minutes()/15.-0.5) * 15.)
+		truncatedDuration = time.Duration(minutesOffsetTruncated) * time.Minute
+	} else {
+		minutesOffsetTruncated := int64(math.Floor(durationOffset.Minutes()/15.+0.5) * 15.)
+		truncatedDuration = time.Duration(minutesOffsetTruncated) * time.Minute
+	}
+
+	minutesOffsetPortion := float64((int64(truncatedDuration) - int64(truncatedDuration.Hours())*int64(time.Hour)) / int64(time.Minute))
+	locationName := fmt.Sprintf("%+03d%02d", int(truncatedDuration.Hours()), int64(math.Abs(minutesOffsetPortion)))
 	return time.FixedZone(locationName, int(durationOffset.Seconds()))
 }
 
@@ -96,4 +127,27 @@ func GetLocalTimeInProperLocation(localTime string, internalTime time.Time) (loc
 	location := GetLocaltimeOffset(localTime, internalTime)
 	localTimeWithLocation, _ = time.ParseInLocation(TIMEFORMAT_NO_TZ, localTime, location)
 	return
+}
+
+func GetOrLoadLocationForName(locationName string) (location *time.Location, err error) {
+	if location, ok := locationCache[locationName]; !ok {
+		location, err = time.LoadLocation(locationName)
+		if err != nil {
+			if !zoneNameRegexp.MatchString(locationName) {
+				return nil, errors.New(fmt.Sprintf("Invalid location name, not a valid timezone location [%s]", locationName))
+			} else {
+				var hours, minutes int64
+				fmt.Sscanf(locationName, "%+03d%02d", &hours, &minutes)
+				offsetInMinutes := hours*int64(time.Duration(60)*time.Minute) + minutes
+				offsetInSeconds := offsetInMinutes + minutes*int64(time.Duration(60)*time.Second)
+				location = time.FixedZone(locationName, int(offsetInSeconds))
+				locationCache[locationName] = location
+			}
+		}
+
+		locationCache[locationName] = location
+		return location, nil
+	} else {
+		return location, nil
+	}
 }

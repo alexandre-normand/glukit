@@ -76,7 +76,7 @@ func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile 
 func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []model.DayOfGlucoseReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfReads))
 	for i := range daysOfReads {
-		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", daysOfReads[i].Reads[0].Timestamp.EpochTime, userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", daysOfReads[i].Reads[0].Time.Timestamp, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of reads", len(elementKeys), len(daysOfReads))
@@ -115,7 +115,7 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 func StoreCalibrationReads(context appengine.Context, userProfileKey *datastore.Key, daysOfCalibrationReads []model.DayOfCalibrationReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfCalibrationReads))
 	for i := range daysOfCalibrationReads {
-		elementKeys[i] = datastore.NewKey(context, "DayOfCalibrationReads", "", daysOfCalibrationReads[i].Reads[0].Timestamp.EpochTime, userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfCalibrationReads", "", daysOfCalibrationReads[i].Reads[0].Time.Timestamp, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of calibration reads", len(elementKeys), len(daysOfCalibrationReads))
@@ -168,7 +168,7 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfInjections))
 	for i := range daysOfInjections {
-		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", daysOfInjections[i].Injections[0].Timestamp.EpochTime, userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", daysOfInjections[i].Injections[0].Time.Timestamp, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of injections", len(elementKeys), len(daysOfInjections))
@@ -214,18 +214,18 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 	return filteredInjections, nil
 }
 
-// StoreDaysOfCarbs stores a batch of DayOfCarbs elements. It is a optimized operation in that:
-//    1. One element represents a relatively short-and-wide entry of all Carbs for a single day.
-//    2. We have multiple DayOfCarbs elements and we use a PutMulti to make this faster.
-// For details of how a single element of DayOfCarbs is physically stored, see the implementation of model.Store and model.Load.
-func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, daysOfCarbs []model.DayOfCarbs) (keys []*datastore.Key, err error) {
-	elementKeys := make([]*datastore.Key, len(daysOfCarbs))
-	for i := range daysOfCarbs {
-		elementKeys[i] = datastore.NewKey(context, "DayOfCarbs", "", daysOfCarbs[i].Carbs[0].Timestamp.EpochTime, userProfileKey)
+// StoreDaysOfMeals stores a batch of DayOfMeals elements. It is a optimized operation in that:
+//    1. One element represents a relatively short-and-wide entry of all Meals for a single day.
+//    2. We have multiple DayOfMeals elements and we use a PutMulti to make this faster.
+// For details of how a single element of DayOfMeals is physically stored, see the implementation of model.Store and model.Load.
+func StoreDaysOfMeals(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []model.DayOfMeals) (keys []*datastore.Key, err error) {
+	elementKeys := make([]*datastore.Key, len(daysOfMeals))
+	for i := range daysOfMeals {
+		elementKeys[i] = datastore.NewKey(context, "DayOfMeals", "", daysOfMeals[i].Meals[0].Time.Timestamp, userProfileKey)
 	}
 
-	context.Infof("Emitting a PutMulti with %d keys for all %d days of carbs", len(elementKeys), len(daysOfCarbs))
-	keys, error := datastore.PutMulti(context, elementKeys, daysOfCarbs)
+	context.Infof("Emitting a PutMulti with %d keys for all %d days of carbs", len(elementKeys), len(daysOfMeals))
+	keys, error := datastore.PutMulti(context, elementKeys, daysOfMeals)
 	if error != nil {
 		context.Criticalf("Error writing %d days of carbs with keys [%s]: %v", len(elementKeys), elementKeys, error)
 		return nil, error
@@ -234,8 +234,8 @@ func StoreDaysOfCarbs(context appengine.Context, userProfileKey *datastore.Key, 
 	return elementKeys, nil
 }
 
-// GetCarbs returns all Carb entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (carbs []model.Carb, err error) {
+// GetMeals returns all Meal entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
+func GetMeals(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (carbs []model.Meal, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -245,28 +245,28 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 
 	context.Infof("Scanning for carbs between %s and %s to get carbs between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
-	query := datastore.NewQuery("DayOfCarbs").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfCarbs model.DayOfCarbs
+	query := datastore.NewQuery("DayOfMeals").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
+	var daysOfMeals model.DayOfMeals
 
 	iterator := query.Run(context)
 	count := 0
-	for _, err := iterator.Next(&daysOfCarbs); err == nil; _, err = iterator.Next(&daysOfCarbs) {
-		batchSize := len(daysOfCarbs.Carbs) - count
+	for _, err := iterator.Next(&daysOfMeals); err == nil; _, err = iterator.Next(&daysOfMeals) {
+		batchSize := len(daysOfMeals.Meals) - count
 		context.Debugf("Loaded batch of %d carbs...", batchSize)
-		count = len(daysOfCarbs.Carbs)
+		count = len(daysOfMeals.Meals)
 	}
 
-	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(daysOfCarbs.Carbs), daysOfCarbs.Carbs)
-	carbSlice := model.CarbSlice(daysOfCarbs.Carbs)
+	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(daysOfMeals.Meals), daysOfMeals.Meals)
+	carbSlice := model.MealSlice(daysOfMeals.Meals)
 	startIndex, endIndex := model.GetBoundariesOfElementsInRange(carbSlice, lowerBound, upperBound)
-	filteredCarbs := daysOfCarbs.Carbs[startIndex : endIndex+1]
-	context.Debugf("Finished filtering with %d carbs", len(filteredCarbs))
+	filteredMeals := daysOfMeals.Meals[startIndex : endIndex+1]
+	context.Debugf("Finished filtering with %d carbs", len(filteredMeals))
 
 	if err != datastore.Done {
 		util.Propagate(err)
 	}
 
-	return filteredCarbs, nil
+	return filteredMeals, nil
 }
 
 // StoreDaysOfExercises stores a batch of DayOfExercises elements. It is a optimized operation in that:
@@ -276,7 +276,7 @@ func GetCarbs(context appengine.Context, email string, lowerBound time.Time, upp
 func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfExercises))
 	for i := range daysOfExercises {
-		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", daysOfExercises[i].Exercises[0].Timestamp.EpochTime, userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", daysOfExercises[i].Exercises[0].Time.Timestamp, userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of exercises", len(elementKeys), len(daysOfExercises))
@@ -381,7 +381,7 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 	if util.GLUKIT_EPOCH_TIME.Equal(userProfile.MostRecentRead.GetTime()) {
 		return userProfile, key, util.GLUKIT_EPOCH_TIME, ErrNoImportedDataFound
 	} else {
-		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(userProfile.MostRecentRead.LocalTime, userProfile.MostRecentRead.GetTime()))
+		upperBound = util.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead.GetTime())
 		return userProfile, key, upperBound, nil
 	}
 }
@@ -446,7 +446,7 @@ func FindSteadySailor(context appengine.Context, recipientEmail string) (sailorP
 		return nil, nil, util.GLUKIT_EPOCH_TIME, ErrNoSteadySailorMatchFound
 	} else {
 		context.Infof("Found a steady sailor match for user [%s]: healthy [%s]", recipientEmail, sailorProfile.Email)
-		upperBound = util.GetEndOfDayBoundaryBefore(util.GetLocalTimeInProperLocation(sailorProfile.MostRecentRead.LocalTime, sailorProfile.MostRecentRead.GetTime()))
+		upperBound = util.GetEndOfDayBoundaryBefore(sailorProfile.MostRecentRead.GetTime())
 		return sailorProfile, GetUserKey(context, sailorProfile.Email), upperBound, nil
 	}
 }

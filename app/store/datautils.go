@@ -12,9 +12,9 @@ func mergeGlucoseReadArrays(first, second []model.GlucoseRead) []model.GlucoseRe
 	return newslice
 }
 
-// mergeCarbArrays merges two arrays of Carb elements.
-func mergeCarbArrays(first, second []model.Carb) []model.Carb {
-	newslice := make([]model.Carb, len(first)+len(second))
+// mergeMealArrays merges two arrays of Meal elements.
+func mergeMealArrays(first, second []model.Meal) []model.Meal {
+	newslice := make([]model.Meal, len(first)+len(second))
 	copy(newslice, first)
 	copy(newslice[len(first):], second)
 	return newslice

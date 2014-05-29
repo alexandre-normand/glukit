@@ -1,38 +1,58 @@
 package model
 
 import (
+	"github.com/alexandre-normand/glukit/app/util"
 	"sort"
 	"time"
 )
 
-// Timestamp represents hold a timestamp and a localtime string
-type Timestamp struct {
-	LocalTime string `json:"label" datastore:"localtime,noindex"`
-	EpochTime int64  `json:"x" datastore:"timestamp"`
+type Time struct {
+	Timestamp  int64  `json:"timestamp"`
+	TimeZoneId string `json:"timezone"`
 }
 
 // GetTime gets the time of a Timestamp value
-func (element Timestamp) GetTime() (timeValue time.Time) {
-	value := time.Unix(int64(element.EpochTime), 0)
-	return value
+func (element Time) GetTime() (timeValue time.Time) {
+	rawValue := time.Unix(element.Timestamp/1000, 0)
+	if location, err := util.GetOrLoadLocationForName(element.TimeZoneId); err != nil {
+		util.Propagate(err)
+		return time.Unix(0, 0)
+	} else {
+		return rawValue.In(location)
+	}
+
+	return time.Unix(0, 0)
 }
 
-type TimestampSlice []Timestamp
+func (element Time) Format() (formatted string, err error) {
+	timeValue := element.GetTime()
+	if location, err := util.GetOrLoadLocationForName(element.TimeZoneId); err != nil {
+		return "", err
+	} else {
+		return timeValue.In(location).Format(util.TIMEFORMAT), nil
+	}
+}
 
-func (slice TimestampSlice) Len() int {
+func GetTimeMillis(time time.Time) int64 {
+	return time.Unix() * 1000
+}
+
+type TimeSlice []Time
+
+func (slice TimeSlice) Len() int {
 	return len(slice)
 }
 
-func (slice TimestampSlice) Less(i, j int) bool {
-	return slice[i].EpochTime < slice[j].EpochTime
+func (slice TimeSlice) Less(i, j int) bool {
+	return slice[i].Timestamp < slice[j].Timestamp
 }
 
-func (slice TimestampSlice) Swap(i, j int) {
+func (slice TimeSlice) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (slice TimestampSlice) GetEpochTime(i int) (epochTime int64) {
-	return slice[i].EpochTime
+func (slice TimeSlice) GetEpochTime(i int) (epochTime int64) {
+	return slice[i].Timestamp / 1000
 }
 
 type Interface interface {
