@@ -2,12 +2,17 @@ package glukit
 
 import (
 	"appengine"
+	"appengine/datastore"
 	"appengine/user"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
+	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"github.com/alexandre-normand/osin"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var server *osin.Server
@@ -41,6 +46,31 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 			// Nothing to do since the page is already login restricted by gae app configuration
 			ar.Authorized = true
 			ar.UserData = user.Email
+
+			_, _, _, err := store.GetUserData(c, user.Email)
+			if err == datastore.ErrNoSuchEntity {
+				// If the user doesn't exist already, create it
+				glukitUser := model.GlukitUser{user.Email, "", "", time.Now(),
+					"", "", util.GLUKIT_EPOCH_TIME, model.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
+					model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
+				_, err = store.StoreUserProfile(c, time.Now(), glukitUser)
+				if err != nil {
+					resp.SetError(osin.E_SERVER_ERROR, fmt.Sprintf("Fail to initialize user for email [%s]: [%v]", user.Email, err))
+					resp.StatusCode = 500
+					osin.OutputJSON(resp, writer, request)
+					return
+				}
+			} else if err != nil {
+				resp.SetError(osin.E_SERVER_ERROR, fmt.Sprintf("Unable to find user for email [%s]: [%v]", user.Email, err))
+				resp.StatusCode = 500
+				osin.OutputJSON(resp, writer, request)
+				return
+			}
+
+			if err != nil {
+				util.Propagate(err)
+			}
+
 			server.FinishAuthorizeRequest(resp, req, ar)
 
 			if resp.URL == "urn:ietf:wg:oauth:2.0:oob" {
@@ -76,7 +106,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 func (handler *oauthAuthenticatedHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	c := appengine.NewContext(request)
 	request.ParseForm()
-	c.Debugf("Checking authentication for request [%v]...", request)
+	c.Debugf("Checking authentication for request [%s]...", request.RequestURI)
 
 	ret := server.NewResponse()
 	authorizationValue := request.Header.Get("Authorization")
