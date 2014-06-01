@@ -55,8 +55,7 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
 		} else if err != nil {
-			context.Warningf("Error getting user to process calibration data, user email is [%s]", user.Email)
-			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			context.Warningf("Error processing calibration data for user [%s]: %v", user.Email, err)
 			break
 		}
 
@@ -70,14 +69,14 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	}
 
 	if err != io.EOF {
-		context.Warningf("Error getting user to process calibration data, user email is [%s]", user.Email)
+		context.Warningf("Error processing calibration read data for user [%s]: %v", user.Email, err)
 		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
 		return
 	}
 
 	calibrationStreamer, err = calibrationStreamer.Close()
 	if err != nil {
-		context.Warningf("Error closing glucose read streamer: %v", err)
+		context.Warningf("Error closing calibration read streamer: %v", err)
 		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
 		return
 	}
@@ -94,7 +93,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
-		context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email, err)
+		context.Warningf("Error getting user to process glucose read data, user email is [%s]: %v", user.Email, err)
 		http.Error(writer, "Error getting user to process glucose read data", 500)
 		return
 	}
@@ -103,6 +102,10 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, 200)
 	glucoseReadStreamer := streaming.NewGlucoseStreamerDuration(batchingWriter, time.Hour*24)
 
+	// buf := new(bytes.Buffer)
+	// buf.ReadFrom(request.Body)
+
+	// context.Debugf("Body is [%s]", buf.String())
 	decoder := json.NewDecoder(request.Body)
 
 	for {
@@ -111,8 +114,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
 		} else if err != nil {
-			context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email)
-			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			context.Warningf("Error processing glucose read data for user [%s]: %v", user.Email, err)
 			break
 		}
 
@@ -126,7 +128,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	}
 
 	if err != io.EOF {
-		context.Warningf("Error getting user to process glucose read data, user email is [%s]", user.Email)
+		context.Warningf("Error processing glucose read data for user [%s]: %v", user.Email, err)
 		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
 		return
 	}
@@ -150,7 +152,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
-		context.Warningf("Error getting user to process injection data, user email is [%s]", user.Email, err)
+		context.Warningf("Error getting user to process injection data, user email is [%s]: %v", user.Email, err)
 		http.Error(writer, "Error getting user to process injection data", 500)
 		return
 	}
@@ -167,8 +169,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 		if err = decoder.Decode(&p); err == io.EOF {
 			break
 		} else if err != nil {
-			context.Warningf("Error getting user to process injection data, user email is [%s]", user.Email)
-			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			context.Warningf("Error processing injection data for user [%s]: %v", user.Email, err)
 			break
 		}
 
@@ -182,7 +183,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 	}
 
 	if err != io.EOF {
-		context.Warningf("Error getting user to process injection data, user email is [%s]", user.Email)
+		context.Warningf("Error processing injection data for user [%s]: %v", user.Email, err)
 		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
 		return
 	}
@@ -206,7 +207,7 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
-		context.Warningf("Error getting user to process meal data, user email is [%s]", user.Email, err)
+		context.Warningf("Error getting user to process meal data, user email is [%s]: %v", user.Email, err)
 		http.Error(writer, "Error getting user to process meal data", 500)
 		return
 	}
@@ -223,8 +224,7 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 		if err = decoder.Decode(&meals); err == io.EOF {
 			break
 		} else if err != nil {
-			context.Warningf("Error getting user to process meal data, user email is [%s]", user.Email)
-			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			context.Warningf("Error processing meal data for user [%s]: %v", user.Email, err)
 			break
 		}
 
@@ -238,14 +238,14 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	if err != io.EOF {
-		context.Warningf("Error getting user to process meal data, user email is [%s]", user.Email)
+		context.Warningf("Error processing meal data for user [%s]: %v", user.Email, err)
 		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
 		return
 	}
 
 	mealStreamer, err = mealStreamer.Close()
 	if err != nil {
-		context.Warningf("Error closing injection streamer: %v", err)
+		context.Warningf("Error closing meal streamer: %v", err)
 		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
 		return
 	}
@@ -262,7 +262,7 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
-		context.Warningf("Error getting user to process exercise data, user email is [%s]", user.Email, err)
+		context.Warningf("Error getting user to process exercise data, user email is [%s]: %v", user.Email, err)
 		http.Error(writer, "Error getting user to process exercise data", 500)
 		return
 	}
@@ -279,8 +279,7 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 		if err = decoder.Decode(&exercises); err == io.EOF {
 			break
 		} else if err != nil {
-			context.Warningf("Error getting user to process exercise data, user email is [%s]", user.Email)
-			http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
+			context.Warningf("Error processing exercise data for user [%s]: %v", user.Email, err)
 			break
 		}
 
@@ -294,14 +293,14 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	if err != io.EOF {
-		context.Warningf("Error getting user to process exercise data, user email is [%s]", user.Email)
+		context.Warningf("Error processing exercise data for user [%s]: %v", user.Email, err)
 		http.Error(writer, fmt.Sprintf("Error decoding data: %v", err), 400)
 		return
 	}
 
 	exerciseStreamer, err = exerciseStreamer.Close()
 	if err != nil {
-		context.Warningf("Error closing injection streamer: %v", err)
+		context.Warningf("Error closing exercise streamer: %v", err)
 		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
 		return
 	}
