@@ -36,6 +36,7 @@ type EventTimestamp struct {
 }
 
 var mmolValueRegExp = regexp.MustCompile("\\d\\.\\d\\d")
+var mgValueRegExp = regexp.MustCompile("\\d+")
 
 func convertXmlGlucoseRead(read Glucose) (*model.GlucoseRead, error) {
 	// Convert display/internal to timestamp with timezone extracted
@@ -45,6 +46,12 @@ func convertXmlGlucoseRead(read Glucose) (*model.GlucoseRead, error) {
 		timeLocation := util.GetLocaltimeOffset(read.DisplayTime, timeUTC)
 
 		unit := getUnitFromValue(read.Value)
+
+		// Skip this read if we can't even tell what its unit is (i.e. value of "Low")
+		if unit == model.UNKNOWN_GLUCOSE_MEASUREMENT_UNIT {
+			return nil, nil
+		}
+
 		if value, err := strconv.ParseFloat(read.Value, 32); err != nil {
 			return nil, err
 		} else {
@@ -57,6 +64,9 @@ func getUnitFromValue(value string) (unit string) {
 	unit = model.MG_PER_DL
 	if mmolValueRegExp.MatchString(value) {
 		unit = model.MMOL_PER_L
+	} else if !mgValueRegExp.MatchString(value) {
+		// This would happen is the value is tagged "Low"
+		unit = model.UNKNOWN_GLUCOSE_MEASUREMENT_UNIT
 	}
 
 	return unit
