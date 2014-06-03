@@ -58,7 +58,7 @@ func (slice CalibrationReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 			util.Propagate(err)
 		}
 
-		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, float32(slice[i].Value), CALIBRATION_READ_TAG}
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, float32(slice[i].Value), CALIBRATION_READ_TAG, slice[i].Unit}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints

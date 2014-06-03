@@ -56,7 +56,7 @@ func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataP
 		}
 
 		dataPoint := DataPoint{localTime, slice.GetEpochTime(i),
-			linearInterpolateY(matchingReads, slice[i].Time), slice[i].Units, INSULIN_TAG}
+			linearInterpolateY(matchingReads, slice[i].Time), slice[i].Units, INSULIN_TAG, "units"}
 		dataPoints[i] = dataPoint
 	}
 

@@ -66,7 +66,7 @@ func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 			util.Propagate(err)
 		}
 
-		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG}
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG, slice[i].Unit}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints
