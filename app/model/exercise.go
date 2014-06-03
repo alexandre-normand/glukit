@@ -54,7 +54,7 @@ func (slice ExerciseSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPo
 		}
 
 		dataPoint := DataPoint{localTime, slice.GetEpochTime(i),
-			linearInterpolateY(matchingReads, slice[i].Time), float32(slice[i].DurationMinutes), EXERCISE_TAG}
+			linearInterpolateY(matchingReads, slice[i].Time), float32(slice[i].DurationMinutes), EXERCISE_TAG, "minutes"}
 		dataPoints[i] = dataPoint
 	}
 

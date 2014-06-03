@@ -7,6 +7,7 @@ type DataPoint struct {
 	Y         float32 `json:"y"`
 	Value     float32 `json:"value"`
 	Tag       string  `json:"tag"`
+	Unit      string  `json:"unit"`
 }
 
 type DataPointSlice []DataPoint
