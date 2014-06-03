@@ -165,7 +165,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 			util.Propagate(err)
 		}
 
-		lastReadTime, err := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, startTime,
+		lastReadTime, err := importer.ParseContent(context, reader, userProfileKey, startTime,
 			store.StoreDaysOfReads, store.StoreDaysOfMeals, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 		errMessage := "Success"
 		if err != nil {
@@ -209,7 +209,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	// make a read buffer
 	reader := bufio.NewReader(fi)
 
-	lastReadTime, err := importer.ParseContent(context, reader, importer.IMPORT_BATCH_SIZE, userProfileKey, util.GLUKIT_EPOCH_TIME,
+	lastReadTime, err := importer.ParseContent(context, reader, userProfileKey, util.GLUKIT_EPOCH_TIME,
 		store.StoreDaysOfReads, store.StoreDaysOfMeals, store.StoreDaysOfInjections, store.StoreDaysOfExercises)
 
 	if err != nil {
