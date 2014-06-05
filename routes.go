@@ -127,7 +127,8 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 		if err != nil {
 			util.Propagate(err)
 		}
-		taskqueue.Add(context, task, "store")
+		taskqueue.Add(context, task, DATASTORE_WRITES_QUEUE_NAME)
+
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
@@ -227,5 +228,5 @@ func initializeAndHandleRequest(writer http.ResponseWriter, request *http.Reques
 func initializeApp(writer http.ResponseWriter, request *http.Request) {
 	initOauthProvider(writer, request)
 	initApiEndpoints(writer, request)
-	initializeGlukitBernstein(writer, request)
+	//initializeGlukitBernstein(writer, request)
 }

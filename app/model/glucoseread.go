@@ -9,8 +9,9 @@ const (
 	GLUCOSE_READ_TAG = "GlucoseRead"
 
 	// Units
-	MMOL_PER_L = "mmolPerL"
-	MG_PER_DL  = "mgPerDL"
+	MMOL_PER_L                       = "mmolPerL"
+	MG_PER_DL                        = "mgPerDL"
+	UNKNOWN_GLUCOSE_MEASUREMENT_UNIT = "Unknown"
 )
 
 // GlucoseRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external
@@ -65,7 +66,7 @@ func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 			util.Propagate(err)
 		}
 
-		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG}
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG, slice[i].Unit}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints

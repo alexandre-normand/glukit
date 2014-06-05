@@ -57,7 +57,7 @@ func (slice MealSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints
 		}
 
 		dataPoint := DataPoint{localTime, slice.GetEpochTime(i),
-			linearInterpolateY(matchingReads, slice[i].Time), slice[i].Carbohydrates, CARB_TAG}
+			linearInterpolateY(matchingReads, slice[i].Time), slice[i].Carbohydrates, CARB_TAG, "grams"}
 		dataPoints[i] = dataPoint
 	}
 
