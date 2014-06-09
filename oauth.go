@@ -10,6 +10,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"github.com/alexandre-normand/osin"
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -25,6 +26,14 @@ const (
 type oauthAuthenticatedHandler struct {
 	authenticatedHandler http.Handler
 }
+
+// Some variables that are used during rendering of oauth templates
+type OauthRenderVariables struct {
+	Code  string
+	State string
+}
+
+var authorizeLocalAppTemplate = template.Must(template.ParseFiles("view/templates/oauthorize.html"))
 
 func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig := osin.NewServerConfig()
@@ -74,7 +83,14 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 			server.FinishAuthorizeRequest(resp, req, ar)
 
 			if resp.URL == "urn:ietf:wg:oauth:2.0:oob" {
-				resp.Type = osin.DATA
+				// Render a page with the title including the code
+				data := resp.Output
+				renderVariables := &OauthRenderVariables{Code: data["code"].(string), State: data["state"].(string)}
+
+				if err := authorizeLocalAppTemplate.Execute(w, renderVariables); err != nil {
+					c.Criticalf("Error executing template [%s]", authorizeLocalAppTemplate.Name())
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
 			}
 		}
 		if resp.IsError && resp.InternalError != nil {
