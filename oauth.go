@@ -10,6 +10,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"github.com/alexandre-normand/osin"
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -25,6 +26,14 @@ const (
 type oauthAuthenticatedHandler struct {
 	authenticatedHandler http.Handler
 }
+
+// Some variables that are used during rendering of oauth templates
+type OauthRenderVariables struct {
+	Code  string
+	State string
+}
+
+var authorizeLocalAppTemplate = template.Must(template.ParseFiles("view/templates/oauthorize.html"))
 
 func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	sconfig := osin.NewServerConfig()
@@ -74,7 +83,14 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 			server.FinishAuthorizeRequest(resp, req, ar)
 
 			if resp.URL == "urn:ietf:wg:oauth:2.0:oob" {
-				resp.Type = osin.DATA
+				// Render a page with the title including the code
+				data := resp.Output
+				renderVariables := &OauthRenderVariables{Code: data["code"].(string), State: data["state"].(string)}
+
+				if err := authorizeLocalAppTemplate.Execute(w, renderVariables); err != nil {
+					c.Criticalf("Error executing template [%s]", authorizeLocalAppTemplate.Name())
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
 			}
 		}
 		if resp.IsError && resp.InternalError != nil {
@@ -87,14 +103,12 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	muxRouter.Get(TOKEN_ROUTE).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		c.Debugf("Processing token request: %v", req)
-		user := user.Current(c)
 		resp := server.NewResponse()
 		req.ParseForm()
 		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
 		if ar := server.HandleAccessRequest(resp, req); ar != nil {
-			c.Debugf("Processing token request with form: %v", req.Form)
+			c.Debugf("Processing token request with form [%v], retrieved authorize data [%v]", req.Form, ar)
 			ar.Authorized = true
-			ar.UserData = user.Email
 			server.FinishAccessRequest(resp, req, ar)
 		}
 		osin.OutputJSON(resp, w, req)
