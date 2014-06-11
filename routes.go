@@ -76,8 +76,8 @@ func init() {
 	muxRouter.HandleFunc("/v1/exercises", initializeAndHandleRequest).Methods("POST").Name(EXERCISES_V1_ROUTE)
 
 	// Register oauth endpoints to warmup which will initilize the oauth server and replace the routes with the actual oauth handlers
-	muxRouter.HandleFunc("/token", initializeAndHandleRequest).Name(TOKEN_ROUTE)
-	muxRouter.HandleFunc("/authorize", initializeAndHandleRequest).Name(AUTHORIZE_ROUTE)
+	muxRouter.HandleFunc("/token", initializeAndHandleRequest).Methods("POST").Name(TOKEN_ROUTE)
+	muxRouter.HandleFunc("/authorize", initializeAndHandleRequest).Methods("GET").Name(AUTHORIZE_ROUTE)
 
 	// Initialize task functions that would otherwise be prone to initialization loops
 	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)

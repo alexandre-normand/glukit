@@ -2,7 +2,6 @@ package glukit
 
 import (
 	"appengine"
-	"appengine/user"
 	"encoding/json"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/bufio"
@@ -11,6 +10,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/streaming"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -21,6 +21,32 @@ const (
 	MEALS_V1_ROUTE        = "v1_meals"
 	INJECTIONS_V1_ROUTE   = "v1_injections"
 )
+
+// Represents the logging of a file import
+type ApiUser struct {
+	Email string
+}
+
+func CurrentApiUser(request *http.Request) (user *ApiUser) {
+	request.ParseForm()
+
+	authorizationValue := request.Header.Get("Authorization")
+	if authorizationValue == "" {
+		return nil
+	}
+
+	accessCode := strings.TrimPrefix(authorizationValue, "Bearer ")
+	if accessCode == "" {
+		return nil
+	}
+
+	// load access data
+	if accessData, err := server.Storage.LoadAccess(accessCode, request); err == nil {
+		return &ApiUser{accessData.UserData.(string)}
+	}
+
+	return nil
+}
 
 func initApiEndpoints(writer http.ResponseWriter, request *http.Request) {
 	muxRouter.Get(CALIBRATIONS_V1_ROUTE).Handler(newOauthAuthenticationHandler(http.HandlerFunc(processNewCalibrationData)))
@@ -34,7 +60,7 @@ func initApiEndpoints(writer http.ResponseWriter, request *http.Request) {
 // handles all data to be stored for a given user
 func processNewCalibrationData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	user := user.Current(context)
+	user := CurrentApiUser(request)
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
@@ -89,7 +115,7 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 // handles all data to be stored for a given user
 func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	user := user.Current(context)
+	user := CurrentApiUser(request)
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
@@ -148,7 +174,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 // handles all data to be stored for a given user
 func processNewInjectionData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	user := user.Current(context)
+	user := CurrentApiUser(request)
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
@@ -203,7 +229,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 // handles all data to be stored for a given user
 func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	user := user.Current(context)
+	user := CurrentApiUser(request)
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
@@ -258,7 +284,7 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 // handles all data to be stored for a given user
 func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	user := user.Current(context)
+	user := CurrentApiUser(request)
 
 	userProfileKey, _, err := store.GetGlukitUser(context, user.Email)
 	if err != nil {
