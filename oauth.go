@@ -103,14 +103,12 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 	muxRouter.Get(TOKEN_ROUTE).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
 		c.Debugf("Processing token request: %v", req)
-		user := user.Current(c)
 		resp := server.NewResponse()
 		req.ParseForm()
 		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
 		if ar := server.HandleAccessRequest(resp, req); ar != nil {
-			c.Debugf("Processing token request with form: %v", req.Form)
+			c.Debugf("Processing token request with form [%v], retrieved authorize data [%v]", req.Form, ar)
 			ar.Authorized = true
-			ar.UserData = user.Email
 			server.FinishAccessRequest(resp, req, ar)
 		}
 		osin.OutputJSON(resp, w, req)
