@@ -48,9 +48,9 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 		c := appengine.NewContext(req)
 		user := user.Current(c)
 		resp := server.NewResponse()
-		c.Debugf("Processing authorization request: %v", req)
 		req.ParseForm()
 		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
+		c.Debugf("Processing authorization request: %v and form [%v]", req, req.PostForm)
 		if ar := server.HandleAuthorizeRequest(resp, req); ar != nil {
 			// Nothing to do since the page is already login restricted by gae app configuration
 			ar.Authorized = true
@@ -96,21 +96,23 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 		if resp.IsError && resp.InternalError != nil {
 			c.Debugf("ERROR: %s\n", resp.InternalError)
 		}
+		c.Debugf("Writing response: %v", resp.Output)
 		osin.OutputJSON(resp, w, req)
 	})
 
 	// Access token endpoint
 	muxRouter.Get(TOKEN_ROUTE).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c := appengine.NewContext(req)
-		c.Debugf("Processing token request: %v", req)
 		resp := server.NewResponse()
 		req.ParseForm()
 		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
+		c.Debugf("Processing token request: %v with form [%v]", req, req.PostForm)
 		if ar := server.HandleAccessRequest(resp, req); ar != nil {
-			c.Debugf("Processing token request with form [%v], retrieved authorize data [%v]", req.Form, ar)
+			c.Debugf("Retrieved authorize data [%v]", ar)
 			ar.Authorized = true
 			server.FinishAccessRequest(resp, req, ar)
 		}
+		c.Debugf("Writing response: %v", resp.Output)
 		osin.OutputJSON(resp, w, req)
 	})
 	context := appengine.NewContext(request)
