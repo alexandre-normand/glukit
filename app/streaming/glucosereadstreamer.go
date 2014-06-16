@@ -1,15 +1,15 @@
 package streaming
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	"time"
 )
 
 type GlucoseReadStreamer struct {
 	head    *container.ImmutableList
-	tailVal *model.GlucoseRead
+	tailVal *apimodel.GlucoseRead
 	wr      glukitio.GlucoseReadBatchWriter
 	d       time.Duration
 }
@@ -19,15 +19,15 @@ const (
 )
 
 // WriteGlucoseRead writes a single GlucoseRead into the buffer.
-func (b *GlucoseReadStreamer) WriteGlucoseRead(c model.GlucoseRead) (g *GlucoseReadStreamer, err error) {
-	return b.WriteGlucoseReads([]model.GlucoseRead{c})
+func (b *GlucoseReadStreamer) WriteGlucoseRead(c apimodel.GlucoseRead) (g *GlucoseReadStreamer, err error) {
+	return b.WriteGlucoseReads([]apimodel.GlucoseRead{c})
 }
 
 // WriteGlucoseReads writes the contents of p into the buffer.
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *GlucoseReadStreamer, err error) {
+func (b *GlucoseReadStreamer) WriteGlucoseReads(p []apimodel.GlucoseRead) (g *GlucoseReadStreamer, err error) {
 	g = newGlucoseStreamerDuration(b.head, b.tailVal, b.wr, b.d)
 	if err != nil {
 		return g, err
@@ -52,7 +52,7 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []model.GlucoseRead) (g *Gluco
 	return g, err
 }
 
-func newGlucoseStreamerDuration(head *container.ImmutableList, tailVal *model.GlucoseRead, wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
+func newGlucoseStreamerDuration(head *container.ImmutableList, tailVal *apimodel.GlucoseRead, wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
 	w := new(GlucoseReadStreamer)
 	w.head = head
 	w.tailVal = tailVal
@@ -84,11 +84,11 @@ func (b *GlucoseReadStreamer) Flush() (*GlucoseReadStreamer, error) {
 	return newGlucoseStreamerDuration(nil, nil, b.wr, b.d), nil
 }
 
-func ListToArrayOfGlucoseReads(head *container.ImmutableList, size int) []model.GlucoseRead {
-	r := make([]model.GlucoseRead, size)
+func ListToArrayOfGlucoseReads(head *container.ImmutableList, size int) []apimodel.GlucoseRead {
+	r := make([]apimodel.GlucoseRead, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.GlucoseRead)
+		r[i] = cursor.Value().(apimodel.GlucoseRead)
 		cursor = cursor.Next()
 	}
 

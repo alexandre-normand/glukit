@@ -2,7 +2,7 @@ package glukitio
 
 import (
 	"errors"
-	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 )
 
 // ErrShortWrite means that a write accepted fewer bytes than requested
@@ -22,8 +22,8 @@ var ErrShortWrite = errors.New("short write")
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type CalibrationBatchWriter interface {
-	WriteCalibrationBatch(p []model.CalibrationRead) (w CalibrationBatchWriter, err error)
-	WriteCalibrationBatches(p []model.DayOfCalibrationReads) (w CalibrationBatchWriter, err error)
+	WriteCalibrationBatch(p []apimodel.CalibrationRead) (w CalibrationBatchWriter, err error)
+	WriteCalibrationBatches(p []apimodel.DayOfCalibrationReads) (w CalibrationBatchWriter, err error)
 	Flush() (w CalibrationBatchWriter, err error)
 }
 
@@ -40,8 +40,8 @@ type CalibrationBatchWriter interface {
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type GlucoseReadBatchWriter interface {
-	WriteGlucoseReadBatch(p []model.GlucoseRead) (w GlucoseReadBatchWriter, err error)
-	WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (w GlucoseReadBatchWriter, err error)
+	WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (w GlucoseReadBatchWriter, err error)
+	WriteGlucoseReadBatches(p []apimodel.DayOfGlucoseReads) (w GlucoseReadBatchWriter, err error)
 	Flush() (w GlucoseReadBatchWriter, err error)
 }
 
@@ -58,8 +58,8 @@ type GlucoseReadBatchWriter interface {
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type InjectionBatchWriter interface {
-	WriteInjectionBatch(p []model.Injection) (w InjectionBatchWriter, err error)
-	WriteInjectionBatches(p []model.DayOfInjections) (w InjectionBatchWriter, err error)
+	WriteInjectionBatch(p []apimodel.Injection) (w InjectionBatchWriter, err error)
+	WriteInjectionBatches(p []apimodel.DayOfInjections) (w InjectionBatchWriter, err error)
 	Flush() (w InjectionBatchWriter, err error)
 }
 
@@ -76,8 +76,8 @@ type InjectionBatchWriter interface {
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type MealBatchWriter interface {
-	WriteMealBatch(p []model.Meal) (w MealBatchWriter, err error)
-	WriteMealBatches(p []model.DayOfMeals) (w MealBatchWriter, err error)
+	WriteMealBatch(p []apimodel.Meal) (w MealBatchWriter, err error)
+	WriteMealBatches(p []apimodel.DayOfMeals) (w MealBatchWriter, err error)
 	Flush() (w MealBatchWriter, err error)
 }
 
@@ -94,7 +94,7 @@ type MealBatchWriter interface {
 // from p (0 <= n <= len(p)) and any error encountered that caused the
 // write to stop early. Write must return a non-nil error if it returns n < len(p).
 type ExerciseBatchWriter interface {
-	WriteExerciseBatch(p []model.Exercise) (w ExerciseBatchWriter, err error)
-	WriteExerciseBatches(p []model.DayOfExercises) (w ExerciseBatchWriter, err error)
+	WriteExerciseBatch(p []apimodel.Exercise) (w ExerciseBatchWriter, err error)
+	WriteExerciseBatches(p []apimodel.DayOfExercises) (w ExerciseBatchWriter, err error)
 	Flush() (w ExerciseBatchWriter, err error)
 }

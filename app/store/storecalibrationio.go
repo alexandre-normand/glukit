@@ -3,8 +3,8 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type DataStoreCalibrationBatchWriter struct {
@@ -20,7 +20,7 @@ func NewDataStoreCalibrationBatchWriter(context appengine.Context, userProfileKe
 	return w
 }
 
-func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
+func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatches(p []apimodel.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
 	if _, err := StoreCalibrationReads(w.c, w.k, p); err != nil {
 		return w, err
 	} else {
@@ -28,9 +28,9 @@ func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayO
 	}
 }
 
-func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
-	dayOfCalibrationReads := make([]model.DayOfCalibrationReads, 1)
-	dayOfCalibrationReads[0] = model.DayOfCalibrationReads{p}
+func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatch(p []apimodel.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
+	dayOfCalibrationReads := make([]apimodel.DayOfCalibrationReads, 1)
+	dayOfCalibrationReads[0] = apimodel.DayOfCalibrationReads{p}
 	return w.WriteCalibrationBatches(dayOfCalibrationReads)
 }
 

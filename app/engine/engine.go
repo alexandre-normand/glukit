@@ -5,6 +5,7 @@ package engine
 import (
 	"appengine"
 	"appengine/taskqueue"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -76,7 +77,7 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 
 // An individual score is either 0 if it's straight on perfection (83) or it's the deviation from 83 weighted
 // by whether it's high (multiplier of 2) or lower (multiplier of 1)
-func CalculateIndividualReadScoreWeight(context appengine.Context, read model.GlucoseRead) (weightedScoreContribution float64) {
+func CalculateIndividualReadScoreWeight(context appengine.Context, read apimodel.GlucoseRead) (weightedScoreContribution float64) {
 	weightedScoreContribution = 0.
 	value := float64(read.Value)
 	if value > model.TARGET_GLUCOSE_VALUE {
