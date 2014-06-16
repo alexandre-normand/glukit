@@ -4,6 +4,7 @@ Package models provides model types
 package model
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/util"
 	"math"
 	"time"
@@ -11,7 +12,6 @@ import (
 
 const (
 	TARGET_GLUCOSE_VALUE    = 83.
-	UNDEFINED_READ          = -1
 	EXERCISE_VALUE_FORMAT   = "%d,%s"
 	UNDEFINED_SCORE_VALUE   = int64(math.MaxInt64)
 	DEFAULT_LOOKBACK_PERIOD = time.Duration(-7*24) * time.Hour
@@ -33,3 +33,9 @@ type FileImportLog struct {
 	LastDataProcessed time.Time
 	ImportResult      string
 }
+
+type DataStoreDayOfGlucoseReads apimodel.DayOfGlucoseReads
+type DataStoreDayOfCalibrationReads apimodel.DayOfCalibrationReads
+type DataStoreDayOfInjections apimodel.DayOfInjections
+type DataStoreDayOfExercises apimodel.DayOfExercises
+type DataStoreDayOfMeals apimodel.DayOfMeals

@@ -1,9 +1,9 @@
 package bufio
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedExerciseBatchWriter struct {
@@ -34,16 +34,16 @@ func newExerciseWriterSize(wr glukitio.ExerciseBatchWriter, head *container.Immu
 	return w
 }
 
-// WriteExercise writes a single model.DayOfExercises
-func (b *BufferedExerciseBatchWriter) WriteExerciseBatch(p []model.Exercise) (glukitio.ExerciseBatchWriter, error) {
-	return b.WriteExerciseBatches([]model.DayOfExercises{model.DayOfExercises{p}})
+// WriteExercise writes a single apimodel.DayOfExercises
+func (b *BufferedExerciseBatchWriter) WriteExerciseBatch(p []apimodel.Exercise) (glukitio.ExerciseBatchWriter, error) {
+	return b.WriteExerciseBatches([]apimodel.DayOfExercises{apimodel.DayOfExercises{p}})
 }
 
 // WriteExerciseBatches writes the contents of p into the buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedExerciseBatchWriter) WriteExerciseBatches(p []model.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
+func (b *BufferedExerciseBatchWriter) WriteExerciseBatches(p []apimodel.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
 	w := b
 	for _, batch := range p {
 		if w.size >= w.flushSize {
@@ -80,11 +80,11 @@ func (b *BufferedExerciseBatchWriter) Flush() (glukitio.ExerciseBatchWriter, err
 	return newExerciseWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-func ListToArrayOfExerciseBatch(head *container.ImmutableList, size int) []model.DayOfExercises {
-	r := make([]model.DayOfExercises, size)
+func ListToArrayOfExerciseBatch(head *container.ImmutableList, size int) []apimodel.DayOfExercises {
+	r := make([]apimodel.DayOfExercises, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.DayOfExercises)
+		r[i] = cursor.Value().(apimodel.DayOfExercises)
 		cursor = cursor.Next()
 	}
 

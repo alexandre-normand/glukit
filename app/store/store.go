@@ -4,6 +4,7 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/util"
 	"math"
@@ -71,9 +72,9 @@ func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile 
 // StoreDaysOfReads stores a batch of DayOfReads elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all reads for a single day.
 //    2. We have multiple DayOfReads elements and we use a PutMulti to make this faster.
-// For details of how a single element of DayOfReads is physically stored, see the implementation of model.Store and model.Load.
+// For details of how a single element of DayOfReads is physically stored, see the implementation of apimodel.Store and apimodel.Load.
 // Also important to note, this store operation also handles updating the GlukitUser entry with the most recent read, if applicable.
-func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []model.DayOfGlucoseReads) (keys []*datastore.Key, err error) {
+func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []apimodel.DayOfGlucoseReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfReads))
 	for i := range daysOfReads {
 		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", daysOfReads[i].Reads[0].Time.Timestamp, userProfileKey)
@@ -111,8 +112,8 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 // StoreCalibrationReads stores a batch of DayOfCalibrations elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all calibration reads for a single day.
 //    2. We have multiple DayOfReads elements and we use a PutMulti to make this faster.
-// For details of how a single element of DayOfReads is physically stored, see the implementation of model.Store and model.Load.
-func StoreCalibrationReads(context appengine.Context, userProfileKey *datastore.Key, daysOfCalibrationReads []model.DayOfCalibrationReads) (keys []*datastore.Key, err error) {
+// For details of how a single element of DayOfReads is physically stored, see the implementation of apimodel.Store and apimodel.Load.
+func StoreCalibrationReads(context appengine.Context, userProfileKey *datastore.Key, daysOfCalibrationReads []apimodel.DayOfCalibrationReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfCalibrationReads))
 	for i := range daysOfCalibrationReads {
 		elementKeys[i] = datastore.NewKey(context, "DayOfCalibrationReads", "", daysOfCalibrationReads[i].Reads[0].Time.Timestamp, userProfileKey)
@@ -129,7 +130,7 @@ func StoreCalibrationReads(context appengine.Context, userProfileKey *datastore.
 }
 
 // GetGlucoseReads returns all GlucoseReads given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (reads []model.GlucoseRead, err error) {
+func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (reads []apimodel.GlucoseRead, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -140,7 +141,7 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfReads model.DayOfGlucoseReads
+	var daysOfReads apimodel.DayOfGlucoseReads
 
 	iterator := query.Run(context)
 	count := 0
@@ -150,8 +151,8 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 		count = len(daysOfReads.Reads)
 	}
 
-	readSlice := model.GlucoseReadSlice(daysOfReads.Reads)
-	startIndex, endIndex := model.GetBoundariesOfElementsInRange(readSlice, lowerBound, upperBound)
+	readSlice := apimodel.GlucoseReadSlice(daysOfReads.Reads)
+	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(readSlice, lowerBound, upperBound)
 	filteredReads := daysOfReads.Reads[startIndex : endIndex+1]
 
 	if err != datastore.Done {
@@ -164,8 +165,8 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 // StoreDaysOfInjections stores a batch of DayOfInjections elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all injections for a single day.
 //    2. We have multiple DayOfInjections elements and we use a PutMulti to make this faster.
-// For details of how a single element of DayOfInjections is physically stored, see the implementation of model.Store and model.Load.
-func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) (keys []*datastore.Key, err error) {
+// For details of how a single element of DayOfInjections is physically stored, see the implementation of apimodel.Store and apimodel.Load.
+func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []apimodel.DayOfInjections) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfInjections))
 	for i := range daysOfInjections {
 		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", daysOfInjections[i].Injections[0].Time.Timestamp, userProfileKey)
@@ -182,7 +183,7 @@ func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.
 }
 
 // GetInjections returns all Injection entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetInjections(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (injections []model.Injection, err error) {
+func GetInjections(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (injections []apimodel.Injection, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -193,7 +194,7 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 	context.Infof("Scanning for injections between %s and %s to get injections between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfInjections").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfInjections model.DayOfInjections
+	var daysOfInjections apimodel.DayOfInjections
 
 	iterator := query.Run(context)
 	count := 0
@@ -203,8 +204,8 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 		count = len(daysOfInjections.Injections)
 	}
 
-	injectionSlice := model.InjectionSlice(daysOfInjections.Injections)
-	startIndex, endIndex := model.GetBoundariesOfElementsInRange(injectionSlice, lowerBound, upperBound)
+	injectionSlice := apimodel.InjectionSlice(daysOfInjections.Injections)
+	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(injectionSlice, lowerBound, upperBound)
 	filteredInjections := daysOfInjections.Injections[startIndex : endIndex+1]
 
 	if err != datastore.Done {
@@ -217,8 +218,8 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 // StoreDaysOfMeals stores a batch of DayOfMeals elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all Meals for a single day.
 //    2. We have multiple DayOfMeals elements and we use a PutMulti to make this faster.
-// For details of how a single element of DayOfMeals is physically stored, see the implementation of model.Store and model.Load.
-func StoreDaysOfMeals(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []model.DayOfMeals) (keys []*datastore.Key, err error) {
+// For details of how a single element of DayOfMeals is physically stored, see the implementation of apimodel.Store and apimodel.Load.
+func StoreDaysOfMeals(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []apimodel.DayOfMeals) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfMeals))
 	for i := range daysOfMeals {
 		elementKeys[i] = datastore.NewKey(context, "DayOfMeals", "", daysOfMeals[i].Meals[0].Time.Timestamp, userProfileKey)
@@ -235,7 +236,7 @@ func StoreDaysOfMeals(context appengine.Context, userProfileKey *datastore.Key, 
 }
 
 // GetMeals returns all Meal entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetMeals(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (carbs []model.Meal, err error) {
+func GetMeals(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (carbs []apimodel.Meal, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -246,7 +247,7 @@ func GetMeals(context appengine.Context, email string, lowerBound time.Time, upp
 	context.Infof("Scanning for carbs between %s and %s to get carbs between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfMeals").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfMeals model.DayOfMeals
+	var daysOfMeals apimodel.DayOfMeals
 
 	iterator := query.Run(context)
 	count := 0
@@ -257,8 +258,8 @@ func GetMeals(context appengine.Context, email string, lowerBound time.Time, upp
 	}
 
 	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(daysOfMeals.Meals), daysOfMeals.Meals)
-	carbSlice := model.MealSlice(daysOfMeals.Meals)
-	startIndex, endIndex := model.GetBoundariesOfElementsInRange(carbSlice, lowerBound, upperBound)
+	carbSlice := apimodel.MealSlice(daysOfMeals.Meals)
+	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(carbSlice, lowerBound, upperBound)
 	filteredMeals := daysOfMeals.Meals[startIndex : endIndex+1]
 	context.Debugf("Finished filtering with %d carbs", len(filteredMeals))
 
@@ -272,8 +273,8 @@ func GetMeals(context appengine.Context, email string, lowerBound time.Time, upp
 // StoreDaysOfExercises stores a batch of DayOfExercises elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all Exercises for a single day.
 //    2. We have multiple DayOfExercises elements and we use a PutMulti to make this faster.
-// For details of how a single element of DayOfExercises is physically stored, see the implementation of model.Store and model.Load.
-func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) (keys []*datastore.Key, err error) {
+// For details of how a single element of DayOfExercises is physically stored, see the implementation of apimodel.Store and apimodel.Load.
+func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []apimodel.DayOfExercises) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfExercises))
 	for i := range daysOfExercises {
 		elementKeys[i] = datastore.NewKey(context, "DayOfExercises", "", daysOfExercises[i].Exercises[0].Time.Timestamp, userProfileKey)
@@ -290,7 +291,7 @@ func StoreDaysOfExercises(context appengine.Context, userProfileKey *datastore.K
 }
 
 // GetExercises returns all Exercise entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetExercises(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (exercises []model.Exercise, err error) {
+func GetExercises(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (exercises []apimodel.Exercise, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -301,7 +302,7 @@ func GetExercises(context appengine.Context, email string, lowerBound time.Time,
 	context.Infof("Scanning for exercises between %s and %s to get exercises between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfExercises").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfExercises model.DayOfExercises
+	var daysOfExercises apimodel.DayOfExercises
 
 	iterator := query.Run(context)
 	count := 0
@@ -311,8 +312,8 @@ func GetExercises(context appengine.Context, email string, lowerBound time.Time,
 		count = len(daysOfExercises.Exercises)
 	}
 
-	exerciseSlice := model.ExerciseSlice(daysOfExercises.Exercises)
-	startIndex, endIndex := model.GetBoundariesOfElementsInRange(exerciseSlice, lowerBound, upperBound)
+	exerciseSlice := apimodel.ExerciseSlice(daysOfExercises.Exercises)
+	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(exerciseSlice, lowerBound, upperBound)
 	filteredExercises := daysOfExercises.Exercises[startIndex : endIndex+1]
 
 	if err != datastore.Done {

@@ -1,15 +1,15 @@
 package streaming
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	"time"
 )
 
 type MealStreamer struct {
 	head    *container.ImmutableList
-	tailVal *model.Meal
+	tailVal *apimodel.Meal
 	wr      glukitio.MealBatchWriter
 	d       time.Duration
 }
@@ -19,7 +19,7 @@ func NewMealStreamerDuration(wr glukitio.MealBatchWriter, bufferDuration time.Du
 	return newMealStreamerDuration(nil, nil, wr, bufferDuration)
 }
 
-func newMealStreamerDuration(head *container.ImmutableList, tailVal *model.Meal, wr glukitio.MealBatchWriter, bufferDuration time.Duration) *MealStreamer {
+func newMealStreamerDuration(head *container.ImmutableList, tailVal *apimodel.Meal, wr glukitio.MealBatchWriter, bufferDuration time.Duration) *MealStreamer {
 	w := new(MealStreamer)
 	w.head = head
 	w.tailVal = tailVal
@@ -30,15 +30,15 @@ func newMealStreamerDuration(head *container.ImmutableList, tailVal *model.Meal,
 }
 
 // WriteMeal writes a single Meal into the buffer.
-func (b *MealStreamer) WriteMeal(c model.Meal) (s *MealStreamer, err error) {
-	return b.WriteMeals([]model.Meal{c})
+func (b *MealStreamer) WriteMeal(c apimodel.Meal) (s *MealStreamer, err error) {
+	return b.WriteMeals([]apimodel.Meal{c})
 }
 
 // WriteMeals writes the contents of p into the buffer.
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *MealStreamer) WriteMeals(p []model.Meal) (s *MealStreamer, err error) {
+func (b *MealStreamer) WriteMeals(p []apimodel.Meal) (s *MealStreamer, err error) {
 	s = newMealStreamerDuration(b.head, b.tailVal, b.wr, b.d)
 	if err != nil {
 		return s, err
@@ -80,11 +80,11 @@ func (b *MealStreamer) Flush() (s *MealStreamer, err error) {
 	return newMealStreamerDuration(nil, nil, b.wr, b.d), nil
 }
 
-func ListToArrayOfMealReads(head *container.ImmutableList, size int) []model.Meal {
-	r := make([]model.Meal, size)
+func ListToArrayOfMealReads(head *container.ImmutableList, size int) []apimodel.Meal {
+	r := make([]apimodel.Meal, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.Meal)
+		r[i] = cursor.Value().(apimodel.Meal)
 		cursor = cursor.Next()
 	}
 

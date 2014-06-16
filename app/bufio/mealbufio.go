@@ -1,9 +1,9 @@
 package bufio
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedMealBatchWriter struct {
@@ -34,16 +34,16 @@ func newMealWriterSize(wr glukitio.MealBatchWriter, head *container.ImmutableLis
 	return w
 }
 
-// WriteMeal writes a single model.DayOfMeals
-func (b *BufferedMealBatchWriter) WriteMealBatch(p []model.Meal) (glukitio.MealBatchWriter, error) {
-	return b.WriteMealBatches([]model.DayOfMeals{model.DayOfMeals{p}})
+// WriteMeal writes a single apimodel.DayOfMeals
+func (b *BufferedMealBatchWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
+	return b.WriteMealBatches([]apimodel.DayOfMeals{apimodel.DayOfMeals{p}})
 }
 
 // WriteMealBatches writes the contents of p into the buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedMealBatchWriter) WriteMealBatches(p []model.DayOfMeals) (glukitio.MealBatchWriter, error) {
+func (b *BufferedMealBatchWriter) WriteMealBatches(p []apimodel.DayOfMeals) (glukitio.MealBatchWriter, error) {
 	w := b
 	for _, batch := range p {
 		if w.size >= w.flushSize {
@@ -80,11 +80,11 @@ func (b *BufferedMealBatchWriter) Flush() (glukitio.MealBatchWriter, error) {
 	return newMealWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-func ListToArrayOfMealBatch(head *container.ImmutableList, size int) []model.DayOfMeals {
-	r := make([]model.DayOfMeals, size)
+func ListToArrayOfMealBatch(head *container.ImmutableList, size int) []apimodel.DayOfMeals {
+	r := make([]apimodel.DayOfMeals, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.DayOfMeals)
+		r[i] = cursor.Value().(apimodel.DayOfMeals)
 		cursor = cursor.Next()
 	}
 

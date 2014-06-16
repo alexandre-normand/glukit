@@ -5,6 +5,7 @@ import (
 	"appengine/datastore"
 	"appengine/user"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -60,7 +61,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 			if err == datastore.ErrNoSuchEntity {
 				// If the user doesn't exist already, create it
 				glukitUser := model.GlukitUser{user.Email, "", "", time.Now(),
-					"", "", util.GLUKIT_EPOCH_TIME, model.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
+					"", "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
 					model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
 				_, err = store.StoreUserProfile(c, time.Now(), glukitUser)
 				if err != nil {

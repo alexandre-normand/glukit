@@ -8,6 +8,7 @@ import (
 	"appengine/urlfetch"
 	"appengine/user"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -22,7 +23,7 @@ const (
 	DEMO_EMAIL = "demo@glukit.com"
 )
 
-var emptyDataPointSlice []model.DataPoint
+var emptyDataPointSlice []apimodel.DataPoint
 
 // config returns the configuration information for OAuth and Drive.
 func config() *oauth.Config {
@@ -64,7 +65,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 		// We store the refresh token separately from the rest. This token is long-lived, meaning that if
 		// we have a glukit user with no refresh token, we need to force getting a new one (which is to be avoided)
 		glukitUser = &model.GlukitUser{user.Email, "", "", time.Now(),
-			"", "", util.GLUKIT_EPOCH_TIME, model.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
+			"", "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
 			model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
 		_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
 		if err != nil {
@@ -191,10 +192,10 @@ func getEnvSettings() (host, clientId, clientSecret string) {
 }
 
 // buildPerfectBaseline generates an array of reads that represents the target/perfection
-func buildPerfectBaseline(glucoseReads []model.GlucoseRead) (reads []model.GlucoseRead) {
-	reads = make([]model.GlucoseRead, len(glucoseReads))
+func buildPerfectBaseline(glucoseReads []apimodel.GlucoseRead) (reads []apimodel.GlucoseRead) {
+	reads = make([]apimodel.GlucoseRead, len(glucoseReads))
 	for i := range glucoseReads {
-		reads[i] = model.GlucoseRead{glucoseReads[i].Time, model.MG_PER_DL, model.TARGET_GLUCOSE_VALUE}
+		reads[i] = apimodel.GlucoseRead{glucoseReads[i].Time, apimodel.MG_PER_DL, model.TARGET_GLUCOSE_VALUE}
 	}
 
 	return reads

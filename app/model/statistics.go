@@ -1,11 +1,12 @@
 package model
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"time"
 )
 
 // Type for a slice of GlucoseReads with comparison based on value rather than time. It is used as read statistics.
-type ReadStatsSlice []GlucoseRead
+type ReadStatsSlice []apimodel.GlucoseRead
 
 func (slice ReadStatsSlice) Len() int {
 	return len(slice)
