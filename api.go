@@ -2,10 +2,12 @@ package glukit
 
 import (
 	"appengine"
+	"appengine/channel"
 	"encoding/json"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
+	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
 	"io"
@@ -165,6 +167,19 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		http.Error(writer, fmt.Sprintf("Error storing data: %v", err), 502)
 		return
 	}
+
+	_, glukitUser, err := store.GetGlukitUser(context, user.Email)
+	if err != nil {
+		context.Warningf("Couldn't get glukit user profile [%s] to recalculate score: %v", user.Email, err)
+	}
+
+	err = engine.CalculateGlukitScoreBatch(context, glukitUser)
+	if err != nil {
+		context.Warningf("Error starting glukit score calculation batch for user [%s]: %v", user.Email, err)
+	}
+
+	// Notify a user that is currently connected that there's new data available
+	channel.Send(context, user.Email, "Refresh")
 
 	context.Infof("Wrote glucose reads to the datastore for user [%s]", user.Email)
 	writer.WriteHeader(200)
