@@ -1,9 +1,9 @@
 package streaming_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
 	"testing"
@@ -14,7 +14,7 @@ type exerciseWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.Exercise
+	batches    map[int64][]apimodel.Exercise
 }
 
 type statsExerciseReadWriter struct {
@@ -23,7 +23,7 @@ type statsExerciseReadWriter struct {
 
 func NewExerciseWriterState() *exerciseWriterState {
 	s := new(exerciseWriterState)
-	s.batches = make(map[int64][]model.Exercise)
+	s.batches = make(map[int64][]apimodel.Exercise)
 
 	return s
 }
@@ -35,14 +35,14 @@ func NewStatsExerciseReadWriter(s *exerciseWriterState) *statsExerciseReadWriter
 	return w
 }
 
-func (w *statsExerciseReadWriter) WriteExerciseBatch(p []model.Exercise) (glukitio.ExerciseBatchWriter, error) {
+func (w *statsExerciseReadWriter) WriteExerciseBatch(p []apimodel.Exercise) (glukitio.ExerciseBatchWriter, error) {
 	log.Printf("WriteExerciseReadBatch with [%d] elements: %v", len(p), p)
-	dayOfExercises := []model.DayOfExercises{model.DayOfExercises{p}}
+	dayOfExercises := []apimodel.DayOfExercises{apimodel.DayOfExercises{p}}
 
 	return w.WriteExerciseBatches(dayOfExercises)
 }
 
-func (w *statsExerciseReadWriter) WriteExerciseBatches(p []model.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
+func (w *statsExerciseReadWriter) WriteExerciseBatches(p []apimodel.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
 	log.Printf("WriteExerciseBatches with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Exercises[0].GetTime())
@@ -69,7 +69,7 @@ func TestWriteOfDayExerciseBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteExercise(model.Exercise{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, i, "Light", "details"})
+		w, _ = w.WriteExercise(apimodel.Exercise{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, i, "Light", "details"})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyExerciseBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteExercise(model.Exercise{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, i, "Light", "details"})
+		w, _ = w.WriteExercise(apimodel.Exercise{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, i, "Light", "details"})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleExerciseBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteExercise(model.Exercise{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, i, "Light", "details"})
+		w, _ = w.WriteExercise(apimodel.Exercise{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, i, "Light", "details"})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestExerciseStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteExercise(model.Exercise{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, b*48 + i, "Light", "details"})
+			w, _ = w.WriteExercise(apimodel.Exercise{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, b*48 + i, "Light", "details"})
 		}
 	}
 

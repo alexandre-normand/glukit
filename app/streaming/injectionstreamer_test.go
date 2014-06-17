@@ -1,9 +1,9 @@
 package streaming_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
 	"testing"
@@ -14,7 +14,7 @@ type injectionWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.Injection
+	batches    map[int64][]apimodel.Injection
 }
 
 type statsInjectionReadWriter struct {
@@ -23,7 +23,7 @@ type statsInjectionReadWriter struct {
 
 func NewInjectionWriterState() *injectionWriterState {
 	s := new(injectionWriterState)
-	s.batches = make(map[int64][]model.Injection)
+	s.batches = make(map[int64][]apimodel.Injection)
 
 	return s
 }
@@ -35,14 +35,14 @@ func NewStatsInjectionReadWriter(s *injectionWriterState) *statsInjectionReadWri
 	return w
 }
 
-func (w *statsInjectionReadWriter) WriteInjectionBatch(p []model.Injection) (glukitio.InjectionBatchWriter, error) {
+func (w *statsInjectionReadWriter) WriteInjectionBatch(p []apimodel.Injection) (glukitio.InjectionBatchWriter, error) {
 	log.Printf("WriteInjectionReadBatch with [%d] elements: %v", len(p), p)
-	dayOfInjections := []model.DayOfInjections{model.DayOfInjections{p}}
+	dayOfInjections := []apimodel.DayOfInjections{apimodel.DayOfInjections{p}}
 
 	return w.WriteInjectionBatches(dayOfInjections)
 }
 
-func (w *statsInjectionReadWriter) WriteInjectionBatches(p []model.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
+func (w *statsInjectionReadWriter) WriteInjectionBatches(p []apimodel.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
 	log.Printf("WriteInjectionBatches with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Injections[0].GetTime())
@@ -69,7 +69,7 @@ func TestWriteOfDayInjectionBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
+		w, _ = w.WriteInjection(apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyInjectionBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
+		w, _ = w.WriteInjection(apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleInjectionBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
+		w, _ = w.WriteInjection(apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestInjectionStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteInjection(model.Injection{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(b*48 + i), "Humalog", "Bolus"})
+			w, _ = w.WriteInjection(apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(b*48 + i), "Humalog", "Bolus"})
 		}
 	}
 

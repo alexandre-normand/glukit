@@ -1,9 +1,9 @@
 package bufio_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	"log"
 	"testing"
 	"time"
@@ -13,7 +13,7 @@ type glucoseWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.GlucoseRead
+	batches    map[int64][]apimodel.GlucoseRead
 }
 
 type statsGlucoseReadWriter struct {
@@ -22,7 +22,7 @@ type statsGlucoseReadWriter struct {
 
 func NewGlucoseWriterState() *glucoseWriterState {
 	s := new(glucoseWriterState)
-	s.batches = make(map[int64][]model.GlucoseRead)
+	s.batches = make(map[int64][]apimodel.GlucoseRead)
 
 	return s
 }
@@ -34,13 +34,13 @@ func NewStatsGlucoseReadWriter(s *glucoseWriterState) *statsGlucoseReadWriter {
 	return w
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
 
-	return w.WriteGlucoseReadBatches([]model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}})
+	return w.WriteGlucoseReadBatches([]apimodel.DayOfGlucoseReads{apimodel.DayOfGlucoseReads{p}})
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []apimodel.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.state.total += len(dayOfData.Reads)
@@ -62,15 +62,15 @@ func (w *statsGlucoseReadWriter) Flush() (glukitio.GlucoseReadBatchWriter, error
 func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 	state := NewGlucoseWriterState()
 	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
-	batches := make([]model.DayOfGlucoseReads, 10)
+	batches := make([]apimodel.DayOfGlucoseReads, 10)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	for i := 0; i < 10; i++ {
-		glucoseReads := make([]model.GlucoseRead, 24)
+		glucoseReads := make([]apimodel.GlucoseRead, 24)
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
-			glucoseReads[j] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(j)}
+			glucoseReads[j] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(j)}
 		}
-		batches[i] = model.DayOfGlucoseReads{glucoseReads}
+		batches[i] = apimodel.DayOfGlucoseReads{glucoseReads}
 	}
 	newWriter, _ := w.WriteGlucoseReadBatches(batches)
 	w = newWriter.(*BufferedGlucoseReadBatchWriter)
@@ -93,11 +93,11 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 func TestIndividualGlucoseReadWrite(t *testing.T) {
 	state := NewGlucoseWriterState()
 	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
-	glucoseReads := make([]model.GlucoseRead, 24)
+	glucoseReads := make([]apimodel.GlucoseRead, 24)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	for j := 0; j < 24; j++ {
 		readTime := ct.Add(time.Duration(j) * 1 * time.Hour)
-		glucoseReads[j] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(j)}
+		glucoseReads[j] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(j)}
 	}
 	newWriter, _ := w.WriteGlucoseReadBatch(glucoseReads)
 	w = newWriter.(*BufferedGlucoseReadBatchWriter)
@@ -120,15 +120,15 @@ func TestIndividualGlucoseReadWrite(t *testing.T) {
 func TestSimpleWriteLargerThanOneGlucoseReadBatch(t *testing.T) {
 	state := NewGlucoseWriterState()
 	w := NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 10)
-	batches := make([]model.DayOfGlucoseReads, 19)
+	batches := make([]apimodel.DayOfGlucoseReads, 19)
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	for i := 0; i < 19; i++ {
-		glucoseReads := make([]model.GlucoseRead, 24)
+		glucoseReads := make([]apimodel.GlucoseRead, 24)
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
-			glucoseReads[j] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i*24 + j)}
+			glucoseReads[j] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i*24 + j)}
 		}
-		batches[i] = model.DayOfGlucoseReads{glucoseReads}
+		batches[i] = apimodel.DayOfGlucoseReads{glucoseReads}
 	}
 	newWriter, _ := w.WriteGlucoseReadBatches(batches)
 	w = newWriter.(*BufferedGlucoseReadBatchWriter)
@@ -168,11 +168,11 @@ func TestWriteOverTwoFullGlucoseReadBatches(t *testing.T) {
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 
 	for b := 0; b < 3; b++ {
-		glucoseReads := make([]model.GlucoseRead, 48)
+		glucoseReads := make([]apimodel.GlucoseRead, 48)
 
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			glucoseReads[i] = model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)}
+			glucoseReads[i] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(b*48 + i)}
 		}
 
 		newWriter, _ := w.WriteGlucoseReadBatch(glucoseReads)

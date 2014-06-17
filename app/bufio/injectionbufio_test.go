@@ -1,9 +1,9 @@
 package bufio_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	"log"
 	"testing"
 )
@@ -12,7 +12,7 @@ type injectionWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.Injection
+	batches    map[int64][]apimodel.Injection
 }
 
 type statsInjectionWriter struct {
@@ -21,7 +21,7 @@ type statsInjectionWriter struct {
 
 func NewInjectionWriterState() *injectionWriterState {
 	s := new(injectionWriterState)
-	s.batches = make(map[int64][]model.Injection)
+	s.batches = make(map[int64][]apimodel.Injection)
 
 	return s
 }
@@ -33,13 +33,13 @@ func NewStatsInjectionWriter(s *injectionWriterState) *statsInjectionWriter {
 	return w
 }
 
-func (w *statsInjectionWriter) WriteInjectionBatch(p []model.Injection) (glukitio.InjectionBatchWriter, error) {
+func (w *statsInjectionWriter) WriteInjectionBatch(p []apimodel.Injection) (glukitio.InjectionBatchWriter, error) {
 	log.Printf("WriteInjectionBatch with [%d] elements: %v", len(p), p)
 
-	return w.WriteInjectionBatches([]model.DayOfInjections{model.DayOfInjections{p}})
+	return w.WriteInjectionBatches([]apimodel.DayOfInjections{apimodel.DayOfInjections{p}})
 }
 
-func (w *statsInjectionWriter) WriteInjectionBatches(p []model.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
+func (w *statsInjectionWriter) WriteInjectionBatches(p []apimodel.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
 	log.Printf("WriteInjectionBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.state.total += len(dayOfData.Injections)
@@ -59,13 +59,13 @@ func (w *statsInjectionWriter) Flush() (glukitio.InjectionBatchWriter, error) {
 func TestSimpleWriteOfSingleInjectionBatch(t *testing.T) {
 	state := NewInjectionWriterState()
 	w := NewInjectionWriterSize(NewStatsInjectionWriter(state), 10)
-	batches := make([]model.DayOfInjections, 10)
+	batches := make([]apimodel.DayOfInjections, 10)
 	for i := 0; i < 10; i++ {
-		injections := make([]model.Injection, 24)
+		injections := make([]apimodel.Injection, 24)
 		for j := 0; j < 24; j++ {
-			injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
+			injections[j] = apimodel.Injection{apimodel.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 		}
-		batches[i] = model.DayOfInjections{injections}
+		batches[i] = apimodel.DayOfInjections{injections}
 	}
 	newWriter, _ := w.WriteInjectionBatches(batches)
 	w = newWriter.(*BufferedInjectionBatchWriter)
@@ -88,9 +88,9 @@ func TestSimpleWriteOfSingleInjectionBatch(t *testing.T) {
 func TestIndividualInjectionWrite(t *testing.T) {
 	state := NewInjectionWriterState()
 	w := NewInjectionWriterSize(NewStatsInjectionWriter(state), 10)
-	injections := make([]model.Injection, 24)
+	injections := make([]apimodel.Injection, 24)
 	for j := 0; j < 24; j++ {
-		injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
+		injections[j] = apimodel.Injection{apimodel.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 	}
 	newWriter, _ := w.WriteInjectionBatch(injections)
 	w = newWriter.(*BufferedInjectionBatchWriter)
@@ -113,13 +113,13 @@ func TestIndividualInjectionWrite(t *testing.T) {
 func TestSimpleWriteLargerThanOneInjectionBatch(t *testing.T) {
 	state := NewInjectionWriterState()
 	w := NewInjectionWriterSize(NewStatsInjectionWriter(state), 10)
-	batches := make([]model.DayOfInjections, 11)
+	batches := make([]apimodel.DayOfInjections, 11)
 	for i := 0; i < 11; i++ {
-		injections := make([]model.Injection, 24)
+		injections := make([]apimodel.Injection, 24)
 		for j := 0; j < 24; j++ {
-			injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
+			injections[j] = apimodel.Injection{apimodel.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 		}
-		batches[i] = model.DayOfInjections{injections}
+		batches[i] = apimodel.DayOfInjections{injections}
 	}
 	newWriter, _ := w.WriteInjectionBatches(batches)
 	w = newWriter.(*BufferedInjectionBatchWriter)
@@ -156,13 +156,13 @@ func TestSimpleWriteLargerThanOneInjectionBatch(t *testing.T) {
 func TestWriteTwoFullInjectionBatches(t *testing.T) {
 	state := NewInjectionWriterState()
 	w := NewInjectionWriterSize(NewStatsInjectionWriter(state), 10)
-	batches := make([]model.DayOfInjections, 20)
+	batches := make([]apimodel.DayOfInjections, 20)
 	for i := 0; i < 20; i++ {
-		injections := make([]model.Injection, 24)
+		injections := make([]apimodel.Injection, 24)
 		for j := 0; j < 24; j++ {
-			injections[j] = model.Injection{model.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
+			injections[j] = apimodel.Injection{apimodel.Time{0, "America/Montreal"}, float32(j), "Humalog", "Bolus"}
 		}
-		batches[i] = model.DayOfInjections{injections}
+		batches[i] = apimodel.DayOfInjections{injections}
 	}
 	newWriter, _ := w.WriteInjectionBatches(batches)
 	w = newWriter.(*BufferedInjectionBatchWriter)

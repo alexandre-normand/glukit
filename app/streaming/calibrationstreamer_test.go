@@ -1,9 +1,9 @@
 package streaming_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
 	"testing"
@@ -14,7 +14,7 @@ type calibrationWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.CalibrationRead
+	batches    map[int64][]apimodel.CalibrationRead
 }
 
 type statsCalibrationReadWriter struct {
@@ -23,7 +23,7 @@ type statsCalibrationReadWriter struct {
 
 func NewCalibrationWriterState() *calibrationWriterState {
 	s := new(calibrationWriterState)
-	s.batches = make(map[int64][]model.CalibrationRead)
+	s.batches = make(map[int64][]apimodel.CalibrationRead)
 
 	return s
 }
@@ -35,14 +35,14 @@ func NewStatsCalibrationReadWriter(s *calibrationWriterState) *statsCalibrationR
 	return w
 }
 
-func (w *statsCalibrationReadWriter) WriteCalibrationBatch(p []model.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
+func (w *statsCalibrationReadWriter) WriteCalibrationBatch(p []apimodel.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
 	log.Printf("WriteCalibrationReadBatch with [%d] elements: %v", len(p), p)
-	dayOfCalibrationReads := []model.DayOfCalibrationReads{model.DayOfCalibrationReads{p}}
+	dayOfCalibrationReads := []apimodel.DayOfCalibrationReads{apimodel.DayOfCalibrationReads{p}}
 
 	return w.WriteCalibrationBatches(dayOfCalibrationReads)
 }
 
-func (w *statsCalibrationReadWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
+func (w *statsCalibrationReadWriter) WriteCalibrationBatches(p []apimodel.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
 	log.Printf("WriteCalibrationReadBatches with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
@@ -69,7 +69,7 @@ func TestWriteOfDayCalibrationBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteCalibration(apimodel.CalibrationRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyCalibrationBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteCalibration(apimodel.CalibrationRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleCalibrationBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteCalibration(apimodel.CalibrationRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestCalibrationStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteCalibration(model.CalibrationRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)})
+			w, _ = w.WriteCalibration(apimodel.CalibrationRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(b*48 + i)})
 
 		}
 	}
