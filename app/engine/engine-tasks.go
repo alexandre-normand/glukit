@@ -2,6 +2,7 @@ package engine
 
 import (
 	"appengine"
+	"appengine/channel"
 	"appengine/delay"
 	"appengine/taskqueue"
 	"github.com/alexandre-normand/glukit/app/model"
@@ -89,4 +90,7 @@ func RunGlukitScoreBatchCalculation(context appengine.Context, userEmail string,
 	} else {
 		context.Infof("Done with glukit score calculation for user [%s]", userEmail)
 	}
+
+	// Notify user of new data
+	channel.Send(context, userEmail, "Refresh")
 }
