@@ -5,6 +5,7 @@ import (
 	"appengine/user"
 	"encoding/json"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
@@ -27,9 +28,9 @@ type DataResponse struct {
 
 // Represents a generic DataSeries structure with a series of DataPoints
 type DataSeries struct {
-	Name string            `json:"name"`
-	Data []model.DataPoint `json:"data"`
-	Type string            `json:"type"`
+	Name string               `json:"name"`
+	Data []apimodel.DataPoint `json:"data"`
+	Type string               `json:"type"`
 }
 
 const (
@@ -134,26 +135,26 @@ func writeAsJson(writer http.ResponseWriter, response DataResponse) {
 	enc.Encode(response)
 }
 
-func generateDataSeriesFromData(reads []model.GlucoseRead, injections []model.Injection, carbs []model.Meal, exercises []model.Exercise) (dataSeries []DataSeries) {
+func generateDataSeriesFromData(reads []apimodel.GlucoseRead, injections []apimodel.Injection, carbs []apimodel.Meal, exercises []apimodel.Exercise) (dataSeries []DataSeries) {
 	data := make([]DataSeries, 1)
 
-	data[0] = DataSeries{"GlucoseReads", model.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
-	var userEvents []model.DataPoint
+	data[0] = DataSeries{"GlucoseReads", apimodel.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
+	var userEvents []apimodel.DataPoint
 	if injections != nil {
-		userEvents = model.MergeDataPointArrays(userEvents, model.InjectionSlice(injections).ToDataPointSlice(reads))
+		userEvents = apimodel.MergeDataPointArrays(userEvents, apimodel.InjectionSlice(injections).ToDataPointSlice(reads))
 	}
 
 	if carbs != nil {
-		userEvents = model.MergeDataPointArrays(userEvents, model.MealSlice(carbs).ToDataPointSlice(reads))
+		userEvents = apimodel.MergeDataPointArrays(userEvents, apimodel.MealSlice(carbs).ToDataPointSlice(reads))
 	}
 
 	// TODO: clean up exercise from all the app or restore it. We won't be using it at the moment as we don't think the exercise data
 	// from the dexcom is good enough
 	// if exercises != nil {
-	// 	userEvents = model.MergeDataPointArrays(userEvents, model.ExerciseSlice(exercises).ToDataPointSlice(reads))
+	// 	userEvents = apimodel.MergeDataPointArrays(userEvents, apimodel.ExerciseSlice(exercises).ToDataPointSlice(reads))
 	// }
 
-	sort.Sort(model.DataPointSlice(userEvents))
+	sort.Sort(apimodel.DataPointSlice(userEvents))
 
 	data = append(data, DataSeries{"UserEvents", userEvents, "UserEvents"})
 
@@ -197,7 +198,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 
 // writedashboardDataAsJson calculates dashboard statistics from an array of GlucoseReads and writes it
 // as json
-func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request, reads []model.GlucoseRead, userProfile *model.GlukitUser) {
+func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request, reads []apimodel.GlucoseRead, userProfile *model.GlukitUser) {
 	context := appengine.NewContext(request)
 	value := writer.Header()
 	value.Add("Content-type", "application/json")

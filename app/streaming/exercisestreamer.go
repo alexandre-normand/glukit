@@ -1,15 +1,15 @@
 package streaming
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	"time"
 )
 
 type ExerciseStreamer struct {
 	head    *container.ImmutableList
-	tailVal *model.Exercise
+	tailVal *apimodel.Exercise
 	wr      glukitio.ExerciseBatchWriter
 	d       time.Duration
 }
@@ -19,7 +19,7 @@ func NewExerciseStreamerDuration(wr glukitio.ExerciseBatchWriter, bufferDuration
 	return newExerciseStreamerDuration(nil, nil, wr, bufferDuration)
 }
 
-func newExerciseStreamerDuration(head *container.ImmutableList, tailVal *model.Exercise, wr glukitio.ExerciseBatchWriter, bufferDuration time.Duration) *ExerciseStreamer {
+func newExerciseStreamerDuration(head *container.ImmutableList, tailVal *apimodel.Exercise, wr glukitio.ExerciseBatchWriter, bufferDuration time.Duration) *ExerciseStreamer {
 	w := new(ExerciseStreamer)
 	w.head = head
 	w.tailVal = tailVal
@@ -30,15 +30,15 @@ func newExerciseStreamerDuration(head *container.ImmutableList, tailVal *model.E
 }
 
 // WriteExercise writes a single Exercise into the buffer.
-func (b *ExerciseStreamer) WriteExercise(c model.Exercise) (s *ExerciseStreamer, err error) {
-	return b.WriteExercises([]model.Exercise{c})
+func (b *ExerciseStreamer) WriteExercise(c apimodel.Exercise) (s *ExerciseStreamer, err error) {
+	return b.WriteExercises([]apimodel.Exercise{c})
 }
 
 // WriteExercises writes the contents of p into the buffer.
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
-func (b *ExerciseStreamer) WriteExercises(p []model.Exercise) (s *ExerciseStreamer, err error) {
+func (b *ExerciseStreamer) WriteExercises(p []apimodel.Exercise) (s *ExerciseStreamer, err error) {
 	s = newExerciseStreamerDuration(b.head, b.tailVal, b.wr, b.d)
 	if err != nil {
 		return s, err
@@ -80,11 +80,11 @@ func (b *ExerciseStreamer) Flush() (s *ExerciseStreamer, err error) {
 	return newExerciseStreamerDuration(nil, nil, b.wr, b.d), nil
 }
 
-func ListToArrayOfExerciseReads(head *container.ImmutableList, size int) []model.Exercise {
-	r := make([]model.Exercise, size)
+func ListToArrayOfExerciseReads(head *container.ImmutableList, size int) []apimodel.Exercise {
+	r := make([]apimodel.Exercise, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.Exercise)
+		r[i] = cursor.Value().(apimodel.Exercise)
 		cursor = cursor.Next()
 	}
 

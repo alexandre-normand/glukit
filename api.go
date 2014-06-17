@@ -4,8 +4,8 @@ import (
 	"appengine"
 	"encoding/json"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
-	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
 	"io"
@@ -76,7 +76,7 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var c []model.CalibrationRead
+		var c []apimodel.CalibrationRead
 
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
@@ -135,7 +135,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var c []model.GlucoseRead
+		var c []apimodel.GlucoseRead
 
 		if err = decoder.Decode(&c); err == io.EOF {
 			break
@@ -190,7 +190,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var p []model.Injection
+		var p []apimodel.Injection
 
 		if err = decoder.Decode(&p); err == io.EOF {
 			break
@@ -245,7 +245,7 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var meals []model.Meal
+		var meals []apimodel.Meal
 
 		if err = decoder.Decode(&meals); err == io.EOF {
 			break
@@ -300,7 +300,7 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 	decoder := json.NewDecoder(request.Body)
 
 	for {
-		var exercises []model.Exercise
+		var exercises []apimodel.Exercise
 
 		if err = decoder.Decode(&exercises); err == io.EOF {
 			break

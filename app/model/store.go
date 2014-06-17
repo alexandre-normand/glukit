@@ -3,11 +3,12 @@ package model
 import (
 	"appengine/datastore"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"strconv"
 	"time"
 )
 
-func (dayOfReads *DayOfGlucoseReads) Load(channel <-chan datastore.Property) error {
+func (dayOfReads *DataStoreDayOfGlucoseReads) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
 	var unit string
 	var locationName string
@@ -33,7 +34,7 @@ func (dayOfReads *DayOfGlucoseReads) Load(channel <-chan datastore.Property) err
 			// We need to convert value to int64 and cast it as int
 			value := columnValue.(float64)
 
-			read := GlucoseRead{Time{GetTimeMillis(readTime), locationName}, unit, float32(value)}
+			read := apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), locationName}, unit, float32(value)}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -41,7 +42,7 @@ func (dayOfReads *DayOfGlucoseReads) Load(channel <-chan datastore.Property) err
 	return nil
 }
 
-func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) error {
+func (dayOfReads *DataStoreDayOfGlucoseReads) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfReads.Reads)
@@ -84,7 +85,7 @@ func (dayOfReads *DayOfGlucoseReads) Save(channel chan<- datastore.Property) err
 	return nil
 }
 
-func (dayOfReads *DayOfCalibrationReads) Load(channel <-chan datastore.Property) error {
+func (dayOfReads *DataStoreDayOfCalibrationReads) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
 	var unit string
 	var locationName string
@@ -110,7 +111,7 @@ func (dayOfReads *DayOfCalibrationReads) Load(channel <-chan datastore.Property)
 			// We need to convert value to int64 and cast it as int
 			value := columnValue.(float64)
 
-			read := CalibrationRead{Time{GetTimeMillis(readTime), locationName}, unit, float32(value)}
+			read := apimodel.CalibrationRead{apimodel.Time{apimodel.GetTimeMillis(readTime), locationName}, unit, float32(value)}
 			dayOfReads.Reads = append(dayOfReads.Reads, read)
 		}
 	}
@@ -118,7 +119,7 @@ func (dayOfReads *DayOfCalibrationReads) Load(channel <-chan datastore.Property)
 	return nil
 }
 
-func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property) error {
+func (dayOfReads *DataStoreDayOfCalibrationReads) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfReads.Reads)
@@ -161,7 +162,7 @@ func (dayOfReads *DayOfCalibrationReads) Save(channel chan<- datastore.Property)
 	return nil
 }
 
-func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) error {
+func (dayOfInjections *DataStoreDayOfInjections) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
 	var locationName string
 
@@ -185,7 +186,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 			// the store
 			value := float32(columnValue.(float64))
 
-			injection := Injection{Time{GetTimeMillis(timestamp), locationName}, value, "Not implemented", "Not implemented"}
+			injection := apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(timestamp), locationName}, value, "Not implemented", "Not implemented"}
 			dayOfInjections.Injections = append(dayOfInjections.Injections, injection)
 		}
 	}
@@ -193,7 +194,7 @@ func (dayOfInjections *DayOfInjections) Load(channel <-chan datastore.Property) 
 	return nil
 }
 
-func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) error {
+func (dayOfInjections *DataStoreDayOfInjections) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfInjections.Injections)
@@ -234,7 +235,7 @@ func (dayOfInjections *DayOfInjections) Save(channel chan<- datastore.Property) 
 	return nil
 }
 
-func (dayOfMeals *DayOfMeals) Load(channel <-chan datastore.Property) error {
+func (dayOfMeals *DataStoreDayOfMeals) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
 	var locationName string
 
@@ -258,7 +259,7 @@ func (dayOfMeals *DayOfMeals) Load(channel <-chan datastore.Property) error {
 			// the store
 			carbs := float32(columnValue.(float64))
 
-			meal := Meal{Time{GetTimeMillis(timestamp), locationName}, carbs, 0., 0., 0.}
+			meal := apimodel.Meal{apimodel.Time{apimodel.GetTimeMillis(timestamp), locationName}, carbs, 0., 0., 0.}
 			dayOfMeals.Meals = append(dayOfMeals.Meals, meal)
 		}
 	}
@@ -266,7 +267,7 @@ func (dayOfMeals *DayOfMeals) Load(channel <-chan datastore.Property) error {
 	return nil
 }
 
-func (dayOfMeals *DayOfMeals) Save(channel chan<- datastore.Property) error {
+func (dayOfMeals *DataStoreDayOfMeals) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfMeals.Meals)
@@ -307,7 +308,7 @@ func (dayOfMeals *DayOfMeals) Save(channel chan<- datastore.Property) error {
 	return nil
 }
 
-func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) error {
+func (dayOfExercises *DataStoreDayOfExercises) Load(channel <-chan datastore.Property) error {
 	var startTime time.Time
 	var locationName string
 
@@ -333,7 +334,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 			var intensity string
 			fmt.Sscanf(value, EXERCISE_VALUE_FORMAT, &duration, &intensity)
 
-			exercise := Exercise{Time{GetTimeMillis(timestamp), locationName}, duration, intensity, ""}
+			exercise := apimodel.Exercise{apimodel.Time{apimodel.GetTimeMillis(timestamp), locationName}, duration, intensity, ""}
 			dayOfExercises.Exercises = append(dayOfExercises.Exercises, exercise)
 		}
 	}
@@ -341,7 +342,7 @@ func (dayOfExercises *DayOfExercises) Load(channel <-chan datastore.Property) er
 	return nil
 }
 
-func (dayOfExercises *DayOfExercises) Save(channel chan<- datastore.Property) error {
+func (dayOfExercises *DataStoreDayOfExercises) Save(channel chan<- datastore.Property) error {
 	defer close(channel)
 
 	size := len(dayOfExercises.Exercises)

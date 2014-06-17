@@ -1,9 +1,9 @@
 package streaming_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
 	"testing"
@@ -14,7 +14,7 @@ type mealWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.Meal
+	batches    map[int64][]apimodel.Meal
 }
 
 type statsMealReadWriter struct {
@@ -23,7 +23,7 @@ type statsMealReadWriter struct {
 
 func NewMealWriterState() *mealWriterState {
 	s := new(mealWriterState)
-	s.batches = make(map[int64][]model.Meal)
+	s.batches = make(map[int64][]apimodel.Meal)
 
 	return s
 }
@@ -35,14 +35,14 @@ func NewStatsMealReadWriter(s *mealWriterState) *statsMealReadWriter {
 	return w
 }
 
-func (w *statsMealReadWriter) WriteMealBatch(p []model.Meal) (glukitio.MealBatchWriter, error) {
+func (w *statsMealReadWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
 	log.Printf("WriteMealReadBatch with [%d] elements: %v", len(p), p)
-	dayOfMeals := []model.DayOfMeals{model.DayOfMeals{p}}
+	dayOfMeals := []apimodel.DayOfMeals{apimodel.DayOfMeals{p}}
 
 	return w.WriteMealBatches(dayOfMeals)
 }
 
-func (w *statsMealReadWriter) WriteMealBatches(p []model.DayOfMeals) (glukitio.MealBatchWriter, error) {
+func (w *statsMealReadWriter) WriteMealBatches(p []apimodel.DayOfMeals) (glukitio.MealBatchWriter, error) {
 	log.Printf("WriteMealBatches with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Meals[0].GetTime())
@@ -69,7 +69,7 @@ func TestWriteOfDayMealBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+		w, _ = w.WriteMeal(apimodel.Meal{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyMealBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+		w, _ = w.WriteMeal(apimodel.Meal{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 	}
 
 	if state.total != 12 {
@@ -132,7 +132,7 @@ func TestWriteOfMultipleMealBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+		w, _ = w.WriteMeal(apimodel.Meal{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 	}
 
 	if state.total != 24 {
@@ -173,7 +173,7 @@ func TestMealStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteMeal(model.Meal{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
+			w, _ = w.WriteMeal(apimodel.Meal{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)})
 		}
 	}
 

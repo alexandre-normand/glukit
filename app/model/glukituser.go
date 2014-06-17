@@ -1,27 +1,28 @@
 package model
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"time"
 )
 
 // Represents a GlukitUser profile
 type GlukitUser struct {
-	Email           string      `datastore:"email"`
-	FirstName       string      `datastore:"firstName"`
-	LastName        string      `datastore:"lastName"`
-	DateOfBirth     time.Time   `datastore:"birthdate"`
-	DiabetesType    string      `datastore:"diabetesType"`
-	Timezone        string      `datastore:"timezoneId"`
-	LastUpdated     time.Time   `datastore:"lastUpdated"`
-	MostRecentRead  GlucoseRead `datastore:"mostRecentRead"`
-	Token           oauth.Token `datastore:"token",noindex`
-	RefreshToken    string      `datastore:"refreshToken",noindex`
-	BestScore       GlukitScore `datastore:"bestScore"`
-	MostRecentScore GlukitScore `datastore:"mostRecentScore"`
-	Internal        bool        `datastore:"internal"`
-	PictureUrl      string      `datastore:"pictureUrl"`
-	AccountCreated  time.Time   `datastore:"joinedOn"`
+	Email           string               `datastore:"email"`
+	FirstName       string               `datastore:"firstName"`
+	LastName        string               `datastore:"lastName"`
+	DateOfBirth     time.Time            `datastore:"birthdate"`
+	DiabetesType    string               `datastore:"diabetesType"`
+	Timezone        string               `datastore:"timezoneId"`
+	LastUpdated     time.Time            `datastore:"lastUpdated"`
+	MostRecentRead  apimodel.GlucoseRead `datastore:"mostRecentRead"`
+	Token           oauth.Token          `datastore:"token",noindex`
+	RefreshToken    string               `datastore:"refreshToken",noindex`
+	BestScore       GlukitScore          `datastore:"bestScore"`
+	MostRecentScore GlukitScore          `datastore:"mostRecentScore"`
+	Internal        bool                 `datastore:"internal"`
+	PictureUrl      string               `datastore:"pictureUrl"`
+	AccountCreated  time.Time            `datastore:"joinedOn"`
 }
 
 // Represents a GlukitScore value, the lower and upper bounds

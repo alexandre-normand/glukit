@@ -5,6 +5,7 @@ import (
 	"appengine/datastore"
 	"bytes"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/importer"
 	"github.com/alexandre-normand/glukit/app/model"
@@ -24,7 +25,7 @@ const (
 
 var BERNSTEIN_EARLIEST_READ, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2013-06-01 12:00:00")
 var BERNSTEIN_MOST_RECENT_READ_TIME, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "2014-03-11 12:00:00")
-var BERNSTEIN_MOST_RECENT_READ = model.GlucoseRead{model.Time{BERNSTEIN_EARLIEST_READ.Unix(), "America/New_York"}, model.MG_PER_DL, PERFECT_SCORE}
+var BERNSTEIN_MOST_RECENT_READ = apimodel.GlucoseRead{apimodel.Time{BERNSTEIN_EARLIEST_READ.Unix(), "America/New_York"}, apimodel.MG_PER_DL, PERFECT_SCORE}
 var BERNSTEIN_BIRTH_DATE, _ = time.Parse(util.TIMEFORMAT_NO_TZ, "1934-06-17 00:00:00")
 
 // initializeGlukitBernstein does lazy initialization of the "perfect" glukit user.

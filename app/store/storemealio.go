@@ -3,8 +3,8 @@ package store
 import (
 	"appengine"
 	"appengine/datastore"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type DataStoreMealBatchWriter struct {
@@ -20,7 +20,7 @@ func NewDataStoreMealBatchWriter(context appengine.Context, userProfileKey *data
 	return w
 }
 
-func (w *DataStoreMealBatchWriter) WriteMealBatches(p []model.DayOfMeals) (glukitio.MealBatchWriter, error) {
+func (w *DataStoreMealBatchWriter) WriteMealBatches(p []apimodel.DayOfMeals) (glukitio.MealBatchWriter, error) {
 	if _, err := StoreDaysOfMeals(w.c, w.k, p); err != nil {
 		return w, err
 	} else {
@@ -28,9 +28,9 @@ func (w *DataStoreMealBatchWriter) WriteMealBatches(p []model.DayOfMeals) (gluki
 	}
 }
 
-func (w *DataStoreMealBatchWriter) WriteMealBatch(p []model.Meal) (glukitio.MealBatchWriter, error) {
-	dayOfMeals := make([]model.DayOfMeals, 1)
-	dayOfMeals[0] = model.DayOfMeals{p}
+func (w *DataStoreMealBatchWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
+	dayOfMeals := make([]apimodel.DayOfMeals, 1)
+	dayOfMeals[0] = apimodel.DayOfMeals{p}
 	return w.WriteMealBatches(dayOfMeals)
 }
 

@@ -5,8 +5,9 @@ import (
 	"appengine/datastore"
 	"encoding/xml"
 	"fmt"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
-	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/dexcomimporter"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -18,7 +19,7 @@ import (
 // ParseContent is the big function that parses the Dexcom xml file. It is given a reader to the file and it parses batches of days of GlucoseReads/Events. It streams the content but
 // keeps some in memory until it reaches a full batch of a type. A batch is an array of DayOf[GlucoseReads,Injection,Meals,Exercises]. A batch is flushed to the datastore once it reaches
 // the given batchSize or we reach the end of the file.
-func ParseContent(context appengine.Context, reader io.Reader, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, meals []model.DayOfGlucoseReads) ([]*datastore.Key, error), mealsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []model.DayOfMeals) ([]*datastore.Key, error), injectionBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []model.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []model.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time, err error) {
+func ParseContent(context appengine.Context, reader io.Reader, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, meals []apimodel.DayOfGlucoseReads) ([]*datastore.Key, error), mealsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []apimodel.DayOfMeals) ([]*datastore.Key, error), injectionBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []apimodel.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []apimodel.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time, err error) {
 	decoder := xml.NewDecoder(reader)
 
 	calibrationDataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, parentKey)
@@ -41,7 +42,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 	exerciseBatchingWriter := bufio.NewExerciseWriterSize(exerciseDataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
 	exerciseStreamer := streaming.NewExerciseStreamerDuration(exerciseBatchingWriter, time.Hour*24)
 
-	var lastRead *model.GlucoseRead
+	var lastRead *apimodel.GlucoseRead
 	for {
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
@@ -57,10 +58,10 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 			// ...and its name is "Glucose"
 			switch se.Name.Local {
 			case "Glucose":
-				var read Glucose
+				var read dexcomimporter.Glucose
 				// decode a whole chunk of following XML into the
 				decoder.DecodeElement(&read, &se)
-				glucoseRead, err := convertXmlGlucoseRead(read)
+				glucoseRead, err := dexcomimporter.ConvertXmlGlucoseRead(read)
 				if err != nil {
 					return lastRead.GetTime(), err
 				}
@@ -75,7 +76,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 					lastRead = glucoseRead
 				}
 			case "Event":
-				var event Event
+				var event dexcomimporter.Event
 				decoder.DecodeElement(&event, &se)
 				internalEventTime, err := util.GetTimeUTC(event.InternalTime)
 				if err != nil {
@@ -97,7 +98,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 						var mealQuantityInGrams int
 						fmt.Sscanf(event.Description, "Carbs %d grams", &mealQuantityInGrams)
 
-						meal := model.Meal{model.Time{model.GetTimeMillis(eventTime), location.String()}, float32(mealQuantityInGrams), 0., 0., 0.}
+						meal := apimodel.Meal{apimodel.Time{apimodel.GetTimeMillis(eventTime), location.String()}, float32(mealQuantityInGrams), 0., 0., 0.}
 
 						mealStreamer, err = mealStreamer.WriteMeal(meal)
 						if err != nil {
@@ -110,7 +111,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 						if err != nil {
 							context.Warningf("Failed to parse event as injection [%s]: %v", event.Description, err)
 						} else {
-							injection := model.Injection{model.Time{model.GetTimeMillis(eventTime), location.String()}, float32(insulinUnits), "", ""}
+							injection := apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(eventTime), location.String()}, float32(insulinUnits), "", ""}
 
 							injectionStreamer, err = injectionStreamer.WriteInjection(injection)
 
@@ -123,7 +124,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 						var intensity string
 						fmt.Sscanf(event.Description, "Exercise %s (%d minutes)", &intensity, &duration)
 
-						exercise := model.Exercise{model.Time{model.GetTimeMillis(eventTime), location.String()}, duration, intensity, ""}
+						exercise := apimodel.Exercise{apimodel.Time{apimodel.GetTimeMillis(eventTime), location.String()}, duration, intensity, ""}
 						exerciseStreamer, err = exerciseStreamer.WriteExercise(exercise)
 						if err != nil {
 							return lastRead.GetTime(), err
@@ -131,10 +132,10 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 					}
 				}
 			case "Meter":
-				var c Calibration
+				var c dexcomimporter.Calibration
 				decoder.DecodeElement(&c, &se)
 
-				if calibrationRead, err := convertXmlCalibrationRead(c); err != nil {
+				if calibrationRead, err := dexcomimporter.ConvertXmlCalibrationRead(c); err != nil {
 					return lastRead.GetTime(), err
 				} else {
 					calibrationStreamer, err = calibrationStreamer.WriteCalibration(*calibrationRead)

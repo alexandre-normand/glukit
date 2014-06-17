@@ -1,9 +1,9 @@
 package streaming_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	. "github.com/alexandre-normand/glukit/app/streaming"
 	"log"
 	"testing"
@@ -14,7 +14,7 @@ type glucoseWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.GlucoseRead
+	batches    map[int64][]apimodel.GlucoseRead
 }
 
 type statsGlucoseReadWriter struct {
@@ -23,7 +23,7 @@ type statsGlucoseReadWriter struct {
 
 func NewGlucoseWriterState() *glucoseWriterState {
 	s := new(glucoseWriterState)
-	s.batches = make(map[int64][]model.GlucoseRead)
+	s.batches = make(map[int64][]apimodel.GlucoseRead)
 
 	return s
 }
@@ -35,14 +35,14 @@ func NewStatsGlucoseReadWriter(s *glucoseWriterState) *statsGlucoseReadWriter {
 	return w
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
-	dayOfGlucoseReads := []model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}}
+	dayOfGlucoseReads := []apimodel.DayOfGlucoseReads{apimodel.DayOfGlucoseReads{p}}
 
 	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }
 
-func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
+func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []apimodel.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatches with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
@@ -69,7 +69,7 @@ func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteGlucoseRead(apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -93,7 +93,7 @@ func TestWriteOfHourlyGlucoseReadBatch(t *testing.T) {
 
 	for i := 0; i < 13; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteGlucoseRead(apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i)})
 	}
 
 	t.Logf("state is %p: %v", state, state)
@@ -134,7 +134,7 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i*5) * time.Minute)
-		w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(i)})
+		w, _ = w.WriteGlucoseRead(apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i)})
 	}
 
 	if state.total != 24 {
@@ -175,7 +175,7 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
 			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
-			w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(b*48 + i)})
+			w, _ = w.WriteGlucoseRead(apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(b*48 + i)})
 		}
 	}
 
@@ -208,7 +208,7 @@ func BenchmarkStreamerWithBufferedIO(b *testing.B) {
 		for j := 0; j < 3; j++ {
 			for i := 0; i < 288; i++ {
 				readTime := ct.Add(time.Duration(j*288+i) * 5 * time.Minute)
-				w, _ = w.WriteGlucoseRead(model.GlucoseRead{model.Time{model.GetTimeMillis(readTime), "America/Montreal"}, model.MG_PER_DL, float32(j*288 + i)})
+				w, _ = w.WriteGlucoseRead(apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(j*288 + i)})
 			}
 		}
 

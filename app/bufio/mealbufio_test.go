@@ -1,9 +1,9 @@
 package bufio_test
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	. "github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 	"log"
 	"testing"
 )
@@ -12,7 +12,7 @@ type mealWriterState struct {
 	total      int
 	batchCount int
 	writeCount int
-	batches    map[int64][]model.Meal
+	batches    map[int64][]apimodel.Meal
 }
 
 type statsMealWriter struct {
@@ -21,7 +21,7 @@ type statsMealWriter struct {
 
 func NewMealWriterState() *mealWriterState {
 	s := new(mealWriterState)
-	s.batches = make(map[int64][]model.Meal)
+	s.batches = make(map[int64][]apimodel.Meal)
 
 	return s
 }
@@ -33,13 +33,13 @@ func NewStatsMealWriter(s *mealWriterState) *statsMealWriter {
 	return w
 }
 
-func (w *statsMealWriter) WriteMealBatch(p []model.Meal) (glukitio.MealBatchWriter, error) {
+func (w *statsMealWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
 	log.Printf("WriteMealBatch with [%d] elements: %v", len(p), p)
 
-	return w.WriteMealBatches([]model.DayOfMeals{model.DayOfMeals{p}})
+	return w.WriteMealBatches([]apimodel.DayOfMeals{apimodel.DayOfMeals{p}})
 }
 
-func (w *statsMealWriter) WriteMealBatches(p []model.DayOfMeals) (glukitio.MealBatchWriter, error) {
+func (w *statsMealWriter) WriteMealBatches(p []apimodel.DayOfMeals) (glukitio.MealBatchWriter, error) {
 	log.Printf("WriteMealBatch with [%d] batches: %v", len(p), p)
 	for _, dayOfData := range p {
 		w.state.total += len(dayOfData.Meals)
@@ -59,13 +59,13 @@ func (w *statsMealWriter) Flush() (glukitio.MealBatchWriter, error) {
 func TestSimpleWriteOfSingleMealBatch(t *testing.T) {
 	state := NewMealWriterState()
 	w := NewMealWriterSize(NewStatsMealWriter(state), 10)
-	batches := make([]model.DayOfMeals, 10)
+	batches := make([]apimodel.DayOfMeals, 10)
 	for i := 0; i < 10; i++ {
-		meals := make([]model.Meal, 24)
+		meals := make([]apimodel.Meal, 24)
 		for j := 0; j < 24; j++ {
-			meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
+			meals[j] = apimodel.Meal{apimodel.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
-		batches[i] = model.DayOfMeals{meals}
+		batches[i] = apimodel.DayOfMeals{meals}
 	}
 	newWriter, _ := w.WriteMealBatches(batches)
 	w = newWriter.(*BufferedMealBatchWriter)
@@ -88,9 +88,9 @@ func TestSimpleWriteOfSingleMealBatch(t *testing.T) {
 func TestIndividualMealWrite(t *testing.T) {
 	state := NewMealWriterState()
 	w := NewMealWriterSize(NewStatsMealWriter(state), 10)
-	meals := make([]model.Meal, 24)
+	meals := make([]apimodel.Meal, 24)
 	for j := 0; j < 24; j++ {
-		meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
+		meals[j] = apimodel.Meal{apimodel.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 	}
 	newWriter, _ := w.WriteMealBatch(meals)
 	w = newWriter.(*BufferedMealBatchWriter)
@@ -113,13 +113,13 @@ func TestIndividualMealWrite(t *testing.T) {
 func TestSimpleWriteLargerThanOneMealBatch(t *testing.T) {
 	state := NewMealWriterState()
 	w := NewMealWriterSize(NewStatsMealWriter(state), 10)
-	batches := make([]model.DayOfMeals, 11)
+	batches := make([]apimodel.DayOfMeals, 11)
 	for i := 0; i < 11; i++ {
-		meals := make([]model.Meal, 24)
+		meals := make([]apimodel.Meal, 24)
 		for j := 0; j < 24; j++ {
-			meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
+			meals[j] = apimodel.Meal{apimodel.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
-		batches[i] = model.DayOfMeals{meals}
+		batches[i] = apimodel.DayOfMeals{meals}
 	}
 	newWriter, _ := w.WriteMealBatches(batches)
 	w = newWriter.(*BufferedMealBatchWriter)
@@ -156,13 +156,13 @@ func TestSimpleWriteLargerThanOneMealBatch(t *testing.T) {
 func TestWriteTwoFullMealBatches(t *testing.T) {
 	state := NewMealWriterState()
 	w := NewMealWriterSize(NewStatsMealWriter(state), 10)
-	batches := make([]model.DayOfMeals, 20)
+	batches := make([]apimodel.DayOfMeals, 20)
 	for i := 0; i < 20; i++ {
-		meals := make([]model.Meal, 24)
+		meals := make([]apimodel.Meal, 24)
 		for j := 0; j < 24; j++ {
-			meals[j] = model.Meal{model.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
+			meals[j] = apimodel.Meal{apimodel.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
-		batches[i] = model.DayOfMeals{meals}
+		batches[i] = apimodel.DayOfMeals{meals}
 	}
 	newWriter, _ := w.WriteMealBatches(batches)
 	w = newWriter.(*BufferedMealBatchWriter)
