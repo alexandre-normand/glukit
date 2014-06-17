@@ -2,18 +2,18 @@ package store_test
 
 import (
 	"appengine/aetest"
-	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	. "github.com/alexandre-normand/glukit/app/store"
 	"testing"
 	"time"
 )
 
 func TestSimpleWriteOfSingleExerciseBatch(t *testing.T) {
-	exercises := make([]model.Exercise, 25)
+	exercises := make([]apimodel.Exercise, 25)
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 	for i := 0; i < 25; i++ {
 		readTime := ct.Add(time.Duration(i) * time.Hour)
-		exercises[i] = model.Exercise{model.Time{readTime.Unix(), "America/Los_Angeles"}, i, "Light", "details"}
+		exercises[i] = apimodel.Exercise{apimodel.Time{readTime.Unix(), "America/Los_Angeles"}, i, "Light", "details"}
 	}
 
 	c, err := aetest.NewContext(nil)
@@ -30,16 +30,16 @@ func TestSimpleWriteOfSingleExerciseBatch(t *testing.T) {
 }
 
 func TestSimpleWriteOfExerciseBatches(t *testing.T) {
-	b := make([]model.DayOfExercises, 10)
+	b := make([]apimodel.DayOfExercises, 10)
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
 	for i := 0; i < 10; i++ {
-		exercises := make([]model.Exercise, 24)
+		exercises := make([]apimodel.Exercise, 24)
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(i*24+j) * time.Hour)
-			exercises[j] = model.Exercise{model.Time{readTime.Unix(), "America/Los_Angeles"}, j, "Light", "details"}
+			exercises[j] = apimodel.Exercise{apimodel.Time{readTime.Unix(), "America/Los_Angeles"}, j, "Light", "details"}
 		}
-		b[i] = model.DayOfExercises{exercises}
+		b[i] = apimodel.DayOfExercises{exercises}
 	}
 
 	c, err := aetest.NewContext(nil)
