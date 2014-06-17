@@ -1,9 +1,9 @@
 package bufio
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedGlucoseReadBatchWriter struct {
@@ -34,16 +34,16 @@ func newGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, head *containe
 	return w
 }
 
-// WriteGlucose writes a single model.DayOfGlucoseReads
-func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []model.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
-	return b.WriteGlucoseReadBatches([]model.DayOfGlucoseReads{model.DayOfGlucoseReads{p}})
+// WriteGlucose writes a single apimodel.DayOfGlucoseReads
+func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
+	return b.WriteGlucoseReadBatches([]apimodel.DayOfGlucoseReads{apimodel.DayOfGlucoseReads{p}})
 }
 
 // WriteGlucoseReadBatches writes the contents of p into the Buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []model.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
+func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []apimodel.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
 	w := b
 	for _, batch := range p {
 		if w.size >= w.flushSize {
@@ -80,11 +80,11 @@ func (b *BufferedGlucoseReadBatchWriter) Flush() (w glukitio.GlucoseReadBatchWri
 	return newGlucoseReadWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-func ListToArrayOfGlucoseReadBatch(head *container.ImmutableList, size int) []model.DayOfGlucoseReads {
-	r := make([]model.DayOfGlucoseReads, size)
+func ListToArrayOfGlucoseReadBatch(head *container.ImmutableList, size int) []apimodel.DayOfGlucoseReads {
+	r := make([]apimodel.DayOfGlucoseReads, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.DayOfGlucoseReads)
+		r[i] = cursor.Value().(apimodel.DayOfGlucoseReads)
 		cursor = cursor.Next()
 	}
 

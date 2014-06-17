@@ -1,9 +1,9 @@
 package bufio
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedCalibrationBatchWriter struct {
@@ -34,16 +34,16 @@ func newCalibrationWriterSize(wr glukitio.CalibrationBatchWriter, head *containe
 	return w
 }
 
-// WriteCalibration writes a single model.DayOfCalibrationReads
-func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []model.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
-	return b.WriteCalibrationBatches([]model.DayOfCalibrationReads{model.DayOfCalibrationReads{p}})
+// WriteCalibration writes a single apimodel.DayOfCalibrationReads
+func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []apimodel.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
+	return b.WriteCalibrationBatches([]apimodel.DayOfCalibrationReads{apimodel.DayOfCalibrationReads{p}})
 }
 
 // WriteCalibrationBatches writes the contents of p into the buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatches(p []model.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
+func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatches(p []apimodel.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
 	w := b
 	for _, batch := range p {
 		if w.size >= w.flushSize {
@@ -80,11 +80,11 @@ func (b *BufferedCalibrationBatchWriter) Flush() (w glukitio.CalibrationBatchWri
 	return newCalibrationWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-func ListToArrayOfCalibrationReadBatch(head *container.ImmutableList, size int) []model.DayOfCalibrationReads {
-	r := make([]model.DayOfCalibrationReads, size)
+func ListToArrayOfCalibrationReadBatch(head *container.ImmutableList, size int) []apimodel.DayOfCalibrationReads {
+	r := make([]apimodel.DayOfCalibrationReads, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.DayOfCalibrationReads)
+		r[i] = cursor.Value().(apimodel.DayOfCalibrationReads)
 		cursor = cursor.Next()
 	}
 

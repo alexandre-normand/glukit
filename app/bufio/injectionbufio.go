@@ -1,9 +1,9 @@
 package bufio
 
 import (
+	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"github.com/alexandre-normand/glukit/app/model"
 )
 
 type BufferedInjectionBatchWriter struct {
@@ -34,16 +34,16 @@ func newInjectionWriterSize(wr glukitio.InjectionBatchWriter, head *container.Im
 	return w
 }
 
-// WriteInjection writes a single model.DayOfInjections
-func (b *BufferedInjectionBatchWriter) WriteInjectionBatch(p []model.Injection) (glukitio.InjectionBatchWriter, error) {
-	return b.WriteInjectionBatches([]model.DayOfInjections{model.DayOfInjections{p}})
+// WriteInjection writes a single apimodel.DayOfInjections
+func (b *BufferedInjectionBatchWriter) WriteInjectionBatch(p []apimodel.Injection) (glukitio.InjectionBatchWriter, error) {
+	return b.WriteInjectionBatches([]apimodel.DayOfInjections{apimodel.DayOfInjections{p}})
 }
 
 // WriteInjectionBatches writes the contents of p into the buffer.
 // It returns the number of batches written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (b *BufferedInjectionBatchWriter) WriteInjectionBatches(p []model.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
+func (b *BufferedInjectionBatchWriter) WriteInjectionBatches(p []apimodel.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
 	w := b
 	for _, batch := range p {
 		if w.size >= w.flushSize {
@@ -80,11 +80,11 @@ func (b *BufferedInjectionBatchWriter) Flush() (glukitio.InjectionBatchWriter, e
 	return newInjectionWriterSize(b.wr, nil, 0, b.flushSize), nil
 }
 
-func ListToArrayOfInjectionBatch(head *container.ImmutableList, size int) []model.DayOfInjections {
-	r := make([]model.DayOfInjections, size)
+func ListToArrayOfInjectionBatch(head *container.ImmutableList, size int) []apimodel.DayOfInjections {
+	r := make([]apimodel.DayOfInjections, size)
 	cursor := head
 	for i := 0; i < size; i++ {
-		r[i] = cursor.Value().(model.DayOfInjections)
+		r[i] = cursor.Value().(apimodel.DayOfInjections)
 		cursor = cursor.Next()
 	}
 

@@ -1,4 +1,4 @@
-package model
+package apimodel
 
 import (
 	"github.com/alexandre-normand/glukit/app/util"

@@ -1,4 +1,4 @@
-package model
+package apimodel
 
 // Represents a generic data point in time
 type DataPoint struct {
