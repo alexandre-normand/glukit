@@ -27,3 +27,11 @@ func mergeInjectionArrays(first, second []apimodel.Injection) []apimodel.Injecti
 	copy(newslice[len(first):], second)
 	return newslice
 }
+
+// mergeExerciseArrays merges two arrays of Exercise elements.
+func mergeExerciseArrays(first, second []apimodel.Exercise) []apimodel.Exercise {
+	newslice := make([]apimodel.Exercise, len(first)+len(second))
+	copy(newslice, first)
+	copy(newslice[len(first):], second)
+	return newslice
+}
