@@ -142,18 +142,17 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 
 	query := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
 	var daysOfReads apimodel.DayOfGlucoseReads
+	readsForPeriod := make([]apimodel.GlucoseRead, 0)
 
 	iterator := query.Run(context)
-	count := 0
 	for _, err := iterator.Next(&daysOfReads); err == nil; _, err = iterator.Next(&daysOfReads) {
-		batchSize := len(daysOfReads.Reads) - count
-		context.Debugf("Loaded batch of %d reads...", batchSize)
-		count = len(daysOfReads.Reads)
+		context.Debugf("Loaded batch of %d reads...", len(daysOfReads.Reads))
+		readsForPeriod = mergeGlucoseReadArrays(readsForPeriod, daysOfReads.Reads)
 	}
 
-	readSlice := apimodel.GlucoseReadSlice(daysOfReads.Reads)
+	readSlice := apimodel.GlucoseReadSlice(readsForPeriod)
 	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(readSlice, lowerBound, upperBound)
-	filteredReads := daysOfReads.Reads[startIndex : endIndex+1]
+	filteredReads := readsForPeriod[startIndex : endIndex+1]
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -195,18 +194,17 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 
 	query := datastore.NewQuery("DayOfInjections").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
 	var daysOfInjections apimodel.DayOfInjections
+	injectionsForPeriod := make([]apimodel.Injection, 0)
 
 	iterator := query.Run(context)
-	count := 0
 	for _, err := iterator.Next(&daysOfInjections); err == nil; _, err = iterator.Next(&daysOfInjections) {
-		batchSize := len(daysOfInjections.Injections) - count
-		context.Debugf("Loaded batch of %d injections...", batchSize)
-		count = len(daysOfInjections.Injections)
+		context.Debugf("Loaded batch of %d injections...", len(daysOfInjections.Injections))
+		injectionsForPeriod = mergeInjectionArrays(injectionsForPeriod, daysOfInjections.Injections)
 	}
 
-	injectionSlice := apimodel.InjectionSlice(daysOfInjections.Injections)
+	injectionSlice := apimodel.InjectionSlice(injectionsForPeriod)
 	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(injectionSlice, lowerBound, upperBound)
-	filteredInjections := daysOfInjections.Injections[startIndex : endIndex+1]
+	filteredInjections := injectionsForPeriod[startIndex : endIndex+1]
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -248,19 +246,18 @@ func GetMeals(context appengine.Context, email string, lowerBound time.Time, upp
 
 	query := datastore.NewQuery("DayOfMeals").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
 	var daysOfMeals apimodel.DayOfMeals
+	mealsForPeriod := make([]apimodel.Meal, 0)
 
 	iterator := query.Run(context)
-	count := 0
 	for _, err := iterator.Next(&daysOfMeals); err == nil; _, err = iterator.Next(&daysOfMeals) {
-		batchSize := len(daysOfMeals.Meals) - count
-		context.Debugf("Loaded batch of %d carbs...", batchSize)
-		count = len(daysOfMeals.Meals)
+		context.Debugf("Loaded batch of %d carbs...", len(daysOfMeals.Meals))
+		mealsForPeriod = mergeMealArrays(mealsForPeriod, daysOfMeals.Meals)
 	}
 
-	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(daysOfMeals.Meals), daysOfMeals.Meals)
-	carbSlice := apimodel.MealSlice(daysOfMeals.Meals)
+	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(mealsForPeriod), mealsForPeriod)
+	carbSlice := apimodel.MealSlice(mealsForPeriod)
 	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(carbSlice, lowerBound, upperBound)
-	filteredMeals := daysOfMeals.Meals[startIndex : endIndex+1]
+	filteredMeals := mealsForPeriod[startIndex : endIndex+1]
 	context.Debugf("Finished filtering with %d carbs", len(filteredMeals))
 
 	if err != datastore.Done {
@@ -303,18 +300,17 @@ func GetExercises(context appengine.Context, email string, lowerBound time.Time,
 
 	query := datastore.NewQuery("DayOfExercises").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
 	var daysOfExercises apimodel.DayOfExercises
+	exercisesForPeriod := make([]apimodel.Exercise, 0)
 
 	iterator := query.Run(context)
-	count := 0
 	for _, err := iterator.Next(&daysOfExercises); err == nil; _, err = iterator.Next(&daysOfExercises) {
-		batchSize := len(daysOfExercises.Exercises) - count
-		context.Debugf("Loaded batch of %d exercises...", batchSize)
-		count = len(daysOfExercises.Exercises)
+		context.Debugf("Loaded batch of %d exercises...", len(daysOfExercises.Exercises))
+		exercisesForPeriod = mergeExerciseArrays(exercisesForPeriod, daysOfExercises.Exercises)
 	}
 
-	exerciseSlice := apimodel.ExerciseSlice(daysOfExercises.Exercises)
+	exerciseSlice := apimodel.ExerciseSlice(exercisesForPeriod)
 	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(exerciseSlice, lowerBound, upperBound)
-	filteredExercises := daysOfExercises.Exercises[startIndex : endIndex+1]
+	filteredExercises := exercisesForPeriod[startIndex : endIndex+1]
 
 	if err != datastore.Done {
 		util.Propagate(err)
