@@ -30,7 +30,7 @@ func (w *DataStoreMealBatchWriter) WriteMealBatches(p []apimodel.DayOfMeals) (gl
 
 func (w *DataStoreMealBatchWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
 	dayOfMeals := make([]apimodel.DayOfMeals, 1)
-	dayOfMeals[0] = apimodel.DayOfMeals{p}
+	dayOfMeals[0] = apimodel.NewDayOfMeals(p)
 	return w.WriteMealBatches(dayOfMeals)
 }
 

@@ -37,7 +37,7 @@ func NewStatsExerciseReadWriter(s *exerciseWriterState) *statsExerciseReadWriter
 
 func (w *statsExerciseReadWriter) WriteExerciseBatch(p []apimodel.Exercise) (glukitio.ExerciseBatchWriter, error) {
 	log.Printf("WriteExerciseReadBatch with [%d] elements: %v", len(p), p)
-	dayOfExercises := []apimodel.DayOfExercises{apimodel.DayOfExercises{p}}
+	dayOfExercises := []apimodel.DayOfExercises{apimodel.NewDayOfExercises(p)}
 
 	return w.WriteExerciseBatches(dayOfExercises)
 }

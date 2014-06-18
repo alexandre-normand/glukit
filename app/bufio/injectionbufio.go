@@ -36,7 +36,7 @@ func newInjectionWriterSize(wr glukitio.InjectionBatchWriter, head *container.Im
 
 // WriteInjection writes a single apimodel.DayOfInjections
 func (b *BufferedInjectionBatchWriter) WriteInjectionBatch(p []apimodel.Injection) (glukitio.InjectionBatchWriter, error) {
-	return b.WriteInjectionBatches([]apimodel.DayOfInjections{apimodel.DayOfInjections{p}})
+	return b.WriteInjectionBatches([]apimodel.DayOfInjections{apimodel.NewDayOfInjections(p)})
 }
 
 // WriteInjectionBatches writes the contents of p into the buffer.

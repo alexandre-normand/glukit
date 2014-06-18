@@ -36,7 +36,7 @@ func NewStatsMealWriter(s *mealWriterState) *statsMealWriter {
 func (w *statsMealWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
 	log.Printf("WriteMealBatch with [%d] elements: %v", len(p), p)
 
-	return w.WriteMealBatches([]apimodel.DayOfMeals{apimodel.DayOfMeals{p}})
+	return w.WriteMealBatches([]apimodel.DayOfMeals{apimodel.NewDayOfMeals(p)})
 }
 
 func (w *statsMealWriter) WriteMealBatches(p []apimodel.DayOfMeals) (glukitio.MealBatchWriter, error) {
@@ -65,7 +65,7 @@ func TestSimpleWriteOfSingleMealBatch(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			meals[j] = apimodel.Meal{apimodel.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
-		batches[i] = apimodel.DayOfMeals{meals}
+		batches[i] = apimodel.NewDayOfMeals(meals)
 	}
 	newWriter, _ := w.WriteMealBatches(batches)
 	w = newWriter.(*BufferedMealBatchWriter)
@@ -119,7 +119,7 @@ func TestSimpleWriteLargerThanOneMealBatch(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			meals[j] = apimodel.Meal{apimodel.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
-		batches[i] = apimodel.DayOfMeals{meals}
+		batches[i] = apimodel.NewDayOfMeals(meals)
 	}
 	newWriter, _ := w.WriteMealBatches(batches)
 	w = newWriter.(*BufferedMealBatchWriter)
@@ -162,7 +162,7 @@ func TestWriteTwoFullMealBatches(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			meals[j] = apimodel.Meal{apimodel.Time{0, "America/Montreal"}, float32(j), float32(j + 1), float32(j + 2), float32(j + 3)}
 		}
-		batches[i] = apimodel.DayOfMeals{meals}
+		batches[i] = apimodel.NewDayOfMeals(meals)
 	}
 	newWriter, _ := w.WriteMealBatches(batches)
 	w = newWriter.(*BufferedMealBatchWriter)

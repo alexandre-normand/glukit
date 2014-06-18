@@ -37,7 +37,7 @@ func NewStatsMealReadWriter(s *mealWriterState) *statsMealReadWriter {
 
 func (w *statsMealReadWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
 	log.Printf("WriteMealReadBatch with [%d] elements: %v", len(p), p)
-	dayOfMeals := []apimodel.DayOfMeals{apimodel.DayOfMeals{p}}
+	dayOfMeals := []apimodel.DayOfMeals{apimodel.NewDayOfMeals(p)}
 
 	return w.WriteMealBatches(dayOfMeals)
 }

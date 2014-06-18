@@ -30,7 +30,7 @@ func (w *DataStoreInjectionBatchWriter) WriteInjectionBatches(p []apimodel.DayOf
 
 func (w *DataStoreInjectionBatchWriter) WriteInjectionBatch(p []apimodel.Injection) (glukitio.InjectionBatchWriter, error) {
 	dayOfInjections := make([]apimodel.DayOfInjections, 1)
-	dayOfInjections[0] = apimodel.DayOfInjections{p}
+	dayOfInjections[0] = apimodel.NewDayOfInjections(p)
 	return w.WriteInjectionBatches(dayOfInjections)
 }
 

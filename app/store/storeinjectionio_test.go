@@ -39,7 +39,7 @@ func TestSimpleWriteOfInjectionBatches(t *testing.T) {
 			readTime := ct.Add(time.Duration(i*24+j) * time.Hour)
 			injections[j] = apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Los_Angeles"}, float32(1.5), "Levemir", "Basal"}
 		}
-		b[i] = apimodel.DayOfInjections{injections}
+		b[i] = apimodel.NewDayOfInjections(injections)
 	}
 
 	c, err := aetest.NewContext(nil)

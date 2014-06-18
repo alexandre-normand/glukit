@@ -36,7 +36,7 @@ func newGlucoseReadWriterSize(wr glukitio.GlucoseReadBatchWriter, head *containe
 
 // WriteGlucose writes a single apimodel.DayOfGlucoseReads
 func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
-	return b.WriteGlucoseReadBatches([]apimodel.DayOfGlucoseReads{apimodel.DayOfGlucoseReads{p}})
+	return b.WriteGlucoseReadBatches([]apimodel.DayOfGlucoseReads{apimodel.NewDayOfGlucoseReads(p)})
 }
 
 // WriteGlucoseReadBatches writes the contents of p into the Buffer.
