@@ -65,19 +65,19 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		reads, err := store.GetGlucoseReads(context, email, lowerBound, time.Now())
+		reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
 		}
-		injections, err := store.GetInjections(context, email, lowerBound, time.Now())
+		injections, err := store.GetInjections(context, email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
 		}
-		carbs, err := store.GetMeals(context, email, lowerBound, time.Now())
+		carbs, err := store.GetMeals(context, email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
 		}
-		exercises, err := store.GetExercises(context, email, lowerBound, time.Now())
+		exercises, err := store.GetExercises(context, email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
 		}
