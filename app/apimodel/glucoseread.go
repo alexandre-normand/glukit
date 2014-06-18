@@ -24,7 +24,13 @@ type GlucoseRead struct {
 
 // This holds an array of reads for a whole day
 type DayOfGlucoseReads struct {
-	Reads []GlucoseRead
+	Reads     []GlucoseRead `datastore:"reads"`
+	StartTime time.Time     `datastore:"startTime"`
+	EndTime   time.Time     `datastore:"endTime"`
+}
+
+func NewDayOfGlucoseReads(reads []GlucoseRead) DayOfGlucoseReads {
+	return DayOfGlucoseReads{reads, reads[0].GetTime(), reads[len(reads)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value

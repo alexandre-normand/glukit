@@ -36,7 +36,7 @@ func newMealWriterSize(wr glukitio.MealBatchWriter, head *container.ImmutableLis
 
 // WriteMeal writes a single apimodel.DayOfMeals
 func (b *BufferedMealBatchWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBatchWriter, error) {
-	return b.WriteMealBatches([]apimodel.DayOfMeals{apimodel.DayOfMeals{p}})
+	return b.WriteMealBatches([]apimodel.DayOfMeals{apimodel.NewDayOfMeals(p)})
 }
 
 // WriteMealBatches writes the contents of p into the buffer.

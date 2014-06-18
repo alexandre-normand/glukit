@@ -19,12 +19,18 @@ type CalibrationRead struct {
 
 // This holds an array of reads for a whole day
 type DayOfCalibrationReads struct {
-	Reads []CalibrationRead
+	Reads     []CalibrationRead `datastore:"calibrations"`
+	StartTime time.Time         `datastore:"startTime"`
+	EndTime   time.Time         `datastore:"endTime"`
 }
 
 // GetTime gets the time of a Timestamp value
 func (element CalibrationRead) GetTime() time.Time {
 	return element.Time.GetTime()
+}
+
+func NewDayOfCalibrationReads(reads []CalibrationRead) DayOfCalibrationReads {
+	return DayOfCalibrationReads{reads, reads[0].GetTime(), reads[len(reads)-1].GetTime()}
 }
 
 type CalibrationReadSlice []CalibrationRead

@@ -21,7 +21,13 @@ type Meal struct {
 
 // This holds an array of injections for a whole day
 type DayOfMeals struct {
-	Meals []Meal
+	Meals     []Meal    `datastore:"meals"`
+	StartTime time.Time `datastore:"startTime"`
+	EndTime   time.Time `datastore:"endTime"`
+}
+
+func NewDayOfMeals(meals []Meal) DayOfMeals {
+	return DayOfMeals{meals, meals[0].GetTime(), meals[len(meals)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value

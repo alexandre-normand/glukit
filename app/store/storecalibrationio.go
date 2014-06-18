@@ -30,7 +30,7 @@ func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatches(p []apimodel.D
 
 func (w *DataStoreCalibrationBatchWriter) WriteCalibrationBatch(p []apimodel.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
 	dayOfCalibrationReads := make([]apimodel.DayOfCalibrationReads, 1)
-	dayOfCalibrationReads[0] = apimodel.DayOfCalibrationReads{p}
+	dayOfCalibrationReads[0] = apimodel.NewDayOfCalibrationReads(p)
 	return w.WriteCalibrationBatches(dayOfCalibrationReads)
 }
 

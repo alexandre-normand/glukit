@@ -37,7 +37,7 @@ func NewStatsCalibrationReadWriter(s *calibrationWriterState) *statsCalibrationR
 
 func (w *statsCalibrationReadWriter) WriteCalibrationBatch(p []apimodel.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
 	log.Printf("WriteCalibrationReadBatch with [%d] elements: %v", len(p), p)
-	dayOfCalibrationReads := []apimodel.DayOfCalibrationReads{apimodel.DayOfCalibrationReads{p}}
+	dayOfCalibrationReads := []apimodel.DayOfCalibrationReads{apimodel.NewDayOfCalibrationReads(p)}
 
 	return w.WriteCalibrationBatches(dayOfCalibrationReads)
 }

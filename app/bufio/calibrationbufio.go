@@ -36,7 +36,7 @@ func newCalibrationWriterSize(wr glukitio.CalibrationBatchWriter, head *containe
 
 // WriteCalibration writes a single apimodel.DayOfCalibrationReads
 func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []apimodel.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
-	return b.WriteCalibrationBatches([]apimodel.DayOfCalibrationReads{apimodel.DayOfCalibrationReads{p}})
+	return b.WriteCalibrationBatches([]apimodel.DayOfCalibrationReads{apimodel.NewDayOfCalibrationReads(p)})
 }
 
 // WriteCalibrationBatches writes the contents of p into the buffer.
