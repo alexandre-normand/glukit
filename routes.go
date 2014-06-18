@@ -229,5 +229,5 @@ func initializeAndHandleRequest(writer http.ResponseWriter, request *http.Reques
 func initializeApp(writer http.ResponseWriter, request *http.Request) {
 	initOauthProvider(writer, request)
 	initApiEndpoints(writer, request)
-	//initializeGlukitBernstein(writer, request)
+	initializeGlukitBernstein(writer, request)
 }
