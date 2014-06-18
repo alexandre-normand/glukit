@@ -30,7 +30,7 @@ func (w *DataStoreExerciseBatchWriter) WriteExerciseBatches(p []apimodel.DayOfEx
 
 func (w *DataStoreExerciseBatchWriter) WriteExerciseBatch(p []apimodel.Exercise) (glukitio.ExerciseBatchWriter, error) {
 	dayOfExercises := make([]apimodel.DayOfExercises, 1)
-	dayOfExercises[0] = apimodel.DayOfExercises{p}
+	dayOfExercises[0] = apimodel.NewDayOfExercises(p)
 	return w.WriteExerciseBatches(dayOfExercises)
 }
 

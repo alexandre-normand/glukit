@@ -18,7 +18,13 @@ type Exercise struct {
 
 // This holds an array of exercise events for a whole day
 type DayOfExercises struct {
-	Exercises []Exercise
+	Exercises []Exercise `datastore:"exercises"`
+	StartTime time.Time  `datastore:"startTime"`
+	EndTime   time.Time  `datastore:"endTime"`
+}
+
+func NewDayOfExercises(exercises []Exercise) DayOfExercises {
+	return DayOfExercises{exercises, exercises[0].GetTime(), exercises[len(exercises)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value

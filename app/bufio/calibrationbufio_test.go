@@ -36,7 +36,7 @@ func NewStatsCalibrationWriter(s *calibrationWriterState) *statsCalibrationWrite
 func (w *statsCalibrationWriter) WriteCalibrationBatch(p []apimodel.CalibrationRead) (glukitio.CalibrationBatchWriter, error) {
 	log.Printf("WriteCalibrationBatch with [%d] elements: %v", len(p), p)
 
-	return w.WriteCalibrationBatches([]apimodel.DayOfCalibrationReads{apimodel.DayOfCalibrationReads{p}})
+	return w.WriteCalibrationBatches([]apimodel.DayOfCalibrationReads{apimodel.NewDayOfCalibrationReads(p)})
 }
 
 func (w *statsCalibrationWriter) WriteCalibrationBatches(p []apimodel.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
@@ -65,7 +65,7 @@ func TestSimpleWriteOfSingleCalibrationBatch(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			calibrations[j] = apimodel.CalibrationRead{apimodel.Time{0, "America/Montreal"}, apimodel.MG_PER_DL, 75}
 		}
-		batches[i] = apimodel.DayOfCalibrationReads{calibrations}
+		batches[i] = apimodel.NewDayOfCalibrationReads(calibrations)
 	}
 	newWriter, _ := w.WriteCalibrationBatches(batches)
 	w = newWriter.(*BufferedCalibrationBatchWriter)
@@ -119,7 +119,7 @@ func TestSimpleWriteLargerThanOneCalibrationBatch(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			calibrations[j] = apimodel.CalibrationRead{apimodel.Time{0, "America/Montreal"}, apimodel.MG_PER_DL, 75}
 		}
-		batches[i] = apimodel.DayOfCalibrationReads{calibrations}
+		batches[i] = apimodel.NewDayOfCalibrationReads(calibrations)
 	}
 	newWriter, _ := w.WriteCalibrationBatches(batches)
 	w = newWriter.(*BufferedCalibrationBatchWriter)
@@ -162,7 +162,7 @@ func TestWriteTwoFullCalibrationBatches(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			calibrations[j] = apimodel.CalibrationRead{apimodel.Time{0, "America/Montreal"}, apimodel.MG_PER_DL, 75}
 		}
-		batches[i] = apimodel.DayOfCalibrationReads{calibrations}
+		batches[i] = apimodel.NewDayOfCalibrationReads(calibrations)
 	}
 	newWriter, _ := w.WriteCalibrationBatches(batches)
 	w = newWriter.(*BufferedCalibrationBatchWriter)

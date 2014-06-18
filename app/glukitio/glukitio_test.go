@@ -45,7 +45,7 @@ func TestSimpleWriteOfBatches(t *testing.T) {
 			readTime := ct.Add(time.Duration(j) * time.Hour)
 			calibrations[j] = model.CalibrationRead{model.Timestamp{"", readTime.Unix()}, 75}
 		}
-		b[i] = model.DayOfCalibrationReads{calibrations}
+		b[i] = model.NewDayOfCalibrationReads(calibrations)
 	}
 
 	c, err := aetest.NewContext(nil)

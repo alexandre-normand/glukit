@@ -37,7 +37,7 @@ func NewStatsGlucoseReadWriter(s *glucoseWriterState) *statsGlucoseReadWriter {
 
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
-	dayOfGlucoseReads := []apimodel.DayOfGlucoseReads{apimodel.DayOfGlucoseReads{p}}
+	dayOfGlucoseReads := []apimodel.DayOfGlucoseReads{apimodel.NewDayOfGlucoseReads(p)}
 
 	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }

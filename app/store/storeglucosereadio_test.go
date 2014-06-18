@@ -59,13 +59,13 @@ func TestSimpleWriteOfGlucoseReadBatches(t *testing.T) {
 	b := make([]apimodel.DayOfGlucoseReads, 10)
 
 	for i := 0; i < 10; i++ {
-		calibrations := make([]apimodel.GlucoseRead, 24)
+		reads := make([]apimodel.GlucoseRead, 24)
 		ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 		for j := 0; j < 24; j++ {
 			readTime := ct.Add(time.Duration(j) * time.Hour)
-			calibrations[j] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Los_Angeles"}, apimodel.MG_PER_DL, float32(i*24 + j)}
+			reads[j] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Los_Angeles"}, apimodel.MG_PER_DL, float32(i*24 + j)}
 		}
-		b[i] = apimodel.DayOfGlucoseReads{calibrations}
+		b[i] = apimodel.NewDayOfGlucoseReads(reads)
 	}
 
 	w := NewDataStoreGlucoseReadBatchWriter(c, key)

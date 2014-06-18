@@ -37,7 +37,7 @@ func NewStatsGlucoseReadWriter(s *glucoseWriterState) *statsGlucoseReadWriter {
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	log.Printf("WriteGlucoseReadBatch with [%d] elements: %v", len(p), p)
 
-	return w.WriteGlucoseReadBatches([]apimodel.DayOfGlucoseReads{apimodel.DayOfGlucoseReads{p}})
+	return w.WriteGlucoseReadBatches([]apimodel.DayOfGlucoseReads{apimodel.NewDayOfGlucoseReads(p)})
 }
 
 func (w *statsGlucoseReadWriter) WriteGlucoseReadBatches(p []apimodel.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
@@ -70,7 +70,7 @@ func TestSimpleWriteOfSingleGlucoseReadBatch(t *testing.T) {
 			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
 			glucoseReads[j] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(j)}
 		}
-		batches[i] = apimodel.DayOfGlucoseReads{glucoseReads}
+		batches[i] = apimodel.NewDayOfGlucoseReads(glucoseReads)
 	}
 	newWriter, _ := w.WriteGlucoseReadBatches(batches)
 	w = newWriter.(*BufferedGlucoseReadBatchWriter)
@@ -128,7 +128,7 @@ func TestSimpleWriteLargerThanOneGlucoseReadBatch(t *testing.T) {
 			readTime := ct.Add(time.Duration(i*24+j) * 1 * time.Hour)
 			glucoseReads[j] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i*24 + j)}
 		}
-		batches[i] = apimodel.DayOfGlucoseReads{glucoseReads}
+		batches[i] = apimodel.NewDayOfGlucoseReads(glucoseReads)
 	}
 	newWriter, _ := w.WriteGlucoseReadBatches(batches)
 	w = newWriter.(*BufferedGlucoseReadBatchWriter)

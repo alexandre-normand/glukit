@@ -36,7 +36,7 @@ func newExerciseWriterSize(wr glukitio.ExerciseBatchWriter, head *container.Immu
 
 // WriteExercise writes a single apimodel.DayOfExercises
 func (b *BufferedExerciseBatchWriter) WriteExerciseBatch(p []apimodel.Exercise) (glukitio.ExerciseBatchWriter, error) {
-	return b.WriteExerciseBatches([]apimodel.DayOfExercises{apimodel.DayOfExercises{p}})
+	return b.WriteExerciseBatches([]apimodel.DayOfExercises{apimodel.NewDayOfExercises(p)})
 }
 
 // WriteExerciseBatches writes the contents of p into the buffer.

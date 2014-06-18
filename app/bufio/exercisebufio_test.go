@@ -36,7 +36,7 @@ func NewStatsExerciseWriter(s *exerciseWriterState) *statsExerciseWriter {
 func (w *statsExerciseWriter) WriteExerciseBatch(p []apimodel.Exercise) (glukitio.ExerciseBatchWriter, error) {
 	log.Printf("WriteExerciseBatch with [%d] elements: %v", len(p), p)
 
-	return w.WriteExerciseBatches([]apimodel.DayOfExercises{apimodel.DayOfExercises{p}})
+	return w.WriteExerciseBatches([]apimodel.DayOfExercises{apimodel.NewDayOfExercises(p)})
 }
 
 func (w *statsExerciseWriter) WriteExerciseBatches(p []apimodel.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
@@ -65,7 +65,7 @@ func TestSimpleWriteOfSingleExerciseBatch(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			exercises[j] = apimodel.Exercise{apimodel.Time{0, "America/Montreal"}, j, "Light", "details"}
 		}
-		batches[i] = apimodel.DayOfExercises{exercises}
+		batches[i] = apimodel.NewDayOfExercises(exercises)
 	}
 	newWriter, _ := w.WriteExerciseBatches(batches)
 	w = newWriter.(*BufferedExerciseBatchWriter)
@@ -119,7 +119,7 @@ func TestSimpleWriteLargerThanOneExerciseBatch(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			exercises[j] = apimodel.Exercise{apimodel.Time{0, "America/Montreal"}, j, "Light", "details"}
 		}
-		batches[i] = apimodel.DayOfExercises{exercises}
+		batches[i] = apimodel.NewDayOfExercises(exercises)
 	}
 	newWriter, _ := w.WriteExerciseBatches(batches)
 	w = newWriter.(*BufferedExerciseBatchWriter)
@@ -162,7 +162,7 @@ func TestWriteTwoFullExerciseBatches(t *testing.T) {
 		for j := 0; j < 24; j++ {
 			exercises[j] = apimodel.Exercise{apimodel.Time{0, "America/Montreal"}, j, "Light", "details"}
 		}
-		batches[i] = apimodel.DayOfExercises{exercises}
+		batches[i] = apimodel.NewDayOfExercises(exercises)
 	}
 	newWriter, _ := w.WriteExerciseBatches(batches)
 	w = newWriter.(*BufferedExerciseBatchWriter)
