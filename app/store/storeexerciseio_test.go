@@ -39,7 +39,7 @@ func TestSimpleWriteOfExerciseBatches(t *testing.T) {
 			readTime := ct.Add(time.Duration(i*24+j) * time.Hour)
 			exercises[j] = apimodel.Exercise{apimodel.Time{readTime.Unix(), "America/Los_Angeles"}, j, "Light", "details"}
 		}
-		b[i] = apimodel.DayOfExercises{exercises}
+		b[i] = apimodel.NewDayOfExercises(exercises)
 	}
 
 	c, err := aetest.NewContext(nil)

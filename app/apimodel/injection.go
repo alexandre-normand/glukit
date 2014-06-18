@@ -19,7 +19,13 @@ type Injection struct {
 
 // This holds an array of injections for a whole day
 type DayOfInjections struct {
-	Injections []Injection
+	Injections []Injection `datastore:"injections"`
+	StartTime  time.Time   `datastore:"startTime"`
+	EndTime    time.Time   `datastore:"endTime"`
+}
+
+func NewDayOfInjections(injections []Injection) DayOfInjections {
+	return DayOfInjections{injections, injections[0].GetTime(), injections[len(injections)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value

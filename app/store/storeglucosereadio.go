@@ -30,7 +30,7 @@ func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []apimodel.D
 
 func (w *DataStoreGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []apimodel.GlucoseRead) (glukitio.GlucoseReadBatchWriter, error) {
 	dayOfGlucoseReads := make([]apimodel.DayOfGlucoseReads, 1)
-	dayOfGlucoseReads[0] = apimodel.DayOfGlucoseReads{p}
+	dayOfGlucoseReads[0] = apimodel.NewDayOfGlucoseReads(p)
 	return w.WriteGlucoseReadBatches(dayOfGlucoseReads)
 }
 

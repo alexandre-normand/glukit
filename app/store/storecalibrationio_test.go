@@ -39,7 +39,7 @@ func TestSimpleWriteOfCalibrationBatches(t *testing.T) {
 			readTime := ct.Add(time.Duration(j) * time.Hour)
 			calibrations[j] = apimodel.CalibrationRead{apimodel.Time{readTime.Unix(), "America/Los_Angeles"}, apimodel.MG_PER_DL, float32(j)}
 		}
-		b[i] = apimodel.DayOfCalibrationReads{calibrations}
+		b[i] = apimodel.NewDayOfCalibrationReads(calibrations)
 	}
 
 	c, err := aetest.NewContext(nil)

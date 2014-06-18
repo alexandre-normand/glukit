@@ -37,7 +37,7 @@ func NewStatsInjectionReadWriter(s *injectionWriterState) *statsInjectionReadWri
 
 func (w *statsInjectionReadWriter) WriteInjectionBatch(p []apimodel.Injection) (glukitio.InjectionBatchWriter, error) {
 	log.Printf("WriteInjectionReadBatch with [%d] elements: %v", len(p), p)
-	dayOfInjections := []apimodel.DayOfInjections{apimodel.DayOfInjections{p}}
+	dayOfInjections := []apimodel.DayOfInjections{apimodel.NewDayOfInjections(p)}
 
 	return w.WriteInjectionBatches(dayOfInjections)
 }

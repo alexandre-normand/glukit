@@ -39,7 +39,7 @@ func TestSimpleWriteOfMealBatches(t *testing.T) {
 			readTime := ct.Add(time.Duration(i*24+j) * time.Hour)
 			meals[j] = apimodel.Meal{apimodel.Time{readTime.Unix(), "America/Los_Angeles"}, float32(i*24 + j), 0., 0., 0.}
 		}
-		b[i] = apimodel.DayOfMeals{meals}
+		b[i] = apimodel.NewDayOfMeals(meals)
 	}
 
 	c, err := aetest.NewContext(nil)
