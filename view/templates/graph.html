@@ -400,8 +400,8 @@
       function brushed() {      
         x.domain(brush.empty() ? x2.domain() : brush.extent());        
         focus.selectAll("path.self").attr("d", glucoseLine);
+        focus.selectAll("path.steadySailor").attr("d", glucoseLine);                   
 
-        // focus.selectAll("path.steadySailor").attr("d", glucoseLine);                   
         focus.selectAll("#dayBoundaries")
         dayBoundaryGroup.selectAll(".dayBoundary")
           .attr("x", function(d) { return x(d); });
@@ -492,10 +492,11 @@
             offset = steadySailor[0].x - timeRangeLowerBound;              
             steadySailor.forEach(function(element) {
               element.x = element.x - offset;          
+              element.date = parseDate(element.x * 1000);
             });
           }
 
-          sailorSegments = splitReadsInRangeSegments(steadySailor);
+          sailorSegments = splitReadsInRangeSegments(steadySailor);          
           addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine);  
         }
         
@@ -749,40 +750,7 @@ function highlightLines() {
   </script>
 
   <script src="js/foundation.min.js"></script>
-  <!--
-
-  <script src="js/foundation/foundation.js"></script>
-
-  <script src="js/foundation/foundation.interchange.js"></script>
-
-  <script src="js/foundation/foundation.dropdown.js"></script>
-
-  <script src="js/foundation/foundation.placeholder.js"></script>
-
-  <script src="js/foundation/foundation.forms.js"></script>
-
-  <script src="js/foundation/foundation.alerts.js"></script>
-
-  <script src="js/foundation/foundation.magellan.js"></script>
-
-  <script src="js/foundation/foundation.reveal.js"></script>
-
-  <script src="js/foundation/foundation.tooltips.js"></script>
-
-  <script src="js/foundation/foundation.clearing.js"></script>
-
-  <script src="js/foundation/foundation.cookie.js"></script>
-
-  <script src="js/foundation/foundation.joyride.js"></script>
-
-  <script src="js/foundation/foundation.orbit.js"></script>
-
-  <script src="js/foundation/foundation.section.js"></script>
-
-  <script src="js/foundation/foundation.topbar.js"></script>
-
-  -->
-
+  
   <script>
     $(document).foundation();
   </script>  
