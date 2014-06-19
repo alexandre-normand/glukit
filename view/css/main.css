@@ -212,6 +212,8 @@ path.Carbs {
 .steadySailor {
    stroke: #33ad33;
    stroke-width: 1px;
+   stroke-dasharray: 5, 7;
+   stroke-opacity: 0.5;
 }
 
 .background {  
