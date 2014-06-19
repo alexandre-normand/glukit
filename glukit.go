@@ -65,7 +65,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 		// We store the refresh token separately from the rest. This token is long-lived, meaning that if
 		// we have a glukit user with no refresh token, we need to force getting a new one (which is to be avoided)
 		glukitUser = &model.GlukitUser{user.Email, "", "", time.Now(),
-			"", "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
+			model.DIABETES_TYPE_1, "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
 			model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
 		_, err = store.StoreUserProfile(context, time.Now(), *glukitUser)
 		if err != nil {

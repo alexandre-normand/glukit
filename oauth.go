@@ -59,9 +59,10 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 
 			_, _, _, err := store.GetUserData(c, user.Email)
 			if err == datastore.ErrNoSuchEntity {
+				c.Debugf("Creating GlukitUser on first oauth access for [%s]: ", user.Email)
 				// If the user doesn't exist already, create it
 				glukitUser := model.GlukitUser{user.Email, "", "", time.Now(),
-					"", "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
+					model.DIABETES_TYPE_1, "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
 					model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
 				_, err = store.StoreUserProfile(c, time.Now(), glukitUser)
 				if err != nil {
