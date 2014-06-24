@@ -11,15 +11,15 @@ const (
 
 // Injection represents an insulin injection
 type Injection struct {
-	Time        Time    `json:"time"`
-	Units       float32 `json:"units"`
-	InsulinName string  `json:"insulinName"`
-	InsulinType string  `json:"insulinType"`
+	Time        Time    `json:"time" datastore:"time,noindex"`
+	Units       float32 `json:"units" datastore:"units,noindex"`
+	InsulinName string  `json:"insulinName" datastore:"insulinName,noindex"`
+	InsulinType string  `json:"insulinType" datastore:"insulinType,noindex"`
 }
 
 // This holds an array of injections for a whole day
 type DayOfInjections struct {
-	Injections []Injection `datastore:"injections"`
+	Injections []Injection `datastore:"injections,noindex"`
 	StartTime  time.Time   `datastore:"startTime"`
 	EndTime    time.Time   `datastore:"endTime"`
 }

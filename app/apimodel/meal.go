@@ -12,16 +12,16 @@ const (
 // Meal is the data structure that represents a meal of food intake. Only carbohydrates
 // are fully supported at the moment.
 type Meal struct {
-	Time          Time    `json:"time"`
-	Carbohydrates float32 `json:"carbohydrates"`
-	Proteins      float32 `json:"proteins"`
-	Fat           float32 `json:"fat"`
-	SaturatedFat  float32 `json:"saturatedFat"`
+	Time          Time    `json:"time" datastore:"time,noindex"`
+	Carbohydrates float32 `json:"carbohydrates" datastore:"carbohydrates,noindex"`
+	Proteins      float32 `json:"proteins" datastore:"proteins,noindex"`
+	Fat           float32 `json:"fat" datastore:"fat,noindex"`
+	SaturatedFat  float32 `json:"saturatedFat" datastore:"saturatedFat,noindex"`
 }
 
 // This holds an array of injections for a whole day
 type DayOfMeals struct {
-	Meals     []Meal    `datastore:"meals"`
+	Meals     []Meal    `datastore:"meals,noindex"`
 	StartTime time.Time `datastore:"startTime"`
 	EndTime   time.Time `datastore:"endTime"`
 }

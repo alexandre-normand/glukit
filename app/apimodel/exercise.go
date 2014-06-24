@@ -10,15 +10,15 @@ const (
 )
 
 type Exercise struct {
-	Time            Time   `json:"time"`
-	DurationMinutes int    `json:"durationInMinutes"`
-	Intensity       string `json:"intensity"`
-	Description     string `json:"description"`
+	Time            Time   `json:"time" datastore:"time,noindex"`
+	DurationMinutes int    `json:"durationInMinutes" datastore:"durationInMinutes,noindex"`
+	Intensity       string `json:"intensity" datastore:"intensity,noindex"`
+	Description     string `json:"description" datastore:"description,noindex"`
 }
 
 // This holds an array of exercise events for a whole day
 type DayOfExercises struct {
-	Exercises []Exercise `datastore:"exercises"`
+	Exercises []Exercise `datastore:"exercises,noindex"`
 	StartTime time.Time  `datastore:"startTime"`
 	EndTime   time.Time  `datastore:"endTime"`
 }
