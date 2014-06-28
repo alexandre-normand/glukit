@@ -33,19 +33,23 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []apimodel.GlucoseRead) (g *Gl
 		return g, err
 	}
 
-	for _, c := range p {
+	for i := range p {
+		c := p[i]
+
 		t := c.GetTime()
 
 		if g.head == nil {
 			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
-		} else if t.Sub(g.tailVal.GetTime()) >= g.d {
-			g, err = g.Flush()
-			if err != nil {
-				return g, err
-			}
-			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
 		} else {
-			g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.tailVal, g.wr, g.d)
+			if t.Sub(g.tailVal.GetTime()) >= g.d {
+				g, err = g.Flush()
+				if err != nil {
+					return g, err
+				}
+				g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
+			} else {
+				g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.tailVal, g.wr, g.d)
+			}
 		}
 	}
 
