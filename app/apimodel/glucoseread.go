@@ -17,14 +17,14 @@ const (
 // GlucoseRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external
 // meter
 type GlucoseRead struct {
-	Time  Time    `json:"time"`
-	Unit  string  `json:"unit"`
-	Value float32 `json:"value"`
+	Time  Time    `json:"time" datastore:"time,noindex"`
+	Unit  string  `json:"unit" datastore:"unit,noindex"`
+	Value float32 `json:"value" datastore:"value,noindex"`
 }
 
 // This holds an array of reads for a whole day
 type DayOfGlucoseReads struct {
-	Reads     []GlucoseRead `datastore:"reads"`
+	Reads     []GlucoseRead `datastore:"reads,noindex"`
 	StartTime time.Time     `datastore:"startTime"`
 	EndTime   time.Time     `datastore:"endTime"`
 }

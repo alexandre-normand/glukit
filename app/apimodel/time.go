@@ -7,8 +7,8 @@ import (
 )
 
 type Time struct {
-	Timestamp  int64  `json:"timestamp"`
-	TimeZoneId string `json:"timezone"`
+	Timestamp  int64  `json:"timestamp" datastore:"timestamp,noindex"`
+	TimeZoneId string `json:"timezone" datastore:"timezone,noindex"`
 }
 
 // GetTime gets the time of a Timestamp value
