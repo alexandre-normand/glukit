@@ -9,11 +9,11 @@ import (
 // Represents a GlukitUser profile
 type GlukitUser struct {
 	Email           string               `datastore:"email"`
-	FirstName       string               `datastore:"firstName"`
-	LastName        string               `datastore:"lastName"`
+	FirstName       string               `datastore:"firstName,noindex"`
+	LastName        string               `datastore:"lastName,noindex"`
 	DateOfBirth     time.Time            `datastore:"birthdate"`
 	DiabetesType    string               `datastore:"diabetesType"`
-	Timezone        string               `datastore:"timezoneId"`
+	Timezone        string               `datastore:"timezoneId,noindex"`
 	LastUpdated     time.Time            `datastore:"lastUpdated"`
 	MostRecentRead  apimodel.GlucoseRead `datastore:"mostRecentRead"`
 	Token           oauth.Token          `datastore:"token",noindex`
@@ -21,7 +21,7 @@ type GlukitUser struct {
 	BestScore       GlukitScore          `datastore:"bestScore"`
 	MostRecentScore GlukitScore          `datastore:"mostRecentScore"`
 	Internal        bool                 `datastore:"internal"`
-	PictureUrl      string               `datastore:"pictureUrl"`
+	PictureUrl      string               `datastore:"pictureUrl,noindex"`
 	AccountCreated  time.Time            `datastore:"joinedOn"`
 }
 
