@@ -115,7 +115,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		reads, err := store.GetGlucoseReads(context, steadySailor.Email, lowerBound, time.Now())
+		reads, err := store.GetGlucoseReads(context, steadySailor.Email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
 		}
