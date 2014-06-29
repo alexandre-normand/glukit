@@ -45,7 +45,8 @@ func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatch(p []apimodel.Gluc
 // why the write is short.
 func (b *BufferedGlucoseReadBatchWriter) WriteGlucoseReadBatches(p []apimodel.DayOfGlucoseReads) (glukitio.GlucoseReadBatchWriter, error) {
 	w := b
-	for _, batch := range p {
+	for i := range p {
+		batch := p[i]
 		if w.size >= w.flushSize {
 			fw, err := w.Flush()
 			if err != nil {

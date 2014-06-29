@@ -44,7 +44,8 @@ func (b *CalibrationReadStreamer) WriteCalibrations(p []apimodel.CalibrationRead
 		return s, err
 	}
 
-	for _, c := range p {
+	for i := range p {
+		c := p[i]
 		t := c.GetTime()
 
 		if s.head == nil {

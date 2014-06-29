@@ -41,7 +41,8 @@ func (w *statsExerciseWriter) WriteExerciseBatch(p []apimodel.Exercise) (glukiti
 
 func (w *statsExerciseWriter) WriteExerciseBatches(p []apimodel.DayOfExercises) (glukitio.ExerciseBatchWriter, error) {
 	log.Printf("WriteExerciseBatch with [%d] batches: %v", len(p), p)
-	for _, dayOfData := range p {
+	for i := range p {
+		dayOfData := p[i]
 		w.state.total += len(dayOfData.Exercises)
 		w.state.batches[dayOfData.Exercises[0].GetTime().Unix()] = dayOfData.Exercises
 	}

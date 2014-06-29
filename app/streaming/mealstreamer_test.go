@@ -44,7 +44,8 @@ func (w *statsMealReadWriter) WriteMealBatch(p []apimodel.Meal) (glukitio.MealBa
 
 func (w *statsMealReadWriter) WriteMealBatches(p []apimodel.DayOfMeals) (glukitio.MealBatchWriter, error) {
 	log.Printf("WriteMealBatches with [%d] batches: %v", len(p), p)
-	for _, dayOfData := range p {
+	for i := range p {
+		dayOfData := p[i]
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Meals[0].GetTime())
 		w.state.total += len(dayOfData.Meals)
 		w.state.batches[dayOfData.Meals[0].GetTime().Unix()] = dayOfData.Meals
@@ -82,6 +83,35 @@ func TestWriteOfDayMealBatch(t *testing.T) {
 
 	if state.writeCount != 1 {
 		t.Errorf("TestWriteOfDayMealBatch failed: got a writeCount of %d but expected %d", state.writeCount, 1)
+	}
+}
+
+func TestWriteOfDayMealBatchesInSingleCall(t *testing.T) {
+	state := NewMealWriterState()
+	w := NewMealStreamerDuration(NewStatsMealReadWriter(state), time.Hour*24)
+
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
+
+	meals := make([]apimodel.Meal, 25)
+
+	for i := 0; i < 25; i++ {
+		readTime := ct.Add(time.Duration(i) * time.Hour)
+		meals[i] = apimodel.Meal{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), float32(i + 1), float32(i + 2), float32(i + 3)}
+	}
+
+	w, _ = w.WriteMeals(meals)
+	w.Flush()
+
+	if state.total != 25 {
+		t.Errorf("TestWriteOfDayMealBatchesInSingleCall failed: got a total of %d but expected %d", state.total, 25)
+	}
+
+	if state.batchCount != 2 {
+		t.Errorf("TestWriteOfDayMealBatchesInSingleCall failed: got a batchCount of %d but expected %d", state.batchCount, 2)
+	}
+
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteOfDayMealBatchesInSingleCall failed: got a writeCount of %d but expected %d", state.writeCount, 2)
 	}
 }
 

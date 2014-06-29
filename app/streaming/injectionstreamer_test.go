@@ -44,7 +44,8 @@ func (w *statsInjectionReadWriter) WriteInjectionBatch(p []apimodel.Injection) (
 
 func (w *statsInjectionReadWriter) WriteInjectionBatches(p []apimodel.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
 	log.Printf("WriteInjectionBatches with [%d] batches: %v", len(p), p)
-	for _, dayOfData := range p {
+	for i := range p {
+		dayOfData := p[i]
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Injections[0].GetTime())
 		w.state.total += len(dayOfData.Injections)
 		w.state.batches[dayOfData.Injections[0].GetTime().Unix()] = dayOfData.Injections
@@ -82,6 +83,35 @@ func TestWriteOfDayInjectionBatch(t *testing.T) {
 
 	if state.writeCount != 1 {
 		t.Errorf("TestWriteOfDayInjectionBatch failed: got a writeCount of %d but expected %d", state.writeCount, 1)
+	}
+}
+
+func TestWriteOfDayInjectionBatchesInSingleCall(t *testing.T) {
+	state := NewInjectionWriterState()
+	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), time.Hour*24)
+
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
+
+	injections := make([]apimodel.Injection, 25)
+
+	for i := 0; i < 25; i++ {
+		readTime := ct.Add(time.Duration(i) * time.Hour)
+		injections[i] = apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(i), "Humalog", "Bolus"}
+	}
+
+	w, _ = w.WriteInjections(injections)
+	w.Flush()
+
+	if state.total != 25 {
+		t.Errorf("TestWriteOfDayInjectionBatchesInSingleCall failed: got a total of %d but expected %d", state.total, 25)
+	}
+
+	if state.batchCount != 2 {
+		t.Errorf("TestWriteOfDayInjectionBatchesInSingleCall failed: got a batchCount of %d but expected %d", state.batchCount, 2)
+	}
+
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteOfDayInjectionBatchesInSingleCall failed: got a writeCount of %d but expected %d", state.writeCount, 2)
 	}
 }
 

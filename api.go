@@ -130,10 +130,6 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 	batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
 	glucoseReadStreamer := streaming.NewGlucoseStreamerDuration(batchingWriter, time.Hour*24)
 
-	// buf := new(bytes.Buffer)
-	// buf.ReadFrom(request.Body)
-
-	// context.Debugf("Body is [%s]", buf.String())
 	decoder := json.NewDecoder(request.Body)
 
 	for {
@@ -146,7 +142,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 			break
 		}
 
-		context.Debugf("Writing [%d] new glucose reads", len(c))
+		context.Debugf("Writing [%d] new glucose reads: %v", len(c), c)
 		glucoseReadStreamer, err = glucoseReadStreamer.WriteGlucoseReads(c)
 		if err != nil {
 			context.Warningf("Error storing user data [%v]: %v", c, err)

@@ -44,7 +44,8 @@ func (b *InjectionStreamer) WriteInjections(p []apimodel.Injection) (s *Injectio
 		return s, err
 	}
 
-	for _, c := range p {
+	for i := range p {
+		c := p[i]
 		t := c.GetTime()
 
 		if s.head == nil {
