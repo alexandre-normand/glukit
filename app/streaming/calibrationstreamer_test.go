@@ -85,6 +85,35 @@ func TestWriteOfDayCalibrationBatch(t *testing.T) {
 	}
 }
 
+func TestWriteOfDayCalibrationReadBatchesInSingleCall(t *testing.T) {
+	state := NewCalibrationWriterState()
+	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), time.Hour*24)
+
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
+
+	reads := make([]apimodel.CalibrationRead, 25)
+
+	for i := 0; i < 25; i++ {
+		readTime := ct.Add(time.Duration(i) * time.Hour)
+		reads[i] = apimodel.CalibrationRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(i)}
+	}
+
+	w, _ = w.WriteCalibrations(reads)
+	w.Flush()
+
+	if state.total != 25 {
+		t.Errorf("TestWriteOfDayCalibrationReadBatchesInSingleCall failed: got a total of %d but expected %d", state.total, 25)
+	}
+
+	if state.batchCount != 2 {
+		t.Errorf("TestWriteOfDayCalibrationReadBatchesInSingleCall failed: got a batchCount of %d but expected %d", state.batchCount, 2)
+	}
+
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteOfDayCalibrationReadBatchesInSingleCall failed: got a writeCount of %d but expected %d", state.writeCount, 2)
+	}
+}
+
 func TestWriteOfHourlyCalibrationBatch(t *testing.T) {
 	state := NewCalibrationWriterState()
 	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), time.Hour*1)

@@ -102,15 +102,15 @@ func TestWriteOfDayGlucoseReadBatchesInSingleCall(t *testing.T) {
 	w.Flush()
 
 	if state.total != 25 {
-		t.Errorf("TestWriteOfDayGlucoseReadBatch failed: got a total of %d but expected %d", state.total, 25)
+		t.Errorf("TestWriteOfDayGlucoseReadBatchesInSingleCall failed: got a total of %d but expected %d", state.total, 25)
 	}
 
 	if state.batchCount != 2 {
-		t.Errorf("TestWriteOfDayGlucoseReadBatch failed: got a batchCount of %d but expected %d", state.batchCount, 2)
+		t.Errorf("TestWriteOfDayGlucoseReadBatchesInSingleCall failed: got a batchCount of %d but expected %d", state.batchCount, 2)
 	}
 
 	if state.writeCount != 2 {
-		t.Errorf("TestWriteOfDayGlucoseReadBatch failed: got a writeCount of %d but expected %d", state.writeCount, 2)
+		t.Errorf("TestWriteOfDayGlucoseReadBatchesInSingleCall failed: got a writeCount of %d but expected %d", state.writeCount, 2)
 	}
 }
 
