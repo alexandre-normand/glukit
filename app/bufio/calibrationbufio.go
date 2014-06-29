@@ -45,7 +45,8 @@ func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatch(p []apimodel.Cali
 // why the write is short.
 func (b *BufferedCalibrationBatchWriter) WriteCalibrationBatches(p []apimodel.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
 	w := b
-	for _, batch := range p {
+	for i := range p {
+		batch := p[i]
 		if w.size >= w.flushSize {
 			fw, err := w.Flush()
 			if err != nil {
