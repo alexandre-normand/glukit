@@ -44,7 +44,8 @@ func (b *MealStreamer) WriteMeals(p []apimodel.Meal) (s *MealStreamer, err error
 		return s, err
 	}
 
-	for _, c := range p {
+	for i := range p {
+		c := p[i]
 		t := c.GetTime()
 
 		if s.head == nil {

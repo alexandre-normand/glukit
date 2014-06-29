@@ -44,7 +44,8 @@ func (w *statsCalibrationReadWriter) WriteCalibrationBatch(p []apimodel.Calibrat
 
 func (w *statsCalibrationReadWriter) WriteCalibrationBatches(p []apimodel.DayOfCalibrationReads) (glukitio.CalibrationBatchWriter, error) {
 	log.Printf("WriteCalibrationReadBatches with [%d] batches: %v", len(p), p)
-	for _, dayOfData := range p {
+	for i := range p {
+		dayOfData := p[i]
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Reads[0].GetTime())
 		w.state.total += len(dayOfData.Reads)
 		w.state.batches[dayOfData.Reads[0].GetTime().Unix()] = dayOfData.Reads

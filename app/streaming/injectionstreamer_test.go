@@ -44,7 +44,8 @@ func (w *statsInjectionReadWriter) WriteInjectionBatch(p []apimodel.Injection) (
 
 func (w *statsInjectionReadWriter) WriteInjectionBatches(p []apimodel.DayOfInjections) (glukitio.InjectionBatchWriter, error) {
 	log.Printf("WriteInjectionBatches with [%d] batches: %v", len(p), p)
-	for _, dayOfData := range p {
+	for i := range p {
+		dayOfData := p[i]
 		log.Printf("Persisting batch with start date of [%v]", dayOfData.Injections[0].GetTime())
 		w.state.total += len(dayOfData.Injections)
 		w.state.batches[dayOfData.Injections[0].GetTime().Unix()] = dayOfData.Injections
