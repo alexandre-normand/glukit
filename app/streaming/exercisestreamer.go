@@ -44,7 +44,8 @@ func (b *ExerciseStreamer) WriteExercises(p []apimodel.Exercise) (s *ExerciseStr
 		return s, err
 	}
 
-	for _, c := range p {
+	for i := range p {
+		c := p[i]
 		t := c.GetTime()
 
 		if s.head == nil {

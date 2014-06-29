@@ -85,6 +85,35 @@ func TestWriteOfDayExerciseBatch(t *testing.T) {
 	}
 }
 
+func TestWriteOfDayExerciseBatchesInSingleCall(t *testing.T) {
+	state := NewExerciseWriterState()
+	w := NewExerciseStreamerDuration(NewStatsExerciseReadWriter(state), time.Hour*24)
+
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
+
+	exercises := make([]apimodel.Exercise, 25)
+
+	for i := 0; i < 25; i++ {
+		readTime := ct.Add(time.Duration(i) * time.Hour)
+		exercises[i] = apimodel.Exercise{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, i, "Light", "details"}
+	}
+
+	w, _ = w.WriteExercises(exercises)
+	w.Flush()
+
+	if state.total != 25 {
+		t.Errorf("TestWriteOfDayExerciseBatchesInSingleCall failed: got a total of %d but expected %d", state.total, 25)
+	}
+
+	if state.batchCount != 2 {
+		t.Errorf("TestWriteOfDayExerciseBatchesInSingleCall failed: got a batchCount of %d but expected %d", state.batchCount, 2)
+	}
+
+	if state.writeCount != 2 {
+		t.Errorf("TestWriteOfDayExerciseBatchesInSingleCall failed: got a writeCount of %d but expected %d", state.writeCount, 2)
+	}
+}
+
 func TestWriteOfHourlyExerciseBatch(t *testing.T) {
 	state := NewExerciseWriterState()
 	w := NewExerciseStreamerDuration(NewStatsExerciseReadWriter(state), time.Hour*1)
