@@ -108,7 +108,8 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	context := appengine.NewContext(request)
 	steadySailor, _, upperBound, err := store.FindSteadySailor(context, recipientEmail)
 
-	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
+	// Overscan by a day so that we have enough data to cover for a partial day of the user's data
+	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD + time.Duration(-24)*time.Hour)
 	if err != nil && err == store.ErrNoSteadySailorMatchFound {
 		context.Debugf("No steady sailor match found for user [%s]", recipientEmail)
 		http.Error(writer, err.Error(), 204)
