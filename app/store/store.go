@@ -365,8 +365,8 @@ func GetGlukitUserWithKey(context appengine.Context, key *datastore.Key) (userPr
 	return userProfile, nil
 }
 
-// GetUserData returns a GlukitUser entry and the boundaries of its most recent complete reads. This is aligned to complete days, meaning that
-// it "snaps" to the last day ending at 06:00 am. If the user doesn't have any imported data yet, GetUserData returns ErrNoImportedDataFound
+// GetUserData returns a GlukitUser entry and the boundaries of its most recent complete reads.
+// If the user doesn't have any imported data yet, GetUserData returns ErrNoImportedDataFound
 func GetUserData(context appengine.Context, email string) (userProfile *model.GlukitUser, key *datastore.Key, upperBound time.Time, err error) {
 	key = GetUserKey(context, email)
 	userProfile, err = GetUserProfile(context, key)
@@ -378,8 +378,7 @@ func GetUserData(context appengine.Context, email string) (userProfile *model.Gl
 	if util.GLUKIT_EPOCH_TIME.Equal(userProfile.MostRecentRead.GetTime()) {
 		return userProfile, key, util.GLUKIT_EPOCH_TIME, ErrNoImportedDataFound
 	} else {
-		upperBound = util.GetEndOfDayBoundaryBefore(userProfile.MostRecentRead.GetTime())
-		return userProfile, key, upperBound, nil
+		return userProfile, key, userProfile.MostRecentRead.GetTime(), nil
 	}
 }
 
