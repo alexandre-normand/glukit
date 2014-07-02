@@ -64,7 +64,7 @@ func (w *statsInjectionReadWriter) Flush() (glukitio.InjectionBatchWriter, error
 
 func TestWriteOfDayInjectionBatch(t *testing.T) {
 	state := NewInjectionWriterState()
-	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), time.Hour*24)
+	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -88,7 +88,7 @@ func TestWriteOfDayInjectionBatch(t *testing.T) {
 
 func TestWriteOfDayInjectionBatchesInSingleCall(t *testing.T) {
 	state := NewInjectionWriterState()
-	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), time.Hour*24)
+	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -196,7 +196,7 @@ func TestWriteOfMultipleInjectionBatches(t *testing.T) {
 func TestInjectionStreamerWithBufferedIO(t *testing.T) {
 	state := NewInjectionWriterState()
 	bufferedWriter := bufio.NewInjectionWriterSize(NewStatsInjectionReadWriter(state), 2)
-	w := NewInjectionStreamerDuration(bufferedWriter, time.Hour*24)
+	w := NewInjectionStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 

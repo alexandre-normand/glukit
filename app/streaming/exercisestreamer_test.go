@@ -64,7 +64,7 @@ func (w *statsExerciseReadWriter) Flush() (glukitio.ExerciseBatchWriter, error) 
 
 func TestWriteOfDayExerciseBatch(t *testing.T) {
 	state := NewExerciseWriterState()
-	w := NewExerciseStreamerDuration(NewStatsExerciseReadWriter(state), time.Hour*24)
+	w := NewExerciseStreamerDuration(NewStatsExerciseReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -88,7 +88,7 @@ func TestWriteOfDayExerciseBatch(t *testing.T) {
 
 func TestWriteOfDayExerciseBatchesInSingleCall(t *testing.T) {
 	state := NewExerciseWriterState()
-	w := NewExerciseStreamerDuration(NewStatsExerciseReadWriter(state), time.Hour*24)
+	w := NewExerciseStreamerDuration(NewStatsExerciseReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -196,7 +196,7 @@ func TestWriteOfMultipleExerciseBatches(t *testing.T) {
 func TestExerciseStreamerWithBufferedIO(t *testing.T) {
 	state := NewExerciseWriterState()
 	bufferedWriter := bufio.NewExerciseWriterSize(NewStatsExerciseReadWriter(state), 2)
-	w := NewExerciseStreamerDuration(bufferedWriter, time.Hour*24)
+	w := NewExerciseStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 

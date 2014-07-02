@@ -63,7 +63,7 @@ func (w *statsGlucoseReadWriter) Flush() (glukitio.GlucoseReadBatchWriter, error
 
 func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
 	state := NewGlucoseWriterState()
-	w := NewGlucoseStreamerDuration(NewStatsGlucoseReadWriter(state), time.Hour*24)
+	w := NewGlucoseStreamerDuration(NewStatsGlucoseReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -87,7 +87,7 @@ func TestWriteOfDayGlucoseReadBatch(t *testing.T) {
 
 func TestWriteOfDayGlucoseReadBatchesInSingleCall(t *testing.T) {
 	state := NewGlucoseWriterState()
-	w := NewGlucoseStreamerDuration(NewStatsGlucoseReadWriter(state), time.Hour*24)
+	w := NewGlucoseStreamerDuration(NewStatsGlucoseReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -197,9 +197,9 @@ func TestWriteOfMultipleGlucoseReadBatches(t *testing.T) {
 func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	state := NewGlucoseWriterState()
 	bufferedWriter := bufio.NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
-	w := NewGlucoseStreamerDuration(bufferedWriter, time.Hour*24)
+	w := NewGlucoseStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
-	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
@@ -210,19 +210,62 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 
 	w.Close()
 
-	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	firstBatchTime, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 	if _, ok := state.batches[firstBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", firstBatchTime, firstBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: could not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", firstBatchTime, firstBatchTime.Unix(), state.batches)
 	}
 
 	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
 	if _, ok := state.batches[secondBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", secondBatchTime, secondBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: could not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", secondBatchTime, secondBatchTime.Unix(), state.batches)
 	}
 
 	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
 	if _, ok := state.batches[thirdBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", thirdBatchTime, thirdBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: could not find a batch starting with a read time of [%v]/ts[%d] in batches: [%v]", thirdBatchTime, thirdBatchTime.Unix(), state.batches)
+	}
+}
+
+func TestBatchBoundaries(t *testing.T) {
+	state := NewGlucoseWriterState()
+	bufferedWriter := bufio.NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
+	w := NewGlucoseStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
+
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 01:00")
+	t.Logf("Start time of test is %v", ct)
+
+	for b := 0; b < 3; b++ {
+		for i := 0; i < 48; i++ {
+			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+			w, _ = w.WriteGlucoseRead(apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(b*48 + i)})
+		}
+	}
+
+	w.Close()
+
+	// Fist batch still starts with the first read which isn't a day boundary because we're just keeping track of an array of reads and
+	// therefore will have the first read potentially not line up with the data
+	firstBatchTime, _ := time.Parse("02/01/2006 15:04", "18/04/2014 01:00")
+	if _, ok := state.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestBatchBoundaries test failed: could not find first batch starting with a read time of [%v]/ts[%d] in batches: [%v]", firstBatchTime, firstBatchTime.Unix(), state.batches)
+	}
+
+	// Second batch starts at the truncated day boundary because we have a matching read that starts with it
+	secondBatchTime, _ := time.Parse("02/01/2006 15:04", "19/04/2014 00:00")
+	if _, ok := state.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestBatchBoundaries test failed: could not find second batch starting with a read time of [%v]/ts[%d] in batches: [%v]", secondBatchTime, secondBatchTime.Unix(), state.batches)
+	}
+
+	// Third batch starts at the truncated day boundary because we have a matching read that starts with it
+	thirdBatchTime, _ := time.Parse("02/01/2006 15:04", "20/04/2014 00:00")
+	if _, ok := state.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestBatchBoundaries test failed: could not find third batch starting with a read time of [%v]/ts[%d] in batches: [%v]", thirdBatchTime, thirdBatchTime.Unix(), state.batches)
+	}
+
+	// Fourth batch starts at the truncated day boundary because we have a matching read that starts with it
+	fourthBatchTime, _ := time.Parse("02/01/2006 15:04", "21/04/2014 00:00")
+	if _, ok := state.batches[fourthBatchTime.Unix()]; !ok {
+		t.Errorf("TestBatchBoundaries test failed: could not find third batch starting with a read time of [%v]/ts[%d] in batches: [%v]", fourthBatchTime, fourthBatchTime.Unix(), state.batches)
 	}
 }
 
@@ -230,7 +273,7 @@ func BenchmarkStreamerWithBufferedIO(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		state := NewGlucoseWriterState()
 		bufferedWriter := bufio.NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
-		w := NewGlucoseStreamerDuration(bufferedWriter, time.Hour*24)
+		w := NewGlucoseStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
 		ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 
