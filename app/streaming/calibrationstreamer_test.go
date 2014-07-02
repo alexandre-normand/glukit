@@ -64,7 +64,7 @@ func (w *statsCalibrationReadWriter) Flush() (glukitio.CalibrationBatchWriter, e
 
 func TestWriteOfDayCalibrationBatch(t *testing.T) {
 	state := NewCalibrationWriterState()
-	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), time.Hour*24)
+	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -88,7 +88,7 @@ func TestWriteOfDayCalibrationBatch(t *testing.T) {
 
 func TestWriteOfDayCalibrationReadBatchesInSingleCall(t *testing.T) {
 	state := NewCalibrationWriterState()
-	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), time.Hour*24)
+	w := NewCalibrationReadStreamerDuration(NewStatsCalibrationReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -196,7 +196,7 @@ func TestWriteOfMultipleCalibrationBatches(t *testing.T) {
 func TestCalibrationStreamerWithBufferedIO(t *testing.T) {
 	state := NewCalibrationWriterState()
 	bufferedWriter := bufio.NewCalibrationWriterSize(NewStatsCalibrationReadWriter(state), 2)
-	w := NewCalibrationReadStreamerDuration(bufferedWriter, time.Hour*24)
+	w := NewCalibrationReadStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 

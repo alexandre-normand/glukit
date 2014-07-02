@@ -8,10 +8,10 @@ import (
 )
 
 type GlucoseReadStreamer struct {
-	head    *container.ImmutableList
-	tailVal *apimodel.GlucoseRead
-	wr      glukitio.GlucoseReadBatchWriter
-	d       time.Duration
+	head      *container.ImmutableList
+	startTime *time.Time
+	wr        glukitio.GlucoseReadBatchWriter
+	d         time.Duration
 }
 
 const (
@@ -28,7 +28,7 @@ func (b *GlucoseReadStreamer) WriteGlucoseRead(c apimodel.GlucoseRead) (g *Gluco
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
 func (b *GlucoseReadStreamer) WriteGlucoseReads(p []apimodel.GlucoseRead) (g *GlucoseReadStreamer, err error) {
-	g = newGlucoseStreamerDuration(b.head, b.tailVal, b.wr, b.d)
+	g = newGlucoseStreamerDuration(b.head, b.startTime, b.wr, b.d)
 	if err != nil {
 		return g, err
 	}
@@ -37,18 +37,20 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []apimodel.GlucoseRead) (g *Gl
 		c := p[i]
 
 		t := c.GetTime()
+		truncatedTime := t.Truncate(g.d)
 
 		if g.head == nil {
-			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, g.wr, g.d)
 		} else {
-			if t.Sub(g.tailVal.GetTime()) >= g.d {
+			if t.Sub(*g.startTime) >= g.d {
 				g, err = g.Flush()
 				if err != nil {
 					return g, err
 				}
-				g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &c, g.wr, g.d)
+
+				g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, g.wr, g.d)
 			} else {
-				g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.tailVal, g.wr, g.d)
+				g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.startTime, g.wr, g.d)
 			}
 		}
 	}
@@ -56,10 +58,10 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []apimodel.GlucoseRead) (g *Gl
 	return g, err
 }
 
-func newGlucoseStreamerDuration(head *container.ImmutableList, tailVal *apimodel.GlucoseRead, wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
+func newGlucoseStreamerDuration(head *container.ImmutableList, startTime *time.Time, wr glukitio.GlucoseReadBatchWriter, bufferDuration time.Duration) *GlucoseReadStreamer {
 	w := new(GlucoseReadStreamer)
 	w.head = head
-	w.tailVal = tailVal
+	w.startTime = startTime
 	w.wr = wr
 	w.d = bufferDuration
 
@@ -109,7 +111,7 @@ func (b *GlucoseReadStreamer) Close() (*GlucoseReadStreamer, error) {
 
 	innerWriter, err := g.wr.Flush()
 	if err != nil {
-		return newGlucoseStreamerDuration(g.head, g.tailVal, innerWriter, b.d), err
+		return newGlucoseStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
 	return g, nil

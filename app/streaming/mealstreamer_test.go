@@ -64,7 +64,7 @@ func (w *statsMealReadWriter) Flush() (glukitio.MealBatchWriter, error) {
 
 func TestWriteOfDayMealBatch(t *testing.T) {
 	state := NewMealWriterState()
-	w := NewMealStreamerDuration(NewStatsMealReadWriter(state), time.Hour*24)
+	w := NewMealStreamerDuration(NewStatsMealReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -88,7 +88,7 @@ func TestWriteOfDayMealBatch(t *testing.T) {
 
 func TestWriteOfDayMealBatchesInSingleCall(t *testing.T) {
 	state := NewMealWriterState()
-	w := NewMealStreamerDuration(NewStatsMealReadWriter(state), time.Hour*24)
+	w := NewMealStreamerDuration(NewStatsMealReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -196,7 +196,7 @@ func TestWriteOfMultipleMealBatches(t *testing.T) {
 func TestMealStreamerWithBufferedIO(t *testing.T) {
 	state := NewMealWriterState()
 	bufferedWriter := bufio.NewMealWriterSize(NewStatsMealReadWriter(state), 2)
-	w := NewMealStreamerDuration(bufferedWriter, time.Hour*24)
+	w := NewMealStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 

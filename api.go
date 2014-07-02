@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 )
 
 const (
@@ -73,7 +72,7 @@ func processNewCalibrationData(writer http.ResponseWriter, request *http.Request
 
 	dataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, userProfileKey)
 	batchingWriter := bufio.NewCalibrationWriterSize(dataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(batchingWriter, time.Hour*24)
+	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(batchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -128,7 +127,7 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 
 	dataStoreWriter := store.NewDataStoreGlucoseReadBatchWriter(context, userProfileKey)
 	batchingWriter := bufio.NewGlucoseReadWriterSize(dataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	glucoseReadStreamer := streaming.NewGlucoseStreamerDuration(batchingWriter, time.Hour*24)
+	glucoseReadStreamer := streaming.NewGlucoseStreamerDuration(batchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -196,7 +195,7 @@ func processNewInjectionData(writer http.ResponseWriter, request *http.Request) 
 
 	dataStoreWriter := store.NewDataStoreInjectionBatchWriter(context, userProfileKey)
 	batchingWriter := bufio.NewInjectionWriterSize(dataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	injectionStreamer := streaming.NewInjectionStreamerDuration(batchingWriter, time.Hour*24)
+	injectionStreamer := streaming.NewInjectionStreamerDuration(batchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -251,7 +250,7 @@ func processNewMealData(writer http.ResponseWriter, request *http.Request) {
 
 	dataStoreWriter := store.NewDataStoreMealBatchWriter(context, userProfileKey)
 	batchingWriter := bufio.NewMealWriterSize(dataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	mealStreamer := streaming.NewMealStreamerDuration(batchingWriter, time.Hour*24)
+	mealStreamer := streaming.NewMealStreamerDuration(batchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -306,7 +305,7 @@ func processNewExerciseData(writer http.ResponseWriter, request *http.Request) {
 
 	dataStoreWriter := store.NewDataStoreExerciseBatchWriter(context, userProfileKey)
 	batchingWriter := bufio.NewExerciseWriterSize(dataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	exerciseStreamer := streaming.NewExerciseStreamerDuration(batchingWriter, time.Hour*24)
+	exerciseStreamer := streaming.NewExerciseStreamerDuration(batchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	decoder := json.NewDecoder(request.Body)
 

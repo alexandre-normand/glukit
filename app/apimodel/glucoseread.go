@@ -30,7 +30,7 @@ type DayOfGlucoseReads struct {
 }
 
 func NewDayOfGlucoseReads(reads []GlucoseRead) DayOfGlucoseReads {
-	return DayOfGlucoseReads{reads, reads[0].GetTime(), reads[len(reads)-1].GetTime()}
+	return DayOfGlucoseReads{reads, reads[0].GetTime().Truncate(DAY_OF_DATA_DURATION), reads[len(reads)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value
