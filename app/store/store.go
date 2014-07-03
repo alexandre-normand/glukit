@@ -194,13 +194,14 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 	context.Infof("Scanning for injections between %s and %s to get injections between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfInjections").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfInjections apimodel.DayOfInjections
+	daysOfInjections := new(apimodel.DayOfInjections)
 	injectionsForPeriod := make([]apimodel.Injection, 0)
 
 	iterator := query.Run(context)
-	for _, err := iterator.Next(&daysOfInjections); err == nil; _, err = iterator.Next(&daysOfInjections) {
+	for _, err := iterator.Next(daysOfInjections); err == nil; _, err = iterator.Next(daysOfInjections) {
 		context.Debugf("Loaded batch of %d injections...", len(daysOfInjections.Injections))
 		injectionsForPeriod = mergeInjectionArrays(injectionsForPeriod, daysOfInjections.Injections)
+		daysOfInjections = new(apimodel.DayOfInjections)
 	}
 
 	injectionSlice := apimodel.InjectionSlice(injectionsForPeriod)
@@ -246,13 +247,14 @@ func GetMeals(context appengine.Context, email string, lowerBound time.Time, upp
 	context.Infof("Scanning for carbs between %s and %s to get carbs between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfMeals").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfMeals apimodel.DayOfMeals
+	daysOfMeals := new(apimodel.DayOfMeals)
 	mealsForPeriod := make([]apimodel.Meal, 0)
 
 	iterator := query.Run(context)
-	for _, err := iterator.Next(&daysOfMeals); err == nil; _, err = iterator.Next(&daysOfMeals) {
+	for _, err := iterator.Next(daysOfMeals); err == nil; _, err = iterator.Next(daysOfMeals) {
 		context.Debugf("Loaded batch of %d carbs...", len(daysOfMeals.Meals))
 		mealsForPeriod = mergeMealArrays(mealsForPeriod, daysOfMeals.Meals)
+		daysOfMeals = new(apimodel.DayOfMeals)
 	}
 
 	context.Debugf("Filtering between [%s] and [%s], %d carbs: %v", lowerBound, upperBound, len(mealsForPeriod), mealsForPeriod)
@@ -300,13 +302,14 @@ func GetExercises(context appengine.Context, email string, lowerBound time.Time,
 	context.Infof("Scanning for exercises between %s and %s to get exercises between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfExercises").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfExercises apimodel.DayOfExercises
+	daysOfExercises := new(apimodel.DayOfExercises)
 	exercisesForPeriod := make([]apimodel.Exercise, 0)
 
 	iterator := query.Run(context)
-	for _, err := iterator.Next(&daysOfExercises); err == nil; _, err = iterator.Next(&daysOfExercises) {
+	for _, err := iterator.Next(daysOfExercises); err == nil; _, err = iterator.Next(daysOfExercises) {
 		context.Debugf("Loaded batch of %d exercises...", len(daysOfExercises.Exercises))
 		exercisesForPeriod = mergeExerciseArrays(exercisesForPeriod, daysOfExercises.Exercises)
+		daysOfExercises = new(apimodel.DayOfExercises)
 	}
 
 	exerciseSlice := apimodel.ExerciseSlice(exercisesForPeriod)
