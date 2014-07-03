@@ -141,13 +141,14 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	var daysOfReads apimodel.DayOfGlucoseReads
+	daysOfReads := new(apimodel.DayOfGlucoseReads)
 	readsForPeriod := make([]apimodel.GlucoseRead, 0)
 
 	iterator := query.Run(context)
-	for _, err := iterator.Next(&daysOfReads); err == nil; _, err = iterator.Next(&daysOfReads) {
+	for _, err := iterator.Next(daysOfReads); err == nil; _, err = iterator.Next(daysOfReads) {
 		context.Debugf("Loaded batch of %d reads...", len(daysOfReads.Reads))
 		readsForPeriod = mergeGlucoseReadArrays(readsForPeriod, daysOfReads.Reads)
+		daysOfReads = new(apimodel.DayOfGlucoseReads)
 	}
 
 	readSlice := apimodel.GlucoseReadSlice(readsForPeriod)
