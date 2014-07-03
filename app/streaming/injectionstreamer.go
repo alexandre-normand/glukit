@@ -8,10 +8,10 @@ import (
 )
 
 type InjectionStreamer struct {
-	head    *container.ImmutableList
-	tailVal *apimodel.Injection
-	wr      glukitio.InjectionBatchWriter
-	d       time.Duration
+	head      *container.ImmutableList
+	startTime *time.Time
+	wr        glukitio.InjectionBatchWriter
+	d         time.Duration
 }
 
 // NewInjectionStreamerDuration returns a new InjectionStreamer whose buffer has the specified size.
@@ -19,10 +19,10 @@ func NewInjectionStreamerDuration(wr glukitio.InjectionBatchWriter, bufferDurati
 	return newInjectionStreamerDuration(nil, nil, wr, bufferDuration)
 }
 
-func newInjectionStreamerDuration(head *container.ImmutableList, tailVal *apimodel.Injection, wr glukitio.InjectionBatchWriter, bufferDuration time.Duration) *InjectionStreamer {
+func newInjectionStreamerDuration(head *container.ImmutableList, startTime *time.Time, wr glukitio.InjectionBatchWriter, bufferDuration time.Duration) *InjectionStreamer {
 	w := new(InjectionStreamer)
 	w.head = head
-	w.tailVal = tailVal
+	w.startTime = startTime
 	w.wr = wr
 	w.d = bufferDuration
 
@@ -39,7 +39,7 @@ func (b *InjectionStreamer) WriteInjection(c apimodel.Injection) (s *InjectionSt
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
 func (b *InjectionStreamer) WriteInjections(p []apimodel.Injection) (s *InjectionStreamer, err error) {
-	s = newInjectionStreamerDuration(b.head, b.tailVal, b.wr, b.d)
+	s = newInjectionStreamerDuration(b.head, b.startTime, b.wr, b.d)
 	if err != nil {
 		return s, err
 	}
@@ -47,17 +47,18 @@ func (b *InjectionStreamer) WriteInjections(p []apimodel.Injection) (s *Injectio
 	for i := range p {
 		c := p[i]
 		t := c.GetTime()
+		truncatedTime := t.Truncate(s.d)
 
 		if s.head == nil {
-			s = newInjectionStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
-		} else if t.Sub(s.tailVal.GetTime()) >= s.d {
+			s = newInjectionStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, s.wr, s.d)
+		} else if t.Sub(*s.startTime) >= s.d {
 			s, err = s.Flush()
 			if err != nil {
 				return s, err
 			}
-			s = newInjectionStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
+			s = newInjectionStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, s.wr, s.d)
 		} else {
-			s = newInjectionStreamerDuration(container.NewImmutableList(s.head, c), s.tailVal, s.wr, s.d)
+			s = newInjectionStreamerDuration(container.NewImmutableList(s.head, c), s.startTime, s.wr, s.d)
 		}
 	}
 
@@ -102,7 +103,7 @@ func (b *InjectionStreamer) Close() (s *InjectionStreamer, err error) {
 
 	innerWriter, err := g.wr.Flush()
 	if err != nil {
-		return newInjectionStreamerDuration(g.head, g.tailVal, innerWriter, b.d), err
+		return newInjectionStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
 	return g, nil
