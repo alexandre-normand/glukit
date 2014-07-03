@@ -8,10 +8,10 @@ import (
 )
 
 type ExerciseStreamer struct {
-	head    *container.ImmutableList
-	tailVal *apimodel.Exercise
-	wr      glukitio.ExerciseBatchWriter
-	d       time.Duration
+	head      *container.ImmutableList
+	startTime *time.Time
+	wr        glukitio.ExerciseBatchWriter
+	d         time.Duration
 }
 
 // NewExerciseStreamerDuration returns a new ExerciseStreamer whose buffer has the specified size.
@@ -19,10 +19,10 @@ func NewExerciseStreamerDuration(wr glukitio.ExerciseBatchWriter, bufferDuration
 	return newExerciseStreamerDuration(nil, nil, wr, bufferDuration)
 }
 
-func newExerciseStreamerDuration(head *container.ImmutableList, tailVal *apimodel.Exercise, wr glukitio.ExerciseBatchWriter, bufferDuration time.Duration) *ExerciseStreamer {
+func newExerciseStreamerDuration(head *container.ImmutableList, startTime *time.Time, wr glukitio.ExerciseBatchWriter, bufferDuration time.Duration) *ExerciseStreamer {
 	w := new(ExerciseStreamer)
 	w.head = head
-	w.tailVal = tailVal
+	w.startTime = startTime
 	w.wr = wr
 	w.d = bufferDuration
 
@@ -39,7 +39,7 @@ func (b *ExerciseStreamer) WriteExercise(c apimodel.Exercise) (s *ExerciseStream
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
 func (b *ExerciseStreamer) WriteExercises(p []apimodel.Exercise) (s *ExerciseStreamer, err error) {
-	s = newExerciseStreamerDuration(b.head, b.tailVal, b.wr, b.d)
+	s = newExerciseStreamerDuration(b.head, b.startTime, b.wr, b.d)
 	if err != nil {
 		return s, err
 	}
@@ -47,17 +47,18 @@ func (b *ExerciseStreamer) WriteExercises(p []apimodel.Exercise) (s *ExerciseStr
 	for i := range p {
 		c := p[i]
 		t := c.GetTime()
+		truncatedTime := t.Truncate(s.d)
 
 		if s.head == nil {
-			s = newExerciseStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
-		} else if t.Sub(s.tailVal.GetTime()) >= s.d {
+			s = newExerciseStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, s.wr, s.d)
+		} else if t.Sub(*s.startTime) >= s.d {
 			s, err = s.Flush()
 			if err != nil {
 				return s, err
 			}
-			s = newExerciseStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
+			s = newExerciseStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, s.wr, s.d)
 		} else {
-			s = newExerciseStreamerDuration(container.NewImmutableList(s.head, c), s.tailVal, s.wr, s.d)
+			s = newExerciseStreamerDuration(container.NewImmutableList(s.head, c), s.startTime, s.wr, s.d)
 		}
 	}
 
@@ -102,7 +103,7 @@ func (b *ExerciseStreamer) Close() (s *ExerciseStreamer, err error) {
 
 	innerWriter, err := g.wr.Flush()
 	if err != nil {
-		return newExerciseStreamerDuration(g.head, g.tailVal, innerWriter, b.d), err
+		return newExerciseStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
 	return g, nil
