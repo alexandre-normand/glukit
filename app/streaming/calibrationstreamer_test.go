@@ -212,22 +212,71 @@ func TestCalibrationStreamerWithBufferedIO(t *testing.T) {
 
 	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
 	if value, ok := state.batches[firstBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find first batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
 	if value, ok := state.batches[secondBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find second batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
 	if value, ok := state.batches[thirdBatchTime.Unix()]; !ok {
-		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseStreamerWithBufferedIO test failed: count not find third batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
+	}
+}
+
+func TestCalibrationBatchBoundaries(t *testing.T) {
+	state := NewCalibrationWriterState()
+	bufferedWriter := bufio.NewCalibrationWriterSize(NewStatsCalibrationReadWriter(state), 2)
+	w := NewCalibrationReadStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
+
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 01:00")
+
+	for b := 0; b < 3; b++ {
+		for i := 0; i < 48; i++ {
+			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+			w, _ = w.WriteCalibration(apimodel.CalibrationRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, apimodel.MG_PER_DL, float32(b*48 + i)})
+
+		}
+	}
+
+	w, _ = w.Close()
+
+	// Fist batch still starts with the first read which isn't a day boundary because we're just keeping track of an array of reads and
+	// therefore will have the first read potentially not line up with the data
+	firstBatchTime, _ := time.Parse("02/01/2006 15:04", "18/04/2014 01:00")
+	if value, ok := state.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestCalibrationBatchBoundaries test failed: count not find first batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	// Second batch starts at the truncated day boundary because we have a matching read that starts with it
+	secondBatchTime, _ := time.Parse("02/01/2006 15:04", "19/04/2014 00:00")
+	if value, ok := state.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestCalibrationBatchBoundaries test failed: count not find second batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	// Third batch starts at the truncated day boundary because we have a matching read that starts with it
+	thirdBatchTime, _ := time.Parse("02/01/2006 15:04", "20/04/2014 00:00")
+	if value, ok := state.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestCalibrationBatchBoundaries test failed: count not find third batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	// Fourth batch starts at the truncated day boundary because we have a matching read that starts with it
+	fourthBatchTime, _ := time.Parse("02/01/2006 15:04", "21/04/2014 00:00")
+	if _, ok := state.batches[fourthBatchTime.Unix()]; !ok {
+		t.Errorf("TestCalibrationBatchBoundaries test failed: could not find fourth batch starting with a read time of [%v]/ts[%d] in batches: [%v]", fourthBatchTime, fourthBatchTime.Unix(), state.batches)
 	}
 }
