@@ -226,7 +226,7 @@ func TestGlucoseStreamerWithBufferedIO(t *testing.T) {
 	}
 }
 
-func TestBatchBoundaries(t *testing.T) {
+func TestGlucoseBatchBoundaries(t *testing.T) {
 	state := NewGlucoseWriterState()
 	bufferedWriter := bufio.NewGlucoseReadWriterSize(NewStatsGlucoseReadWriter(state), 2)
 	w := NewGlucoseStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
@@ -247,25 +247,25 @@ func TestBatchBoundaries(t *testing.T) {
 	// therefore will have the first read potentially not line up with the data
 	firstBatchTime, _ := time.Parse("02/01/2006 15:04", "18/04/2014 01:00")
 	if _, ok := state.batches[firstBatchTime.Unix()]; !ok {
-		t.Errorf("TestBatchBoundaries test failed: could not find first batch starting with a read time of [%v]/ts[%d] in batches: [%v]", firstBatchTime, firstBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseBatchBoundaries test failed: could not find first batch starting with a read time of [%v]/ts[%d] in batches: [%v]", firstBatchTime, firstBatchTime.Unix(), state.batches)
 	}
 
 	// Second batch starts at the truncated day boundary because we have a matching read that starts with it
 	secondBatchTime, _ := time.Parse("02/01/2006 15:04", "19/04/2014 00:00")
 	if _, ok := state.batches[secondBatchTime.Unix()]; !ok {
-		t.Errorf("TestBatchBoundaries test failed: could not find second batch starting with a read time of [%v]/ts[%d] in batches: [%v]", secondBatchTime, secondBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseBatchBoundaries test failed: could not find second batch starting with a read time of [%v]/ts[%d] in batches: [%v]", secondBatchTime, secondBatchTime.Unix(), state.batches)
 	}
 
 	// Third batch starts at the truncated day boundary because we have a matching read that starts with it
 	thirdBatchTime, _ := time.Parse("02/01/2006 15:04", "20/04/2014 00:00")
 	if _, ok := state.batches[thirdBatchTime.Unix()]; !ok {
-		t.Errorf("TestBatchBoundaries test failed: could not find third batch starting with a read time of [%v]/ts[%d] in batches: [%v]", thirdBatchTime, thirdBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseBatchBoundaries test failed: could not find third batch starting with a read time of [%v]/ts[%d] in batches: [%v]", thirdBatchTime, thirdBatchTime.Unix(), state.batches)
 	}
 
 	// Fourth batch starts at the truncated day boundary because we have a matching read that starts with it
 	fourthBatchTime, _ := time.Parse("02/01/2006 15:04", "21/04/2014 00:00")
 	if _, ok := state.batches[fourthBatchTime.Unix()]; !ok {
-		t.Errorf("TestBatchBoundaries test failed: could not find third batch starting with a read time of [%v]/ts[%d] in batches: [%v]", fourthBatchTime, fourthBatchTime.Unix(), state.batches)
+		t.Errorf("TestGlucoseBatchBoundaries test failed: could not find third batch starting with a read time of [%v]/ts[%d] in batches: [%v]", fourthBatchTime, fourthBatchTime.Unix(), state.batches)
 	}
 }
 
