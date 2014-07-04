@@ -77,7 +77,8 @@ func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile 
 func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, daysOfReads []apimodel.DayOfGlucoseReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfReads))
 	for i := range daysOfReads {
-		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", daysOfReads[i].Reads[0].Time.Timestamp, userProfileKey)
+		context.Debugf("Storing day of reads with [%d] reads and key [%d]", len(daysOfReads[i].Reads), daysOfReads[i].StartTime.Unix())
+		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", daysOfReads[i].StartTime.Unix(), userProfileKey)
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of reads", len(elementKeys), len(daysOfReads))
