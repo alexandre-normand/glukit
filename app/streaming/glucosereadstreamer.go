@@ -114,5 +114,5 @@ func (b *GlucoseReadStreamer) Close() (*GlucoseReadStreamer, error) {
 		return newGlucoseStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
-	return g, nil
+	return newGlucoseStreamerDuration(nil, nil, innerWriter, g.d), nil
 }
