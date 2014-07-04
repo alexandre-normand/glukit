@@ -81,6 +81,11 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 		elementKeys[i] = datastore.NewKey(context, "DayOfReads", "", daysOfReads[i].StartTime.Unix(), userProfileKey)
 	}
 
+	daysOfReads, err = reconcileDayOfReadsWithExisting(context, elementKeys, daysOfReads)
+	if err != nil {
+		return nil, err
+	}
+
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of reads", len(elementKeys), len(daysOfReads))
 	keys, error := datastore.PutMulti(context, elementKeys, daysOfReads)
 	if error != nil {
@@ -108,6 +113,33 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 	}
 
 	return elementKeys, nil
+}
+
+func reconcileDayOfReadsWithExisting(context appengine.Context, elementKeys []*datastore.Key, freshData []apimodel.DayOfGlucoseReads) (reconciledData []apimodel.DayOfGlucoseReads, err error) {
+	// Merge with any pre-existing data
+	existingData := make([]apimodel.DayOfGlucoseReads, len(elementKeys))
+	err = datastore.GetMulti(context, elementKeys, existingData)
+	// If there's an error and it's not a MultiError, return immediately as something went wrong
+	if multierr, ok := err.(appengine.MultiError); !ok && err != nil {
+		context.Warningf("Got error: %v", err)
+		return nil, err
+	} else {
+		if err == nil {
+			for i := range existingData {
+				context.Debugf("Merge old with new at index [%d]", i)
+			}
+		}
+
+		for i, elementErr := range multierr {
+			if elementErr == datastore.ErrNoSuchEntity {
+				context.Debugf("Keeping day of reads for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
+			} else {
+				context.Debugf("Merge old with new")
+			}
+		}
+	}
+
+	return freshData, nil
 }
 
 // StoreCalibrationReads stores a batch of DayOfCalibrations elements. It is a optimized operation in that:

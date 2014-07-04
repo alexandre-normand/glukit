@@ -14,7 +14,7 @@ func TestEndToEndMergeOfBatches(t *testing.T) {
 	defer c.Close()
 
 	w := store.NewDataStoreGlucoseReadBatchWriter(c, key)
-	bufferedWriter := bufio.NewGlucoseReadWriterSize(w, 2)
+	bufferedWriter := bufio.NewGlucoseReadWriterSize(w, 5)
 	s := streaming.NewGlucoseStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	// Write first chunk
