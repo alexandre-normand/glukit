@@ -5,9 +5,11 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/container"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/util"
 	"math"
+	"sort"
 	"time"
 )
 
@@ -116,6 +118,7 @@ func StoreDaysOfReads(context appengine.Context, userProfileKey *datastore.Key, 
 }
 
 func reconcileDayOfReadsWithExisting(context appengine.Context, elementKeys []*datastore.Key, freshData []apimodel.DayOfGlucoseReads) (reconciledData []apimodel.DayOfGlucoseReads, err error) {
+	reconciledData = make([]apimodel.DayOfGlucoseReads, len(freshData))
 	// Merge with any pre-existing data
 	existingData := make([]apimodel.DayOfGlucoseReads, len(elementKeys))
 	err = datastore.GetMulti(context, elementKeys, existingData)
@@ -126,20 +129,54 @@ func reconcileDayOfReadsWithExisting(context appengine.Context, elementKeys []*d
 	} else {
 		if err == nil {
 			for i := range existingData {
-				context.Debugf("Merge old with new at index [%d]", i)
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Reads), len(freshData[i].Reads), i)
+				reconciledReads := reconcileReads(existingData[i].Reads, freshData[i].Reads)
+				context.Debugf("Merged reads ([%d]) is [%v]", len(reconciledReads), reconciledReads)
+				reconciledData[i] = apimodel.DayOfGlucoseReads{reconciledReads, existingData[i].StartTime, reconciledReads[len(reconciledReads)-1].GetTime()}
 			}
 		}
 
 		for i, elementErr := range multierr {
 			if elementErr == datastore.ErrNoSuchEntity {
 				context.Debugf("Keeping day of reads for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
+				reconciledData[i] = freshData[i]
 			} else {
-				context.Debugf("Merge old with new")
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Reads), len(freshData[i].Reads), i)
+				reconciledReads := reconcileReads(existingData[i].Reads, freshData[i].Reads)
+				context.Debugf("Merged reads ([%d]) is [%v]", len(reconciledReads), reconciledReads)
+				reconciledData[i] = apimodel.DayOfGlucoseReads{reconciledReads, existingData[i].StartTime, reconciledReads[len(reconciledReads)-1].GetTime()}
 			}
 		}
 	}
 
-	return freshData, nil
+	return reconciledData, nil
+}
+
+func reconcileReads(older, recent []apimodel.GlucoseRead) (reconciledReads []apimodel.GlucoseRead) {
+	allKeys := make([]int64, 0)
+	values := make(map[int64]apimodel.GlucoseRead)
+	for i := range older {
+		timestamp := older[i].Time.Timestamp
+		allKeys = append(allKeys, timestamp)
+		values[timestamp] = older[i]
+	}
+
+	for i := range recent {
+		timestamp := recent[i].Time.Timestamp
+		if _, exists := values[timestamp]; !exists {
+			allKeys = append(allKeys, timestamp)
+		}
+		values[timestamp] = recent[i]
+	}
+
+	sort.Sort(container.Int64Slice(allKeys))
+
+	reconciledReads = make([]apimodel.GlucoseRead, len(allKeys))
+	for i := range allKeys {
+		reconciledReads[i] = values[allKeys[i]]
+	}
+
+	return reconciledReads
 }
 
 // StoreCalibrationReads stores a batch of DayOfCalibrations elements. It is a optimized operation in that:
