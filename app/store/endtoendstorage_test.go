@@ -50,7 +50,7 @@ func TestEndToEndMergeOfBatches(t *testing.T) {
 
 	// Simulate a second batch of writes that overlaps partly with the second batch and confirm that the total
 	// number of reads matches the expected (i.e. no duplicates)
-	secondChunkStart, _ := time.Parse("02/01/2006 15:04", "18/04/2015 22:00")
+	secondChunkStart, _ := time.Parse("02/01/2006 15:04", "18/04/2015 05:00")
 	r = make([]apimodel.GlucoseRead, 25)
 	for i := 0; i < 25; i++ {
 		readTime := secondChunkStart.Add(time.Duration(i) * time.Hour)
