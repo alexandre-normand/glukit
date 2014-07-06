@@ -132,7 +132,7 @@ func reconcileDayOfReadsWithExisting(context appengine.Context, elementKeys []*d
 				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Reads), len(freshData[i].Reads), i)
 				reconciledReads := reconcileReads(existingData[i].Reads, freshData[i].Reads)
 				context.Debugf("Merged reads ([%d]) is [%v]", len(reconciledReads), reconciledReads)
-				reconciledData[i] = apimodel.DayOfGlucoseReads{reconciledReads, existingData[i].StartTime, reconciledReads[len(reconciledReads)-1].GetTime()}
+				reconciledData[i] = apimodel.DayOfGlucoseReads{reconciledReads, existingData[i].StartTime, freshData[i].EndTime}
 			}
 		}
 
@@ -144,7 +144,7 @@ func reconcileDayOfReadsWithExisting(context appengine.Context, elementKeys []*d
 				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Reads), len(freshData[i].Reads), i)
 				reconciledReads := reconcileReads(existingData[i].Reads, freshData[i].Reads)
 				context.Debugf("Merged reads ([%d]) is [%v]", len(reconciledReads), reconciledReads)
-				reconciledData[i] = apimodel.DayOfGlucoseReads{reconciledReads, existingData[i].StartTime, reconciledReads[len(reconciledReads)-1].GetTime()}
+				reconciledData[i] = apimodel.DayOfGlucoseReads{reconciledReads, existingData[i].StartTime, freshData[i].EndTime}
 			}
 		}
 	}
@@ -179,6 +179,39 @@ func reconcileReads(older, recent []apimodel.GlucoseRead) (reconciledReads []api
 	return reconciledReads
 }
 
+// GetCalibrations returns all Calibration entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
+func GetCalibrations(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (injections []apimodel.CalibrationRead, err error) {
+	key := GetUserKey(context, email)
+
+	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
+	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
+	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
+
+	context.Infof("Scanning for calibrations between %s and %s to get calibrations between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
+
+	query := datastore.NewQuery("DayOfCalibrationReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
+	daysOfCalibration := new(apimodel.DayOfCalibrationReads)
+	calibrationsForPeriod := make([]apimodel.CalibrationRead, 0)
+
+	iterator := query.Run(context)
+	for _, err := iterator.Next(daysOfCalibration); err == nil; _, err = iterator.Next(daysOfCalibration) {
+		context.Debugf("Loaded batch of %d calibrations...", len(daysOfCalibration.Reads))
+		calibrationsForPeriod = mergeCalibrationReadArrays(calibrationsForPeriod, daysOfCalibration.Reads)
+		daysOfCalibration = new(apimodel.DayOfCalibrationReads)
+	}
+
+	calibrationSlice := apimodel.CalibrationReadSlice(calibrationsForPeriod)
+	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(calibrationSlice, lowerBound, upperBound)
+	filteredCalibrations := calibrationsForPeriod[startIndex : endIndex+1]
+
+	if err != datastore.Done {
+		util.Propagate(err)
+	}
+
+	return filteredCalibrations, nil
+}
+
 // StoreCalibrationReads stores a batch of DayOfCalibrations elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all calibration reads for a single day.
 //    2. We have multiple DayOfReads elements and we use a PutMulti to make this faster.
@@ -186,7 +219,13 @@ func reconcileReads(older, recent []apimodel.GlucoseRead) (reconciledReads []api
 func StoreCalibrationReads(context appengine.Context, userProfileKey *datastore.Key, daysOfCalibrationReads []apimodel.DayOfCalibrationReads) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfCalibrationReads))
 	for i := range daysOfCalibrationReads {
-		elementKeys[i] = datastore.NewKey(context, "DayOfCalibrationReads", "", daysOfCalibrationReads[i].Reads[0].Time.Timestamp, userProfileKey)
+		context.Debugf("Storing day of calibration reads with [%d] reads and key [%d]", len(daysOfCalibrationReads[i].Reads), daysOfCalibrationReads[i].StartTime.Unix())
+		elementKeys[i] = datastore.NewKey(context, "DayOfCalibrationReads", "", daysOfCalibrationReads[i].StartTime.Unix(), userProfileKey)
+	}
+
+	daysOfCalibrationReads, err = reconcileDayOfCalibrationsWithExisting(context, elementKeys, daysOfCalibrationReads)
+	if err != nil {
+		return nil, err
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of calibration reads", len(elementKeys), len(daysOfCalibrationReads))
@@ -197,6 +236,68 @@ func StoreCalibrationReads(context appengine.Context, userProfileKey *datastore.
 	}
 
 	return elementKeys, nil
+}
+
+func reconcileDayOfCalibrationsWithExisting(context appengine.Context, elementKeys []*datastore.Key, freshData []apimodel.DayOfCalibrationReads) (reconciledData []apimodel.DayOfCalibrationReads, err error) {
+	reconciledData = make([]apimodel.DayOfCalibrationReads, len(freshData))
+	// Merge with any pre-existing data
+	existingData := make([]apimodel.DayOfCalibrationReads, len(elementKeys))
+	err = datastore.GetMulti(context, elementKeys, existingData)
+	// If there's an error and it's not a MultiError, return immediately as something went wrong
+	if multierr, ok := err.(appengine.MultiError); !ok && err != nil {
+		context.Warningf("Got error: %v", err)
+		return nil, err
+	} else {
+		if err == nil {
+			for i := range existingData {
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Reads), len(freshData[i].Reads), i)
+				reconciledReads := reconcileCalibrations(existingData[i].Reads, freshData[i].Reads)
+				context.Debugf("Merged calibrations ([%d]) is [%v]", len(reconciledReads), reconciledReads)
+				reconciledData[i] = apimodel.DayOfCalibrationReads{reconciledReads, existingData[i].StartTime, freshData[i].EndTime}
+			}
+		}
+
+		for i, elementErr := range multierr {
+			if elementErr == datastore.ErrNoSuchEntity {
+				context.Debugf("Keeping day of calibrations for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
+				reconciledData[i] = freshData[i]
+			} else {
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Reads), len(freshData[i].Reads), i)
+				reconciledReads := reconcileCalibrations(existingData[i].Reads, freshData[i].Reads)
+				context.Debugf("Merged calibrations ([%d]) is [%v]", len(reconciledReads), reconciledReads)
+				reconciledData[i] = apimodel.DayOfCalibrationReads{reconciledReads, existingData[i].StartTime, freshData[i].EndTime}
+			}
+		}
+	}
+
+	return reconciledData, nil
+}
+
+func reconcileCalibrations(older, recent []apimodel.CalibrationRead) (reconciledReads []apimodel.CalibrationRead) {
+	allKeys := make([]int64, 0)
+	values := make(map[int64]apimodel.CalibrationRead)
+	for i := range older {
+		timestamp := older[i].Time.Timestamp
+		allKeys = append(allKeys, timestamp)
+		values[timestamp] = older[i]
+	}
+
+	for i := range recent {
+		timestamp := recent[i].Time.Timestamp
+		if _, exists := values[timestamp]; !exists {
+			allKeys = append(allKeys, timestamp)
+		}
+		values[timestamp] = recent[i]
+	}
+
+	sort.Sort(container.Int64Slice(allKeys))
+
+	reconciledReads = make([]apimodel.CalibrationRead, len(allKeys))
+	for i := range allKeys {
+		reconciledReads[i] = values[allKeys[i]]
+	}
+
+	return reconciledReads
 }
 
 // GetGlucoseReads returns all GlucoseReads given a user's email address and the time boundaries. Not that the boundaries are both inclusive.

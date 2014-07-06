@@ -41,17 +41,15 @@ func (b *GlucoseReadStreamer) WriteGlucoseReads(p []apimodel.GlucoseRead) (g *Gl
 
 		if g.head == nil {
 			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, g.wr, g.d)
-		} else {
-			if t.Sub(*g.startTime) >= g.d {
-				g, err = g.Flush()
-				if err != nil {
-					return g, err
-				}
-
-				g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, g.wr, g.d)
-			} else {
-				g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.startTime, g.wr, g.d)
+		} else if t.Sub(*g.startTime) >= g.d {
+			g, err = g.Flush()
+			if err != nil {
+				return g, err
 			}
+
+			g = newGlucoseStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, g.wr, g.d)
+		} else {
+			g = newGlucoseStreamerDuration(container.NewImmutableList(g.head, c), g.startTime, g.wr, g.d)
 		}
 	}
 
