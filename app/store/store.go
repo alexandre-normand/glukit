@@ -213,7 +213,7 @@ func reconcileReads(older, recent []apimodel.GlucoseRead) (reconciledReads []api
 }
 
 // GetCalibrations returns all Calibration entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetCalibrations(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (injections []apimodel.CalibrationRead, err error) {
+func GetCalibrations(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (meals []apimodel.CalibrationRead, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -334,7 +334,7 @@ func reconcileCalibrations(older, recent []apimodel.CalibrationRead) (reconciled
 }
 
 // GetInjections returns all Injection entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetInjections(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (injections []apimodel.Injection, err error) {
+func GetInjections(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (meals []apimodel.Injection, err error) {
 	key := GetUserKey(context, email)
 
 	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
@@ -342,22 +342,22 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
 	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
 
-	context.Infof("Scanning for injections between %s and %s to get injections between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
+	context.Infof("Scanning for meals between %s and %s to get meals between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
 
 	query := datastore.NewQuery("DayOfInjections").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
 	daysOfInjections := new(apimodel.DayOfInjections)
-	injectionsForPeriod := make([]apimodel.Injection, 0)
+	mealsForPeriod := make([]apimodel.Injection, 0)
 
 	iterator := query.Run(context)
 	for _, err := iterator.Next(daysOfInjections); err == nil; _, err = iterator.Next(daysOfInjections) {
-		context.Debugf("Loaded batch of %d injections...", len(daysOfInjections.Injections))
-		injectionsForPeriod = mergeInjectionArrays(injectionsForPeriod, daysOfInjections.Injections)
+		context.Debugf("Loaded batch of %d meals...", len(daysOfInjections.Injections))
+		mealsForPeriod = mergeInjectionArrays(mealsForPeriod, daysOfInjections.Injections)
 		daysOfInjections = new(apimodel.DayOfInjections)
 	}
 
-	injectionSlice := apimodel.InjectionSlice(injectionsForPeriod)
-	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(injectionSlice, lowerBound, upperBound)
-	filteredInjections := injectionsForPeriod[startIndex : endIndex+1]
+	mealSlice := apimodel.InjectionSlice(mealsForPeriod)
+	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(mealSlice, lowerBound, upperBound)
+	filteredInjections := mealsForPeriod[startIndex : endIndex+1]
 
 	if err != datastore.Done {
 		util.Propagate(err)
@@ -367,7 +367,7 @@ func GetInjections(context appengine.Context, email string, lowerBound time.Time
 }
 
 // StoreDaysOfInjections stores a batch of DayOfInjections elements. It is a optimized operation in that:
-//    1. One element represents a relatively short-and-wide entry of all injections for a single day.
+//    1. One element represents a relatively short-and-wide entry of all meals for a single day.
 //    2. We have multiple DayOfInjections elements and we use a PutMulti to make this faster.
 // For details of how a single element of DayOfInjections is physically stored, see the implementation of apimodel.Store and apimodel.Load.
 func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []apimodel.DayOfInjections) (keys []*datastore.Key, err error) {
@@ -381,10 +381,10 @@ func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.
 		return nil, err
 	}
 
-	context.Infof("Emitting a PutMulti with %d keys for all %d days of injections", len(elementKeys), len(daysOfInjections))
+	context.Infof("Emitting a PutMulti with %d keys for all %d days of meals", len(elementKeys), len(daysOfInjections))
 	keys, error := datastore.PutMulti(context, elementKeys, daysOfInjections)
 	if error != nil {
-		context.Criticalf("Error writing %d days of injections with keys [%s]: %v", len(elementKeys), elementKeys, error)
+		context.Criticalf("Error writing %d days of meals with keys [%s]: %v", len(elementKeys), elementKeys, error)
 		return nil, error
 	}
 
@@ -405,19 +405,19 @@ func reconcileDayOfInjectionsWithExisting(context appengine.Context, elementKeys
 			for i := range existingData {
 				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Injections), len(freshData[i].Injections), i)
 				reconciledInjections := reconcileInjections(existingData[i].Injections, freshData[i].Injections)
-				context.Debugf("Merged injections ([%d]) is [%v]", len(reconciledInjections), reconciledInjections)
+				context.Debugf("Merged meals ([%d]) is [%v]", len(reconciledInjections), reconciledInjections)
 				reconciledData[i] = apimodel.DayOfInjections{reconciledInjections, existingData[i].StartTime, freshData[i].EndTime}
 			}
 		}
 
 		for i, elementErr := range multierr {
 			if elementErr == datastore.ErrNoSuchEntity {
-				context.Debugf("Keeping day of injections for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
+				context.Debugf("Keeping day of meals for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
 				reconciledData[i] = freshData[i]
 			} else {
 				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Injections), len(freshData[i].Injections), i)
 				reconciledInjections := reconcileInjections(existingData[i].Injections, freshData[i].Injections)
-				context.Debugf("Merged injections ([%d]) is [%v]", len(reconciledInjections), reconciledInjections)
+				context.Debugf("Merged meals ([%d]) is [%v]", len(reconciledInjections), reconciledInjections)
 				reconciledData[i] = apimodel.DayOfInjections{reconciledInjections, existingData[i].StartTime, freshData[i].EndTime}
 			}
 		}
@@ -453,26 +453,6 @@ func reconcileInjections(older, recent []apimodel.Injection) (reconciledInjectio
 	return reconciledInjections
 }
 
-// StoreDaysOfMeals stores a batch of DayOfMeals elements. It is a optimized operation in that:
-//    1. One element represents a relatively short-and-wide entry of all Meals for a single day.
-//    2. We have multiple DayOfMeals elements and we use a PutMulti to make this faster.
-// For details of how a single element of DayOfMeals is physically stored, see the implementation of apimodel.Store and apimodel.Load.
-func StoreDaysOfMeals(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []apimodel.DayOfMeals) (keys []*datastore.Key, err error) {
-	elementKeys := make([]*datastore.Key, len(daysOfMeals))
-	for i := range daysOfMeals {
-		elementKeys[i] = datastore.NewKey(context, "DayOfMeals", "", daysOfMeals[i].Meals[0].Time.Timestamp, userProfileKey)
-	}
-
-	context.Infof("Emitting a PutMulti with %d keys for all %d days of carbs", len(elementKeys), len(daysOfMeals))
-	keys, error := datastore.PutMulti(context, elementKeys, daysOfMeals)
-	if error != nil {
-		context.Criticalf("Error writing %d days of carbs with keys [%s]: %v", len(elementKeys), elementKeys, error)
-		return nil, error
-	}
-
-	return elementKeys, nil
-}
-
 // GetMeals returns all Meal entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
 func GetMeals(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (carbs []apimodel.Meal, err error) {
 	key := GetUserKey(context, email)
@@ -506,6 +486,93 @@ func GetMeals(context appengine.Context, email string, lowerBound time.Time, upp
 	}
 
 	return filteredMeals, nil
+}
+
+// StoreDaysOfMeals stores a batch of DayOfMeals elements. It is a optimized operation in that:
+//    1. One element represents a relatively short-and-wide entry of all Meals for a single day.
+//    2. We have multiple DayOfMeals elements and we use a PutMulti to make this faster.
+// For details of how a single element of DayOfMeals is physically stored, see the implementation of apimodel.Store and apimodel.Load.
+func StoreDaysOfMeals(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []apimodel.DayOfMeals) (keys []*datastore.Key, err error) {
+	elementKeys := make([]*datastore.Key, len(daysOfMeals))
+	for i := range daysOfMeals {
+		elementKeys[i] = datastore.NewKey(context, "DayOfMeals", "", daysOfMeals[i].StartTime.Unix(), userProfileKey)
+	}
+
+	daysOfMeals, err = reconcileDayOfMealsWithExisting(context, elementKeys, daysOfMeals)
+	if err != nil {
+		return nil, err
+	}
+
+	context.Infof("Emitting a PutMulti with %d keys for all %d days of meals", len(elementKeys), len(daysOfMeals))
+	keys, error := datastore.PutMulti(context, elementKeys, daysOfMeals)
+	if error != nil {
+		context.Criticalf("Error writing %d days of meals with keys [%s]: %v", len(elementKeys), elementKeys, error)
+		return nil, error
+	}
+
+	return elementKeys, nil
+}
+
+func reconcileDayOfMealsWithExisting(context appengine.Context, elementKeys []*datastore.Key, freshData []apimodel.DayOfMeals) (reconciledData []apimodel.DayOfMeals, err error) {
+	reconciledData = make([]apimodel.DayOfMeals, len(freshData))
+	// Merge with any pre-existing data
+	existingData := make([]apimodel.DayOfMeals, len(elementKeys))
+	err = datastore.GetMulti(context, elementKeys, existingData)
+	// If there's an error and it's not a MultiError, return immediately as something went wrong
+	if multierr, ok := err.(appengine.MultiError); !ok && err != nil {
+		context.Warningf("Got error: %v", err)
+		return nil, err
+	} else {
+		if err == nil {
+			for i := range existingData {
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Meals), len(freshData[i].Meals), i)
+				reconciledMeals := reconcileMeals(existingData[i].Meals, freshData[i].Meals)
+				context.Debugf("Merged meals ([%d]) is [%v]", len(reconciledMeals), reconciledMeals)
+				reconciledData[i] = apimodel.DayOfMeals{reconciledMeals, existingData[i].StartTime, freshData[i].EndTime}
+			}
+		}
+
+		for i, elementErr := range multierr {
+			if elementErr == datastore.ErrNoSuchEntity {
+				context.Debugf("Keeping day of meals for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
+				reconciledData[i] = freshData[i]
+			} else {
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Meals), len(freshData[i].Meals), i)
+				reconciledMeals := reconcileMeals(existingData[i].Meals, freshData[i].Meals)
+				context.Debugf("Merged meals ([%d]) is [%v]", len(reconciledMeals), reconciledMeals)
+				reconciledData[i] = apimodel.DayOfMeals{reconciledMeals, existingData[i].StartTime, freshData[i].EndTime}
+			}
+		}
+	}
+
+	return reconciledData, nil
+}
+
+func reconcileMeals(older, recent []apimodel.Meal) (reconciledMeals []apimodel.Meal) {
+	allKeys := make([]int64, 0)
+	values := make(map[int64]apimodel.Meal)
+	for i := range older {
+		timestamp := older[i].Time.Timestamp
+		allKeys = append(allKeys, timestamp)
+		values[timestamp] = older[i]
+	}
+
+	for i := range recent {
+		timestamp := recent[i].Time.Timestamp
+		if _, exists := values[timestamp]; !exists {
+			allKeys = append(allKeys, timestamp)
+		}
+		values[timestamp] = recent[i]
+	}
+
+	sort.Sort(container.Int64Slice(allKeys))
+
+	reconciledMeals = make([]apimodel.Meal, len(allKeys))
+	for i := range allKeys {
+		reconciledMeals[i] = values[allKeys[i]]
+	}
+
+	return reconciledMeals
 }
 
 // GetExercises returns all Exercise entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
@@ -580,19 +647,19 @@ func reconcileDayOfExercisesWithExisting(context appengine.Context, elementKeys 
 			for i := range existingData {
 				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Exercises), len(freshData[i].Exercises), i)
 				reconciledExercises := reconcileExercises(existingData[i].Exercises, freshData[i].Exercises)
-				context.Debugf("Merged injections ([%d]) is [%v]", len(reconciledExercises), reconciledExercises)
+				context.Debugf("Merged exercises ([%d]) is [%v]", len(reconciledExercises), reconciledExercises)
 				reconciledData[i] = apimodel.DayOfExercises{reconciledExercises, existingData[i].StartTime, freshData[i].EndTime}
 			}
 		}
 
 		for i, elementErr := range multierr {
 			if elementErr == datastore.ErrNoSuchEntity {
-				context.Debugf("Keeping day of injections for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
+				context.Debugf("Keeping day of exercises for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
 				reconciledData[i] = freshData[i]
 			} else {
 				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Exercises), len(freshData[i].Exercises), i)
 				reconciledExercises := reconcileExercises(existingData[i].Exercises, freshData[i].Exercises)
-				context.Debugf("Merged injections ([%d]) is [%v]", len(reconciledExercises), reconciledExercises)
+				context.Debugf("Merged exercises ([%d]) is [%v]", len(reconciledExercises), reconciledExercises)
 				reconciledData[i] = apimodel.DayOfExercises{reconciledExercises, existingData[i].StartTime, freshData[i].EndTime}
 			}
 		}
