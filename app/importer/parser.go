@@ -24,23 +24,23 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 
 	calibrationDataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, parentKey)
 	calibrationBatchingWriter := bufio.NewCalibrationWriterSize(calibrationDataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(calibrationBatchingWriter, time.Hour*24)
+	calibrationStreamer := streaming.NewCalibrationReadStreamerDuration(calibrationBatchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	glucoseDataStoreWriter := store.NewDataStoreGlucoseReadBatchWriter(context, parentKey)
 	glucoseBatchingWriter := bufio.NewGlucoseReadWriterSize(glucoseDataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	glucoseStreamer := streaming.NewGlucoseStreamerDuration(glucoseBatchingWriter, time.Hour*24)
+	glucoseStreamer := streaming.NewGlucoseStreamerDuration(glucoseBatchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	injectionDataStoreWriter := store.NewDataStoreInjectionBatchWriter(context, parentKey)
 	injectionBatchingWriter := bufio.NewInjectionWriterSize(injectionDataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	injectionStreamer := streaming.NewInjectionStreamerDuration(injectionBatchingWriter, time.Hour*24)
+	injectionStreamer := streaming.NewInjectionStreamerDuration(injectionBatchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	mealDataStoreWriter := store.NewDataStoreMealBatchWriter(context, parentKey)
 	mealBatchingWriter := bufio.NewMealWriterSize(mealDataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	mealStreamer := streaming.NewMealStreamerDuration(mealBatchingWriter, time.Hour*24)
+	mealStreamer := streaming.NewMealStreamerDuration(mealBatchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	exerciseDataStoreWriter := store.NewDataStoreExerciseBatchWriter(context, parentKey)
 	exerciseBatchingWriter := bufio.NewExerciseWriterSize(exerciseDataStoreWriter, store.GLUKIT_SCORE_PUT_MULTI_SIZE)
-	exerciseStreamer := streaming.NewExerciseStreamerDuration(exerciseBatchingWriter, time.Hour*24)
+	exerciseStreamer := streaming.NewExerciseStreamerDuration(exerciseBatchingWriter, apimodel.DAY_OF_DATA_DURATION)
 
 	var lastRead *apimodel.GlucoseRead
 	for {

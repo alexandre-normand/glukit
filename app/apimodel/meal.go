@@ -27,7 +27,7 @@ type DayOfMeals struct {
 }
 
 func NewDayOfMeals(meals []Meal) DayOfMeals {
-	return DayOfMeals{meals, meals[0].GetTime(), meals[len(meals)-1].GetTime()}
+	return DayOfMeals{meals, meals[0].GetTime().Truncate(DAY_OF_DATA_DURATION), meals[len(meals)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value
