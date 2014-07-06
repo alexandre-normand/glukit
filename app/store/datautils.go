@@ -35,3 +35,11 @@ func mergeExerciseArrays(first, second []apimodel.Exercise) []apimodel.Exercise 
 	copy(newslice[len(first):], second)
 	return newslice
 }
+
+// mergeCalibrationReadArrays merges two arrays of CalibrationRead elements.
+func mergeCalibrationReadArrays(first, second []apimodel.CalibrationRead) []apimodel.CalibrationRead {
+	newslice := make([]apimodel.CalibrationRead, len(first)+len(second))
+	copy(newslice, first)
+	copy(newslice[len(first):], second)
+	return newslice
+}
