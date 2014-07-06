@@ -24,7 +24,7 @@ type DayOfExercises struct {
 }
 
 func NewDayOfExercises(exercises []Exercise) DayOfExercises {
-	return DayOfExercises{exercises, exercises[0].GetTime(), exercises[len(exercises)-1].GetTime()}
+	return DayOfExercises{exercises, exercises[0].GetTime().Truncate(DAY_OF_DATA_DURATION), exercises[len(exercises)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value
