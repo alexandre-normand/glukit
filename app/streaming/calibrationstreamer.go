@@ -106,5 +106,5 @@ func (b *CalibrationReadStreamer) Close() (s *CalibrationReadStreamer, err error
 		return newCalibrationStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
-	return g, nil
+	return newCalibrationStreamerDuration(nil, nil, innerWriter, g.d), nil
 }

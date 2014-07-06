@@ -106,5 +106,5 @@ func (b *MealStreamer) Close() (s *MealStreamer, err error) {
 		return newMealStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
-	return g, nil
+	return newMealStreamerDuration(nil, nil, innerWriter, g.d), nil
 }

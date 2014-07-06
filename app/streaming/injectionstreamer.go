@@ -106,5 +106,5 @@ func (b *InjectionStreamer) Close() (s *InjectionStreamer, err error) {
 		return newInjectionStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
-	return g, nil
+	return newInjectionStreamerDuration(nil, nil, innerWriter, g.d), nil
 }

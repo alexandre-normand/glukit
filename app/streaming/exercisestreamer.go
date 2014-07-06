@@ -106,5 +106,5 @@ func (b *ExerciseStreamer) Close() (s *ExerciseStreamer, err error) {
 		return newExerciseStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
-	return g, nil
+	return newExerciseStreamerDuration(nil, nil, innerWriter, g.d), nil
 }
