@@ -8,10 +8,10 @@ import (
 )
 
 type CalibrationReadStreamer struct {
-	head    *container.ImmutableList
-	tailVal *apimodel.CalibrationRead
-	wr      glukitio.CalibrationBatchWriter
-	d       time.Duration
+	head      *container.ImmutableList
+	startTime *time.Time
+	wr        glukitio.CalibrationBatchWriter
+	d         time.Duration
 }
 
 // NewCalibrationReadStreamerDuration returns a new CalibrationReadStreamer whose buffer has the specified size.
@@ -19,10 +19,10 @@ func NewCalibrationReadStreamerDuration(wr glukitio.CalibrationBatchWriter, buff
 	return newCalibrationStreamerDuration(nil, nil, wr, bufferDuration)
 }
 
-func newCalibrationStreamerDuration(head *container.ImmutableList, tailVal *apimodel.CalibrationRead, wr glukitio.CalibrationBatchWriter, bufferDuration time.Duration) *CalibrationReadStreamer {
+func newCalibrationStreamerDuration(head *container.ImmutableList, startTime *time.Time, wr glukitio.CalibrationBatchWriter, bufferDuration time.Duration) *CalibrationReadStreamer {
 	w := new(CalibrationReadStreamer)
 	w.head = head
-	w.tailVal = tailVal
+	w.startTime = startTime
 	w.wr = wr
 	w.d = bufferDuration
 
@@ -39,7 +39,7 @@ func (b *CalibrationReadStreamer) WriteCalibration(c apimodel.CalibrationRead) (
 // If nn < len(p), it also returns an error explaining
 // why the write is short. p must be sorted by time (oldest to most recent).
 func (b *CalibrationReadStreamer) WriteCalibrations(p []apimodel.CalibrationRead) (s *CalibrationReadStreamer, err error) {
-	s = newCalibrationStreamerDuration(b.head, b.tailVal, b.wr, b.d)
+	s = newCalibrationStreamerDuration(b.head, b.startTime, b.wr, b.d)
 	if err != nil {
 		return s, err
 	}
@@ -47,17 +47,18 @@ func (b *CalibrationReadStreamer) WriteCalibrations(p []apimodel.CalibrationRead
 	for i := range p {
 		c := p[i]
 		t := c.GetTime()
+		truncatedTime := t.Truncate(s.d)
 
 		if s.head == nil {
-			s = newCalibrationStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
-		} else if t.Sub(s.tailVal.GetTime()) >= s.d {
+			s = newCalibrationStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, s.wr, s.d)
+		} else if t.Sub(*s.startTime) >= s.d {
 			s, err = s.Flush()
 			if err != nil {
 				return s, err
 			}
-			s = newCalibrationStreamerDuration(container.NewImmutableList(nil, c), &c, s.wr, s.d)
+			s = newCalibrationStreamerDuration(container.NewImmutableList(nil, c), &truncatedTime, s.wr, s.d)
 		} else {
-			s = newCalibrationStreamerDuration(container.NewImmutableList(s.head, c), s.tailVal, s.wr, s.d)
+			s = newCalibrationStreamerDuration(container.NewImmutableList(s.head, c), s.startTime, s.wr, s.d)
 		}
 	}
 
@@ -102,8 +103,8 @@ func (b *CalibrationReadStreamer) Close() (s *CalibrationReadStreamer, err error
 
 	innerWriter, err := g.wr.Flush()
 	if err != nil {
-		return newCalibrationStreamerDuration(g.head, g.tailVal, innerWriter, b.d), err
+		return newCalibrationStreamerDuration(g.head, g.startTime, innerWriter, b.d), err
 	}
 
-	return g, nil
+	return newCalibrationStreamerDuration(nil, nil, innerWriter, g.d), nil
 }

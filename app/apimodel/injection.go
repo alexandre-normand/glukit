@@ -25,7 +25,7 @@ type DayOfInjections struct {
 }
 
 func NewDayOfInjections(injections []Injection) DayOfInjections {
-	return DayOfInjections{injections, injections[0].GetTime(), injections[len(injections)-1].GetTime()}
+	return DayOfInjections{injections, injections[0].GetTime().Truncate(DAY_OF_DATA_DURATION), injections[len(injections)-1].GetTime()}
 }
 
 // GetTime gets the time of a Timestamp value

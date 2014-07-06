@@ -57,7 +57,7 @@ func demoContent(writer http.ResponseWriter, request *http.Request) {
 func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
 	glukitUser, _, upperBound, err := store.GetUserData(context, email)
-	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
+	lowerBound := util.GetEndOfDayBoundaryBefore(upperBound).Add(model.DEFAULT_LOOKBACK_PERIOD)
 
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
@@ -108,7 +108,8 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	context := appengine.NewContext(request)
 	steadySailor, _, upperBound, err := store.FindSteadySailor(context, recipientEmail)
 
-	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD)
+	// Overscan by a day so that we have enough data to cover for a partial day of the user's data
+	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD + time.Duration(-24)*time.Hour)
 	if err != nil && err == store.ErrNoSteadySailorMatchFound {
 		context.Debugf("No steady sailor match found for user [%s]", recipientEmail)
 		http.Error(writer, err.Error(), 204)
@@ -179,7 +180,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 	context := appengine.NewContext(request)
 
 	userProfile, _, upperBound, err := store.GetUserData(context, email)
-	lowerBound := upperBound.Add(time.Duration(-1*24) * time.Hour)
+	lowerBound := util.GetEndOfDayBoundaryBefore(upperBound).Add(time.Duration(-1*24) * time.Hour)
 
 	if err != nil && err == store.ErrNoImportedDataFound {
 		context.Debugf("No imported data found for user [%s]", email)
@@ -187,7 +188,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		reads, err := store.GetGlucoseReads(context, email, lowerBound, time.Now())
+		reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
 		}

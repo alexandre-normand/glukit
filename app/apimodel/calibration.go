@@ -30,7 +30,7 @@ func (element CalibrationRead) GetTime() time.Time {
 }
 
 func NewDayOfCalibrationReads(reads []CalibrationRead) DayOfCalibrationReads {
-	return DayOfCalibrationReads{reads, reads[0].GetTime(), reads[len(reads)-1].GetTime()}
+	return DayOfCalibrationReads{reads, reads[0].GetTime().Truncate(DAY_OF_DATA_DURATION), reads[len(reads)-1].GetTime()}
 }
 
 type CalibrationReadSlice []CalibrationRead

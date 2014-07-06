@@ -64,7 +64,7 @@ func (w *statsInjectionReadWriter) Flush() (glukitio.InjectionBatchWriter, error
 
 func TestWriteOfDayInjectionBatch(t *testing.T) {
 	state := NewInjectionWriterState()
-	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), time.Hour*24)
+	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -88,7 +88,7 @@ func TestWriteOfDayInjectionBatch(t *testing.T) {
 
 func TestWriteOfDayInjectionBatchesInSingleCall(t *testing.T) {
 	state := NewInjectionWriterState()
-	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), time.Hour*24)
+	w := NewInjectionStreamerDuration(NewStatsInjectionReadWriter(state), apimodel.DAY_OF_DATA_DURATION)
 
 	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
@@ -196,9 +196,9 @@ func TestWriteOfMultipleInjectionBatches(t *testing.T) {
 func TestInjectionStreamerWithBufferedIO(t *testing.T) {
 	state := NewInjectionWriterState()
 	bufferedWriter := bufio.NewInjectionWriterSize(NewStatsInjectionReadWriter(state), 2)
-	w := NewInjectionStreamerDuration(bufferedWriter, time.Hour*24)
+	w := NewInjectionStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
 
-	ct, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 
 	for b := 0; b < 3; b++ {
 		for i := 0; i < 48; i++ {
@@ -209,24 +209,72 @@ func TestInjectionStreamerWithBufferedIO(t *testing.T) {
 
 	w, _ = w.Close()
 
-	firstBatchTime, _ := time.Parse("02/01/2006 00:15", "18/04/2014 00:00")
+	firstBatchTime, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
 	if value, ok := state.batches[firstBatchTime.Unix()]; !ok {
-		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
+		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find first batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	secondBatchTime := firstBatchTime.Add(time.Duration(24) * time.Hour)
 	if value, ok := state.batches[secondBatchTime.Unix()]; !ok {
-		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
+		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find second batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
 	}
 
 	thirdBatchTime := firstBatchTime.Add(time.Duration(48) * time.Hour)
 	if value, ok := state.batches[thirdBatchTime.Unix()]; !ok {
-		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find a batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
+		t.Errorf("TestInjectionStreamerWithBufferedIO test failed: count not find third batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
 	} else {
 		t.Logf("Value is [%s]", value)
+	}
+}
+
+func TestInjectionBatchBoundaries(t *testing.T) {
+	state := NewInjectionWriterState()
+	bufferedWriter := bufio.NewInjectionWriterSize(NewStatsInjectionReadWriter(state), 2)
+	w := NewInjectionStreamerDuration(bufferedWriter, apimodel.DAY_OF_DATA_DURATION)
+
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 01:00")
+
+	for b := 0; b < 3; b++ {
+		for i := 0; i < 48; i++ {
+			readTime := ct.Add(time.Duration(b*48+i) * 30 * time.Minute)
+			w, _ = w.WriteInjection(apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Montreal"}, float32(b*48 + i), "Humalog", "Bolus"})
+		}
+	}
+
+	w, _ = w.Close()
+
+	// Fist batch still starts with the first read which isn't a day boundary because we're just keeping track of an array of reads and
+	// therefore will have the first read potentially not line up with the data
+	firstBatchTime, _ := time.Parse("02/01/2006 15:04", "18/04/2014 01:00")
+	if value, ok := state.batches[firstBatchTime.Unix()]; !ok {
+		t.Errorf("TestInjectionBatchBoundaries test failed: count not find first batch starting with a read time of [%v] in batches: [%v]", firstBatchTime.Unix(), state.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	// Second batch starts at the truncated day boundary because we have a matching read that starts with it
+	secondBatchTime, _ := time.Parse("02/01/2006 15:04", "19/04/2014 00:00")
+	if value, ok := state.batches[secondBatchTime.Unix()]; !ok {
+		t.Errorf("TestInjectionBatchBoundaries test failed: count not find second batch starting with a read time of [%v] in batches: [%v]", secondBatchTime.Unix(), state.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	// Third batch starts at the truncated day boundary because we have a matching read that starts with it
+	thirdBatchTime, _ := time.Parse("02/01/2006 15:04", "20/04/2014 00:00")
+	if value, ok := state.batches[thirdBatchTime.Unix()]; !ok {
+		t.Errorf("TestInjectionBatchBoundaries test failed: count not find third batch starting with a read time of [%v] in batches: [%v]", thirdBatchTime.Unix(), state.batches)
+	} else {
+		t.Logf("Value is [%s]", value)
+	}
+
+	// Fourth batch starts at the truncated day boundary because we have a matching read that starts with it
+	fourthBatchTime, _ := time.Parse("02/01/2006 15:04", "21/04/2014 00:00")
+	if _, ok := state.batches[fourthBatchTime.Unix()]; !ok {
+		t.Errorf("TestInjectionBatchBoundaries test failed: could not find fourth batch starting with a read time of [%v]/ts[%d] in batches: [%v]", fourthBatchTime, fourthBatchTime.Unix(), state.batches)
 	}
 }
