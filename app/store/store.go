@@ -71,6 +71,39 @@ func GetUserProfile(context appengine.Context, key *datastore.Key) (userProfile 
 	return userProfile, nil
 }
 
+// GetGlucoseReads returns all GlucoseReads given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
+func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (reads []apimodel.GlucoseRead, err error) {
+	key := GetUserKey(context, email)
+
+	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
+	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
+	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
+	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
+
+	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
+
+	query := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
+	daysOfReads := new(apimodel.DayOfGlucoseReads)
+	readsForPeriod := make([]apimodel.GlucoseRead, 0)
+
+	iterator := query.Run(context)
+	for _, err := iterator.Next(daysOfReads); err == nil; _, err = iterator.Next(daysOfReads) {
+		context.Debugf("Loaded batch of %d reads...", len(daysOfReads.Reads))
+		readsForPeriod = mergeGlucoseReadArrays(readsForPeriod, daysOfReads.Reads)
+		daysOfReads = new(apimodel.DayOfGlucoseReads)
+	}
+
+	readSlice := apimodel.GlucoseReadSlice(readsForPeriod)
+	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(readSlice, lowerBound, upperBound)
+	filteredReads := readsForPeriod[startIndex : endIndex+1]
+
+	if err != datastore.Done {
+		util.Propagate(err)
+	}
+
+	return filteredReads, nil
+}
+
 // StoreDaysOfReads stores a batch of DayOfReads elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all reads for a single day.
 //    2. We have multiple DayOfReads elements and we use a PutMulti to make this faster.
@@ -300,39 +333,6 @@ func reconcileCalibrations(older, recent []apimodel.CalibrationRead) (reconciled
 	return reconciledReads
 }
 
-// GetGlucoseReads returns all GlucoseReads given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
-func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Time, upperBound time.Time) (reads []apimodel.GlucoseRead, err error) {
-	key := GetUserKey(context, email)
-
-	// Scan start should be one day prior and scan end should be one day later so that we can capture the day using
-	// a single column inequality filter. The scan should actually capture at least one day and a maximum of 3
-	scanStart := lowerBound.Add(time.Duration(-24 * time.Hour))
-	scanEnd := upperBound.Add(time.Duration(24 * time.Hour))
-
-	context.Infof("Scanning for reads between %s and %s to get reads between %s and %s", scanStart, scanEnd, lowerBound, upperBound)
-
-	query := datastore.NewQuery("DayOfReads").Ancestor(key).Filter("startTime >=", scanStart).Filter("startTime <=", scanEnd).Order("startTime")
-	daysOfReads := new(apimodel.DayOfGlucoseReads)
-	readsForPeriod := make([]apimodel.GlucoseRead, 0)
-
-	iterator := query.Run(context)
-	for _, err := iterator.Next(daysOfReads); err == nil; _, err = iterator.Next(daysOfReads) {
-		context.Debugf("Loaded batch of %d reads...", len(daysOfReads.Reads))
-		readsForPeriod = mergeGlucoseReadArrays(readsForPeriod, daysOfReads.Reads)
-		daysOfReads = new(apimodel.DayOfGlucoseReads)
-	}
-
-	readSlice := apimodel.GlucoseReadSlice(readsForPeriod)
-	startIndex, endIndex := apimodel.GetBoundariesOfElementsInRange(readSlice, lowerBound, upperBound)
-	filteredReads := readsForPeriod[startIndex : endIndex+1]
-
-	if err != datastore.Done {
-		util.Propagate(err)
-	}
-
-	return filteredReads, nil
-}
-
 // StoreDaysOfInjections stores a batch of DayOfInjections elements. It is a optimized operation in that:
 //    1. One element represents a relatively short-and-wide entry of all injections for a single day.
 //    2. We have multiple DayOfInjections elements and we use a PutMulti to make this faster.
@@ -340,7 +340,12 @@ func GetGlucoseReads(context appengine.Context, email string, lowerBound time.Ti
 func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []apimodel.DayOfInjections) (keys []*datastore.Key, err error) {
 	elementKeys := make([]*datastore.Key, len(daysOfInjections))
 	for i := range daysOfInjections {
-		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", daysOfInjections[i].Injections[0].Time.Timestamp, userProfileKey)
+		elementKeys[i] = datastore.NewKey(context, "DayOfInjections", "", daysOfInjections[i].StartTime.Unix(), userProfileKey)
+	}
+
+	daysOfInjections, err = reconcileDayOfInjectionsWithExisting(context, elementKeys, daysOfInjections)
+	if err != nil {
+		return nil, err
 	}
 
 	context.Infof("Emitting a PutMulti with %d keys for all %d days of injections", len(elementKeys), len(daysOfInjections))
@@ -351,6 +356,68 @@ func StoreDaysOfInjections(context appengine.Context, userProfileKey *datastore.
 	}
 
 	return elementKeys, nil
+}
+
+func reconcileDayOfInjectionsWithExisting(context appengine.Context, elementKeys []*datastore.Key, freshData []apimodel.DayOfInjections) (reconciledData []apimodel.DayOfInjections, err error) {
+	reconciledData = make([]apimodel.DayOfInjections, len(freshData))
+	// Merge with any pre-existing data
+	existingData := make([]apimodel.DayOfInjections, len(elementKeys))
+	err = datastore.GetMulti(context, elementKeys, existingData)
+	// If there's an error and it's not a MultiError, return immediately as something went wrong
+	if multierr, ok := err.(appengine.MultiError); !ok && err != nil {
+		context.Warningf("Got error: %v", err)
+		return nil, err
+	} else {
+		if err == nil {
+			for i := range existingData {
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Injections), len(freshData[i].Injections), i)
+				reconciledInjections := reconcileInjections(existingData[i].Injections, freshData[i].Injections)
+				context.Debugf("Merged injections ([%d]) is [%v]", len(reconciledInjections), reconciledInjections)
+				reconciledData[i] = apimodel.DayOfInjections{reconciledInjections, existingData[i].StartTime, freshData[i].EndTime}
+			}
+		}
+
+		for i, elementErr := range multierr {
+			if elementErr == datastore.ErrNoSuchEntity {
+				context.Debugf("Keeping day of injections for key [%s] as-is since we have no pre-existing data for it.", elementKeys[i].String())
+				reconciledData[i] = freshData[i]
+			} else {
+				context.Debugf("Merging old ([%d]) with new ([%d]) at index [%d]", len(existingData[i].Injections), len(freshData[i].Injections), i)
+				reconciledInjections := reconcileInjections(existingData[i].Injections, freshData[i].Injections)
+				context.Debugf("Merged injections ([%d]) is [%v]", len(reconciledInjections), reconciledInjections)
+				reconciledData[i] = apimodel.DayOfInjections{reconciledInjections, existingData[i].StartTime, freshData[i].EndTime}
+			}
+		}
+	}
+
+	return reconciledData, nil
+}
+
+func reconcileInjections(older, recent []apimodel.Injection) (reconciledInjections []apimodel.Injection) {
+	allKeys := make([]int64, 0)
+	values := make(map[int64]apimodel.Injection)
+	for i := range older {
+		timestamp := older[i].Time.Timestamp
+		allKeys = append(allKeys, timestamp)
+		values[timestamp] = older[i]
+	}
+
+	for i := range recent {
+		timestamp := recent[i].Time.Timestamp
+		if _, exists := values[timestamp]; !exists {
+			allKeys = append(allKeys, timestamp)
+		}
+		values[timestamp] = recent[i]
+	}
+
+	sort.Sort(container.Int64Slice(allKeys))
+
+	reconciledInjections = make([]apimodel.Injection, len(allKeys))
+	for i := range allKeys {
+		reconciledInjections[i] = values[allKeys[i]]
+	}
+
+	return reconciledInjections
 }
 
 // GetInjections returns all Injection entries given a user's email address and the time boundaries. Not that the boundaries are both inclusive.
