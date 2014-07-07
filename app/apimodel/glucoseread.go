@@ -1,6 +1,8 @@
 package apimodel
 
 import (
+	"errors"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/util"
 	"time"
 )
@@ -14,12 +16,14 @@ const (
 	UNKNOWN_GLUCOSE_MEASUREMENT_UNIT = "Unknown"
 )
 
+type GlucoseUnit string
+
 // GlucoseRead represents a CGM read (not to be confused with a MeterRead which is a calibration value from an external
 // meter
 type GlucoseRead struct {
-	Time  Time    `json:"time" datastore:"time,noindex"`
-	Unit  string  `json:"unit" datastore:"unit,noindex"`
-	Value float32 `json:"value" datastore:"value,noindex"`
+	Time  Time        `json:"time" datastore:"time,noindex"`
+	Unit  GlucoseUnit `json:"unit" datastore:"unit,noindex"`
+	Value float32     `json:"value" datastore:"value,noindex"`
 }
 
 // This holds an array of reads for a whole day
@@ -38,9 +42,28 @@ func (element GlucoseRead) GetTime() time.Time {
 	return element.Time.GetTime()
 }
 
-// func (slice GlucoseReadSlice) Len() int {
-// 	return len(slice)
-// }
+// GetNormalizedValue gets the normalized value to the requested unit
+func (element GlucoseRead) GetNormalizedValue(unit GlucoseUnit) (float32, error) {
+	if unit == element.Unit {
+		return element.Value, nil
+	}
+
+	if element.Unit == UNKNOWN_GLUCOSE_MEASUREMENT_UNIT {
+		return element.Value, nil
+	}
+
+	// This switch can focus on only conversion cases because the obvious
+	// cases have been sorted out already
+	switch unit {
+	case MMOL_PER_L:
+		return element.Value * 0.0555, nil
+	case MG_PER_DL:
+		return element.Value * 18.0182, nil
+	default:
+		return -1., errors.New(fmt.Sprintf("Bad unit requested, [%s] is not one of [%s, %s]", unit, MG_PER_DL, MMOL_PER_L))
+	}
+}
+
 type GlucoseReadSlice []GlucoseRead
 
 func (slice GlucoseReadSlice) Len() int {
@@ -72,7 +95,13 @@ func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 			util.Propagate(err)
 		}
 
-		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), slice[i].Value, slice[i].Value, GLUCOSE_READ_TAG, slice[i].Unit}
+		// It's pretty terrible if this happens and we crash the app but this is a coding error and I want to know early
+		mgPerDlValue, err := slice[i].GetNormalizedValue(MG_PER_DL)
+		if err != nil {
+			util.Propagate(err)
+		}
+
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), mgPerDlValue, mgPerDlValue, GLUCOSE_READ_TAG, MG_PER_DL}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints
