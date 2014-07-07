@@ -1,5 +1,9 @@
 package apimodel
 
+import (
+	"github.com/alexandre-normand/glukit/app/util"
+)
+
 // linearInterpolateY does a linear interpolation of the Y value of a given GlucoseRead for a given
 // time value
 func linearInterpolateY(reads []GlucoseRead, timeValue Time) (yValue float32) {
@@ -15,15 +19,25 @@ func linearInterpolateY(reads []GlucoseRead, timeValue Time) (yValue float32) {
 	// Handle the case where the timestamp is before the first read we have.
 	// In such as case, we don't interpolate and return the Y value of that read
 	if upperIndex == 0 {
-		return reads[upperIndex].Value
+		value, err := reads[upperIndex].GetNormalizedValue(MG_PER_DL)
+		if err != nil {
+			util.Propagate(err)
+		}
+		return value
 	} else {
 		lowerIndex = upperIndex - 1
 	}
 
 	lowerTimeValue := reads[lowerIndex].Time
 	upperTimeValue := reads[upperIndex].Time
-	lowerYValue := reads[lowerIndex].Value
-	upperYValue := reads[upperIndex].Value
+	lowerYValue, err := reads[lowerIndex].GetNormalizedValue(MG_PER_DL)
+	if err != nil {
+		util.Propagate(err)
+	}
+	upperYValue, err := reads[upperIndex].GetNormalizedValue(MG_PER_DL)
+	if err != nil {
+		util.Propagate(err)
+	}
 
 	relativeTimePosition := float32((timeValue.Timestamp - lowerTimeValue.Timestamp)) / float32((upperTimeValue.Timestamp - lowerTimeValue.Timestamp))
 	yValue = relativeTimePosition*float32(upperYValue-lowerYValue) + float32(lowerYValue)
