@@ -60,7 +60,7 @@ func ConvertXmlGlucoseRead(read Glucose) (*apimodel.GlucoseRead, error) {
 	}
 }
 
-func getUnitFromValue(value string) (unit string) {
+func getUnitFromValue(value string) (unit apimodel.GlucoseUnit) {
 	unit = apimodel.MG_PER_DL
 	if mmolValueRegExp.MatchString(value) {
 		unit = apimodel.MMOL_PER_L

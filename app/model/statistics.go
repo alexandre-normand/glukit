@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/util"
 	"time"
 )
 
@@ -13,7 +14,11 @@ func (slice ReadStatsSlice) Len() int {
 }
 
 func (slice ReadStatsSlice) Get(i int) float64 {
-	return float64(slice[i].Value)
+	value, err := slice[i].GetNormalizedValue(apimodel.MG_PER_DL)
+	if err != nil {
+		util.Propagate(err)
+	}
+	return float64(value)
 }
 
 func (slice ReadStatsSlice) Less(i, j int) bool {
