@@ -41,9 +41,10 @@ func RunGlukitScoreBatchCalculation(context appengine.Context, userEmail string,
 		userEmail, glukitUser.BestScore, glukitUser.MostRecentScore)
 	upperBound := lowerBound.AddDate(0, 0, PERIODS_PER_BATCH*GLUKIT_SCORE_PERIOD)
 
-	// Calculate the GlukitScore for every period until now. This will likely go through a few calculations for which we don't have data yet but this seems like the fair
+	// Calculate the GlukitScore for every period until now by increment of 1 day. This is a moving score over the last GLUKIT_SCORE_PERIOD that gets a new value every day.
+	// This will likely go through a few calculations for which we don't have data yet but this seems like the fair
 	// price to pay for making sure we don't stop processing glukit scores because someone might have stopped using their CGM for a week or so.
-	for periodUpperBound = lowerBound.AddDate(0, 0, GLUKIT_SCORE_PERIOD); periodUpperBound.Before(time.Now()) && periodUpperBound.Before(upperBound); periodUpperBound = periodUpperBound.AddDate(0, 0, GLUKIT_SCORE_PERIOD) {
+	for periodUpperBound = lowerBound.AddDate(0, 0, 1); periodUpperBound.Before(time.Now()) && periodUpperBound.Before(upperBound); periodUpperBound = periodUpperBound.AddDate(0, 0, 1) {
 		glukitScore, err := CalculateGlukitScore(context, glukitUser, periodUpperBound)
 		if err != nil {
 			util.Propagate(err)

@@ -108,16 +108,18 @@ func CalculateUserFacingScore(internal model.GlukitScore) (external *int64) {
 
 // CalculateGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
 func CalculateGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
-	lastScoredRead := glukitUser.MostRecentScore.UpperBound
+	lowerBoundOfLastScore := glukitUser.MostRecentScore.LowerBound
+	// Set the lower bound to one day after the last lower bound
+	lowerBound := lowerBoundOfLastScore.AddDate(0, 0, -1*GLUKIT_SCORE_PERIOD+1)
 
 	// Kick off the first chunk of glukit score calculation
-	task, err := RunGlukitScoreCalculationChunk.Task(glukitUser.Email, lastScoredRead)
+	task, err := RunGlukitScoreCalculationChunk.Task(glukitUser.Email, lowerBound)
 	if err != nil {
 		context.Criticalf("Couldn't schedule the next execution of runGlukitScoreCalculationChunk for user [%s]. "+
 			"This breaks batch calculation of glukit scores for that user!: %v", glukitUser.Email, err)
 	}
 	taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
-	context.Infof("Queued up first chunk of glukit score calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lastScoredRead.Format(util.TIMEFORMAT))
+	context.Infof("Queued up first chunk of glukit score calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lowerBound.Format(util.TIMEFORMAT))
 
 	return nil
 }
