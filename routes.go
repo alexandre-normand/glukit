@@ -22,7 +22,7 @@ import (
 
 var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html"))
 var reportTemplate = template.Must(template.ParseFiles("view/templates/report.html"))
-var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
+var landingTemplate = template.Must(template.ParseFiles("view/index.html"))
 var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
 var muxRouter = mux.NewRouter()
 var initOnce sync.Once

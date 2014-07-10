@@ -1,1 +1,40 @@
-// Your custom SCSS should be written here...
+$getting-started-background: image-url('background.svg', false, false);
+$steps-opacity: 0.75;
+
+.getting-started {  
+  margin-bottom: 40px;
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-color: #eeeeee;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  position: relative;  
+}
+
+.getting-started-wrapper {  
+  width: 100%;
+  height: 450px;  
+  margin: 0 auto;
+  padding: 0px 20px 0 20px;
+  background-image: $getting-started-background;
+  background-position: center;
+  background-repeat: no-repeat;  
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+.getting-started-steps .step {	
+  display: table;  
+  content: "";   
+  text-align: center;
+}
+
+.getting-started-steps .step-number {  
+  filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=75);
+  opacity: $steps-opacity;  
+}
+
