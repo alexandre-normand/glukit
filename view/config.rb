@@ -14,7 +14,7 @@ Compass::Frameworks.register('modular-scale', :path => File.expand_path("#{exten
 http_path = "/"
 css_dir = "css"
 sass_dir = "sass"
-images_dir = "img"
+images_dir = "images"
 
 # You can select your preferred output style here (can be overridden via the command line) :nested or :expanded or :compact or :compressed:
 output_style = :compact
