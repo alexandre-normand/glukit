@@ -14,6 +14,9 @@ handlers:
 - url: /css
   static_dir: view/css
 
+- url: /bower_components
+  static_dir: view/bower_components
+
 - url: /images
   static_dir: view/images
 
