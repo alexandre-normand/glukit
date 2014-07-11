@@ -33,6 +33,9 @@
 	<script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>
 	<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 	<script src="js/d3.v3.min.js"></script>
+	<script src="js/moment-with-langs.min.js"></script>      
+	<script src="bower_components/gumby/js/libs/jquery-2.0.2.min.js"></script>
+	<script src="js/main.js"></script>      
 </head>
 <body>
 	<div class="navbar" id="landing-navigation">
@@ -40,82 +43,76 @@
 		<a href="#">
 			<img src="images/glukit.png" gumby-retina="">
 		</a>
-		</h1>		
+		</h1>
 	</div>
 	
-	<div class="row belowHeader" style="overflow:hidden; padding-top:4px">
-		<div class="large-16 columns">
-			<div class="row belowHeader" style="overflow:hidden">
-				<div class="large-16 columns">
-					<div class="row dashboard" style="padding-bottom: 0px">
-						<div class="large-2 columns">
-							<div id="profilePic"></div>
-						</div>
-						<div class="large-8 columns">
-							<h3 class="profile" id="userName"></h3>
-							<h5 class="profile"><small id="since"></small></h5>
-							<h5 class="profile">Last sync</h5>
-							<h5 class="profile"><small id="lastSync"></small></h5>
-						</div>
-						
-						<div class="large-2 columns">
-							<div class="circleSlab" id="advanced">
-								<div class="insights circle" id="glukitScore"></div>
-							</div>
-						</div>
-						
-						<div class="large-4 columns">
-							<h3 style="padding-top:8%">Glukit Score</h3>
-							<!-- change this date range to the date range returned -->
-							<h5 class="profile"><small id="glukitScoreDates"></small></h5>
-						</div>
-						
-					</div>
-					<hr id="features">
-					
-					<div class="row dashboard">
-						
-						<!-- testing -->
-						<div class="row">
-							<div class="small-4 columns"><h4>How you're doing</h4></div>
-						</div>
-						<div class="row">
-							
-							<div class="large-16 columns">
-								<div class="rangeSelection" id="inRange">
-									<h5 id="inTargetRangeText"><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range&nbsp;<span id="normalRangePercentage" style="display:none"></span></h5>
-								</div>
-								<div class="rangeSelection" id="below">
-									<h5 id="belowTargetRangeText"><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range&nbsp;<span id="lowRangePercentage" style="display:none"></span></h5>
-								</div>
-								<div class="rangeSelection" id="above">
-									<h5 id="aboveTargetRangeText"><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range&nbsp;<span id="highRangePercentage" style="display:none"></span></h5>
-								</div>
-							</div>
-							
-						</div>
-					</div>
-					<hr id="features">
-					<div class="row">
-						<div class="large-16 columns">
-							<div class="slab graph">
-								<div id="chart_container">
-									<div id="hoverbox" class="hoverbox"></div>
-									<div id="chart" style="clear: both"></div>
-								</div>
-								<div id="slider"></div>
-							</div>
-						</div>
+	<div class="row">
+		<div class="twelve columns">
+			<div class="row dashboard">
+				<div class="two columns">
+					<div id="profilePic"></div>
+				</div>
+				<div class="five columns">
+					<h3 class="profile" id="userName"></h3>
+					<h5 class="profile"><small id="since"></small></h5>
+					<h5 class="profile">Last sync</h5>
+					<h5 class="profile"><small id="lastSync"></small></h5>
+				</div>
+				
+				<div class="two columns">
+					<div class="circleSlab" id="advanced">
+						<div class="insights circle" id="glukitScore"></div>
 					</div>
 				</div>
+				
+				<div class="three columns">
+					<h3 style="padding-top:8%">Glukit Score</h3>
+					<!-- change this date range to the date range returned -->
+					<h5 class="profile"><small id="glukitScoreDates"></small></h5>
+				</div>
+				
+			</div>
+			<hr id="features">
+			
+			<div class="row dashboard">			
 				<div class="row">
-					<div class="footer">
-						<div class="large-16 columns" style="height:30px">
+					<div class="four columns"><h4>How you're doing</h4></div>
+				</div>
+				<div class="row">					
+					<div class="twelve columns">
+						<div class="rangeSelection" id="inRange">
+							<h5 id="inTargetRangeText"><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range&nbsp;<span id="normalRangePercentage" style="display:none"></span></h5>
 						</div>
+						<div class="rangeSelection" id="below">
+							<h5 id="belowTargetRangeText"><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range&nbsp;<span id="lowRangePercentage" style="display:none"></span></h5>
+						</div>
+						<div class="rangeSelection" id="above">
+							<h5 id="aboveTargetRangeText"><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range&nbsp;<span id="highRangePercentage" style="display:none"></span></h5>
+						</div>
+					</div>
+					
+				</div>
+			</div>
+			<hr id="features">
+			<div class="row">
+				<div class="twelve columns">
+					<div class="slab graph">
+						<div id="chart_container">
+							<div id="hoverbox" class="hoverbox"></div>
+							<div id="chart" style="clear: both"></div>
+						</div>
+						<div id="slider"></div>
 					</div>
 				</div>
 			</div>
 		</div>
+		<div class="row">
+			<div class="footer">
+				<div class="twelve columns" style="height:30px">
+				</div>
+			</div>
+		</div>
+		
 		<script>
 		var TARGET_RANGE_LOWER_BOUND = 63;
 		var TARGET_RANGE_UPPER_BOUND = 127;
@@ -166,7 +163,6 @@
 		case "right":
 		return 1 * Math.PI;
 		}
-		
 		})
 		.endAngle(function(d)
 		{
@@ -181,7 +177,6 @@
 		var svg = d3.select("#chart").append("svg")
 		.attr("width", width + margin.left + margin.right)
 		.attr("height", height + margin.top + margin.bottom);
-		
 		// That should be the lower bound of the times displayed on the graph
 		// driven by the "self" data
 		d3.json("/{{.PathPrefix}}data", function(error, data) {
@@ -191,7 +186,6 @@
 		glucoseReads.forEach(function(d) {
 		d.date = parseDate(d.x * 1000);
 		});
-		
 		var highestOnChart = d3.max(glucoseReads, function(d) { return d.y; }) + 100;
 		x.domain(d3.extent(glucoseReads.map(function(d) { return d.date; })));
 		y.domain([0, highestOnChart]);
@@ -202,7 +196,6 @@
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 		var context = svg.append("g")
 		.attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
-		
 		focus.append("g")
 		.attr("class", "x axis")
 		.attr("transform", "translate(0," + height + ")")
@@ -222,7 +215,6 @@
 		var focusCoordinates = [];
 		focusCoordinates[0] = new Object();
 		focusCoordinates[1] = new Object();
-		
 		focusCoordinates[0].x = 0;
 		focusCoordinates[0].y = 0;
 		focusCoordinates[1].x = 0;
@@ -265,10 +257,8 @@
 		.attr("height", 5)
 		.attr("x", function(d) { return x(d.start);})
 		.attr("y", height - 5);
-		
 		var segments = splitReadsInRangeSegments(glucoseReads);
 		addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);
-		
 		// Trying out the grouping, it doesn't actually use any of this
 		userEvents.forEach(function(d) {
 		d.date = parseDate(d.x * 1000);
@@ -290,7 +280,6 @@
 		.attr("d", userEventArc);
 		}
 		}
-		
 		function brushed() {
 		x.domain(brush.empty() ? x2.domain() : brush.extent());
 		focus.selectAll("path.self").attr("d", glucoseLine);
@@ -302,14 +291,12 @@
 		.selectAll(".night")
 		.attr("width", function(d) { return x(d.end) - x(d.start);})
 		.attr("x", function(d) { return x(d.start);});
-		
 		focus.selectAll("path.event").attr("transform", function(d) { return "translate(" + x(d.date) + "," + y(d.y) + ")"; });
 		focus.select(".x.axis").call(xAxis);
 		extent = brush.extent();
 		viewfinderUpperLimit = extent[1];
 		viewfinderLowerLimit = extent[0];
 		//console.log("limits are " + viewfinderLowerLimit + ", " + viewfinderUpperLimit);
-		
 		rangeAggregate = getRangeAggregate(segments, viewfinderLowerLimit, viewfinderUpperLimit);
 		var lowRangePercentage = Math.floor(rangeAggregate.lowTimeInMinutes / rangeAggregate.getTotalTime() * 100);
 		var highRangePercentage = Math.floor(rangeAggregate.highTimeInMinutes / rangeAggregate.getTotalTime() * 100);
@@ -326,7 +313,6 @@
 		// We iterate from most recent since we assume that most users will look at that data more often
 		for (var i = 0; i < snapGuides.length; i++) {
 		snap = snapGuides[i]
-		
 		diffInMillis = Math.abs(viewfinderUpperLimit - snap);
 		if (diffInMillis <= SNAP_DISTANCE_IN_MILLIS) {
 		snapExtent = getDayRangeFromUpperBound(snap.getTime() / 1000);
@@ -342,26 +328,22 @@
 		brushRange = getDayRangeFromUpperBound(mostRecentReadTimeInSeconds);
 		// 1 snap every day for 7 days
 		var snapGuides = getDateSnapGuides(moment.unix(glucoseReads[0].x).toDate(), moment.unix(mostRecentReadTimeInSeconds).toDate());
-		
 		var brush = d3.svg.brush()
 		.x(x2)
 		.extent(brushRange)
 		.on("brush", brushed)
 		.on("brushend", snapBrush);
-		
 		brushElement = context.append("g");
 		brushElement.attr("class", "x brush")
 		.call(brush)
 		.selectAll("rect")
 		.attr("y", -6)
 		.attr("height", viewfinderHeight + 7);
-		
 		// Remove resize handles because we don't want to allow resizing. The brush is fixed to the length of one day
 		brushElement.selectAll(".resize").remove();
 		// Disable cross-hair cursor to avoid user overriding the brush completely
 		brushElement.selectAll(".extent").style("pointer-events", "all");
 		brushElement.selectAll(".background").style("pointer-events", "none");
-		
 		// Call a first brushed to view the last day only
 		brushed();
 		toggleNormalRange();
@@ -369,7 +351,6 @@
 		d3.json("/{{.PathPrefix}}steadySailor", function(error, data) {
 		if (data != undefined) {
 		rawSteadySailor = data.data[0].data;
-		
 		steadySailor = rawSteadySailor
 		if (steadySailor.length > 0) {
 		offset = steadySailor[0].x - timeRangeLowerBound;
@@ -381,13 +362,10 @@
 		sailorSegments = splitReadsInRangeSegments(steadySailor);
 		addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine);
 		}
-		
 		});
-		
 		addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine);
 		});
 		}
-		
 		function addToGraph(focus, className, context, segments, glucoseReads, y, glucoseLineFunc, viewfinderLineFunc) {
 		for (var i = 0; i < segments.length; i++) {
 		var segment = segments[i];
@@ -402,7 +380,6 @@
 		.datum(glucoseReads)
 		.attr("d", viewfinderLineFunc);
 		}
-		
 		}
 		function addTargetRangeClip(svg, canvasWidth, canvasHeight, id, lowerBound, upperBound, maxDomainValue, y) {
 		svg.append("defs").append("clipPath")
@@ -432,20 +409,17 @@
 		var left = event.clientX  - rect.left - this.clientLeft + this.scrollLeft;
 		var top = event.clientY - rect.top - this.clientTop + this.scrollTop;
 		var time = x.invert(left);
-		
 		coordinates = getHoverCoordinates(glucoseReads, time);
 		focusCoordinates[1].x = focusCoordinates[0].x = coordinates.x;
 		focus.selectAll("#focusLine").attr("d", focusLine);
 		hoverleftposition = event.clientX - chartContainerElement.getBoundingClientRect().left;
 		hoverbox.style("left",  hoverleftposition + "px" );
-		
 		// Clear previous content
 		hoverbox.text(null);
 		hoverbox.append("p")
 		.attr("class", "glucose")
 		.text(Math.round(coordinates.y) + " mg/dl");
 		var userEventGroupIndex = Math.abs(binaryIndexOf.call(userEventGroups, time));
-		
 		// We beyond the last event group, check if the last is close enough
 		if (userEventGroupIndex >= userEventGroups.length) {
 		if (isHoveringEventGroup(userEventGroups[userEventGroups.length - 1], time)) {
@@ -509,11 +483,9 @@
 		$("#normalRangePercentage").show();
 		$("#lowRangePercentage").hide();
 		$("#highRangePercentage").hide();
-		
 		//change the color of the text to white and the background to pink
 		$("#inTargetRangeText").css("color", "#fff");
 		$("#inRange").css("background", "#9e2064");
-		
 		//reset the other div colors
 		$("#belowTargetRangeText").css("color", "#404041");
 		$("#below").css("background", "#eee");
@@ -551,7 +523,6 @@
 		//change colors of selected div
 		$("#above").css("background", "#9e2064");
 		$("#aboveTargetRangeText").css("color", "#fff");
-		
 		//reset colors of other divs
 		$("#below").css("background", "#eee");
 		$("#belowTargetRangeText").css("color", "#404041");
@@ -641,7 +612,6 @@
 		</script> -->
 		<script src="bower_components/gumby/js/plugins.js"></script>
 		<script src="bower_components/gumby/js/main.js"></script>
-		
 		<script>
 		window._gaq = [['_setAccount','UA-52689137-1'],['_trackPageview'],['_trackPageLoadTime']];
 		Modernizr.load({

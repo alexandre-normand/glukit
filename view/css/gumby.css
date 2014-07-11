@@ -1682,6 +1682,98 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 
 .ie9 .radio.checked i, .ie9 .checkbox.checked i { top: 0; }
 
+/* Header */
+.rangeSelection { cursor: pointer; background-color: #eee; border-style: solid; border-color: #fff; padding: 6px; padding-left: 20px; padding-right: 20px; padding-top: 14px; float: left; min-width: 300px; }
+
+.rangeSelection:hover, .rangeSelection:hover h5 { cursor: pointer; background-color: #9e2064 !important; color: #fff !important; }
+
+.circle { width: 110px; height: 110px; border-radius: 100px; line-height: 170%; text-align: center; background: #eee; }
+
+.profile { margin-bottom: 2% !important; }
+
+#profilePic { max-width: 250% !important; min-width: 120% !important; }
+
+/* Data graph */
+#chart_container { position: relative; font-family: Arial, Helvetica, sans-serif; }
+
+#chart { position: absolute; top: 0; left: 40px; }
+
+#y_axis { position: absolute; top: 0; bottom: 0; width: 40px; }
+
+#legend_container { position: absolute; right: 0; bottom: 26px; width: 0; }
+
+.detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0; }
+
+#injections_chart { position: absolute; top: 0; left: 40px; }
+
+/* Main pages */
+.topLink { padding-top: 14px; }
+
+li.navlink a:hover { cursor: pointer; color: #F2F2F2 !important; background-color: #888888 !important; }
+
+.slab { background-color: #fff; /* padding:20px;
+box-shadow: 2px 2px 6px #E5E5E4; */ }
+
+.graph { height: 600px; }
+
+.footer { width: 100%; }
+
+.footer a { color: #446DB2; }
+
+.hidden { display: none; }
+
+/* Styling for overlay when user has no data */
+#overlay { padding-top: 20%; background-color: #fff; filter: alpha(opacity=80); -moz-opacity: 0.80; -khtml-opacity: 0.80; opacity: 0.90; z-index: 20000; position: absolute; width: 100%; height: 100%; }
+
+/* blurring the text behind the overlay */
+.blurryText { color: rgba(0, 0, 0, 0) !important; text-shadow: 0 0 1px #888 !important; }
+
+#instructions { list-style-type: none; }
+
+#droplet { height: 46px; padding-top: 16px; -moz-box-sizing: none; -webkit-box-sizing: none; box-sizing: none; }
+
+/* Styles for screens that are atleast 768px; */
+@media only screen and (min-width: 768px) { .insights { color: #52C0E6; font-weight: bold; font-size: 4em; }
+  .datepicker { padding-bottom: 20px; display: block; float: left; } }
+/* Styles for screens that are less than 768px; */
+@media only screen and (max-width: 768px) { .insights { color: #52C0E6; font-weight: bold; font-size: 2em; float: right; }
+  .datepicker { padding-bottom: 10px; display: block; float: left; font-size: 1.2em; } }
+svg { font: 10px sans-serif; }
+
+path { stroke: grey; fill: none; stroke-width: 1.5px; }
+
+.axis path, .axis line { fill: none; stroke: #B0B0B0; shape-rendering: crispEdges; }
+
+.axis text { fill: #595959; }
+
+.brush .extent { stroke: #fff; fill-opacity: .125; shape-rendering: crispEdges; }
+
+.target_range { fill-opacity: .05; shape-rendering: crispEdges; fill: #2390de; }
+
+path.Insulin { fill: #56d7e8; stroke-width: 0px; }
+
+path.Carbs { fill: #ffc745; stroke-width: 0px; }
+
+.steadySailor { stroke: #33ad33; stroke-width: 1px; stroke-dasharray: 5, 7; stroke-opacity: 0.5; }
+
+.background { fill-opacity: 0; stroke-width: 0; }
+
+.hoverbox { background-color: rgba(190, 217, 247, 0.1); color: rgba(70, 175, 250, 0.8); font-size: 88%; position: absolute; width: 160px; top: 50px; left: 10px; padding: 0px; display: none; }
+
+.hoverbox > p { padding-left: 5px; margin-top: 1px; margin-bottom: 1px; }
+
+p.glucose { color: rgba(103, 121, 145, 0.8); }
+
+p.insulin { color: #56d7e8; }
+
+p.carbs { color: #ffc745; }
+
+.focusLine { stroke-width: 0.8px; stroke: #B0B0B0; stroke-dasharray: 4, 2; }
+
+.night { fill: rgba(44, 51, 89, 0.5); }
+
+.dayBoundary { fill: rgba(107, 107, 107, 0.8); font-size: 18px; }
+
 .getting-started { height: 450px; margin-bottom: 40px; background-image: url('/images/background.svg'); background-repeat: no-repeat; background-position: top center; background-color: #eeeeee; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover; position: relative; color: white; width: 100%; margin: 0 auto; padding: 0px 20px 0 20px; }
 .getting-started h1 { color: #f2f2f2; text-align: center; }
 
