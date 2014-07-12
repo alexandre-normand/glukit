@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-var graphTemplate = template.Must(template.ParseFiles("view/templates/graph.html"))
+var dataBrowserTemplate = template.Must(template.ParseFiles("view/templates/databrowser.html"))
 var reportTemplate = template.Must(template.ParseFiles("view/templates/report.html"))
 var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
 var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
@@ -153,7 +153,7 @@ func demoReport(w http.ResponseWriter, request *http.Request) {
 	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none"}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
-		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
+		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -165,7 +165,7 @@ func report(w http.ResponseWriter, request *http.Request) {
 	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none"}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
-		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
+		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -182,8 +182,8 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 
 	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token}
 
-	if err := graphTemplate.Execute(w, renderVariables); err != nil {
-		context.Criticalf("Error executing template [%s]", graphTemplate.Name())
+	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {
+		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

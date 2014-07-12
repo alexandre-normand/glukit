@@ -14,8 +14,14 @@ handlers:
 - url: /css
   static_dir: view/css
 
+- url: /bower_components
+  static_dir: view/bower_components
+
 - url: /images
   static_dir: view/images
+
+- url: /fonts
+  static_dir: view/fonts
 
 - url: /graph
   script: _go_app

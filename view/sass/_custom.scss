@@ -1,0 +1,81 @@
+@import "center";
+@import "browser";
+
+$getting-started-background: image-url('background.svg', false, false);
+$steps-opacity: 0.75;
+$banner-header-color: #F2F2F2;
+$banner-text-color: lighten($banner-header-color, 10%);
+$welcome-image: image-url('sea-level-banner.svg', false, false);
+$welcome-image-hover: image-url('sea-level-banner-hover.svg', false, false);
+$welcome-image-transition-duration: 0.3s;
+
+.getting-started {  
+  height: 450px;  
+  margin-bottom: 40px;
+  background-image: $getting-started-background;
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-color: #eeeeee;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  position: relative;  
+  color: $banner-text-color;
+  width: 100%;  
+  margin: 0 auto;
+  padding: 0px 20px 0 20px;  
+
+  h1 {
+  	color: $banner-header-color;
+  	text-align: center;  	  	
+  }
+}
+
+.getting-started-wrapper {      
+  @include centre(both);
+  width: 60%;
+}
+
+.getting-started-steps {	
+  display: table;    
+  padding: 40px 0px 40px 0px;
+  width: 100%;
+  margin: 0 auto;  
+  text-align: center;
+}
+
+.step-number {  
+  padding: 0px 80px 0px 80px;
+  width: 100%;
+  margin: 0 auto;
+  filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=75);
+  opacity: $steps-opacity;  
+}
+
+.login {
+  @include centre(both);	
+}
+
+.welcome-banner {  
+  height: 300px;
+  width: 1074px;
+  margin-top: 50px;
+  margin-bottom: 50px;  
+  background-image: $welcome-image;
+  background-repeat: no-repeat;
+  -o-transition: $welcome-image-transition-duration;
+  -ms-transition: $welcome-image-transition-duration;
+  -moz-transition: $welcome-image-transition-duration;
+  -webkit-transition: $welcome-image-transition-duration;
+  /* ...and now for the proper property */
+  transition: $welcome-image-transition-duration;
+
+  &:hover {
+    background-image: $welcome-image-hover;
+  }
+}
+
+.story {
+  margin-top: 50px;
+}

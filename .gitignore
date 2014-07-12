@@ -31,3 +31,5 @@ lib/github.com/
 code.google.com/
 notes.log
 .notes/
+.sass-cache/
+bower_components/
