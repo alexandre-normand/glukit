@@ -20,6 +20,9 @@ handlers:
 - url: /images
   static_dir: view/images
 
+- url: /fonts
+  static_dir: view/fonts
+
 - url: /graph
   script: _go_app
   login: required
