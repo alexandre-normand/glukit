@@ -33,9 +33,9 @@
 	<script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>
 	<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 	<script src="js/d3.v3.min.js"></script>
-	<script src="js/moment-with-langs.min.js"></script>      
+	<script src="js/moment-with-langs.min.js"></script>
 	<script src="bower_components/gumby/js/libs/jquery-2.0.2.min.js"></script>
-	<script src="js/main.js"></script>      
+	<script src="js/main.js"></script>
 </head>
 <body>
 	<div class="navbar" id="landing-navigation">
@@ -53,10 +53,12 @@
 					<div id="profilePic"></div>
 				</div>
 				<div class="six columns">
-					<h4 class="profile" id="userName"></h4>
-					<h5 class="profile"><small id="since"></small></h5>
-					<h5 class="profile">Last sync</h5>
-					<h5 class="profile"><small id="lastSync"></small></h5>
+					<div class="profile">
+						<div id="userName"></div>
+						<div><small id="since"></small></div>
+						<div>Last sync</div>
+						<div><small id="lastSync"></small></div>
+					</div>
 				</div>
 				
 				<div class="two columns">
@@ -66,19 +68,18 @@
 				</div>
 				
 				<div class="two columns">
-					<h3 style="padding-top:8%">Glukit Score</h3>
-					<!-- change this date range to the date range returned -->
-					<h5 class="profile"><small id="glukitScoreDates"></small></h5>
+					<div style="padding-top:8%">Glukit Score</div>					
+					<div class="profile"><small id="glukitScoreDates"></small></div>
 				</div>
 				
 			</div>
 			<hr id="features">
 			
-			<div class="row dashboard">			
+			<div class="row dashboard">
 				<div class="row">
 					<div class="twelve columns"><h4>How you're doing</h4></div>
 				</div>
-				<div class="row">					
+				<div class="row">
 					<div class="twelve centered columns">
 						<div class="four columns rangeSelection" id="inRange">
 							<h5 id="inTargetRangeText"><i class="icon-thumbs-up">&nbsp; &nbsp;</i>In target range&nbsp;<span id="normalRangePercentage" style="display:none"></span></h5>
@@ -178,6 +179,7 @@
 		.attr("width", width + margin.left + margin.right)
 		.attr("height", height + margin.top + margin.bottom)
 		.attr("align", "center");
+		
 		// That should be the lower bound of the times displayed on the graph
 		// driven by the "self" data
 		d3.json("/{{.PathPrefix}}data", function(error, data) {
