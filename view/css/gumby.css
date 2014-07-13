@@ -1683,7 +1683,7 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 .ie9 .radio.checked i, .ie9 .checkbox.checked i { top: 0; }
 
 /* Header */
-.rangeSelection { cursor: pointer; background-color: #eee; border-style: solid; border-color: #fff; padding: 6px; padding-left: 20px; padding-right: 20px; padding-top: 14px; float: left; min-width: 300px; }
+.rangeSelection { cursor: pointer; background-color: #eee; border-style: solid; border-color: #fff; padding: 6px; padding-left: 6px; padding-right: 6px; padding-top: 14px; float: left; min-width: 300px; }
 
 .rangeSelection:hover, .rangeSelection:hover h5 { cursor: pointer; background-color: #9e2064 !important; color: #fff !important; }
 
