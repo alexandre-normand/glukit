@@ -47,13 +47,13 @@
 	</div>
 	
 	<div class="row">
-		<div class="twelve columns">
+		<div class="ten centered columns">
 			<div class="row dashboard">
 				<div class="two columns">
 					<div id="profilePic"></div>
 				</div>
-				<div class="five columns">
-					<h3 class="profile" id="userName"></h3>
+				<div class="six columns">
+					<h4 class="profile" id="userName"></h4>
 					<h5 class="profile"><small id="since"></small></h5>
 					<h5 class="profile">Last sync</h5>
 					<h5 class="profile"><small id="lastSync"></small></h5>
@@ -65,7 +65,7 @@
 					</div>
 				</div>
 				
-				<div class="three columns">
+				<div class="two columns">
 					<h3 style="padding-top:8%">Glukit Score</h3>
 					<!-- change this date range to the date range returned -->
 					<h5 class="profile"><small id="glukitScoreDates"></small></h5>
@@ -76,26 +76,26 @@
 			
 			<div class="row dashboard">			
 				<div class="row">
-					<div class="four columns"><h4>How you're doing</h4></div>
+					<div class="twelve columns"><h4>How you're doing</h4></div>
 				</div>
 				<div class="row">					
-					<div class="twelve columns">
-						<div class="rangeSelection" id="inRange">
-							<h5 id="inTargetRangeText"><i class="foundicon-checkmark">&nbsp; &nbsp;</i>In target range&nbsp;<span id="normalRangePercentage" style="display:none"></span></h5>
+					<div class="twelve centered columns">
+						<div class="four columns rangeSelection" id="inRange">
+							<h5 id="inTargetRangeText"><i class="icon-thumbs-up">&nbsp; &nbsp;</i>In target range&nbsp;<span id="normalRangePercentage" style="display:none"></span></h5>
 						</div>
-						<div class="rangeSelection" id="below">
-							<h5 id="belowTargetRangeText"><i class="foundicon-down-arrow">&nbsp; &nbsp;</i>Below target range&nbsp;<span id="lowRangePercentage" style="display:none"></span></h5>
+						<div class="four columns rangeSelection" id="below">
+							<h5 id="belowTargetRangeText"><i class="icon-down-open-big">&nbsp; &nbsp;</i>Below target range&nbsp;<span id="lowRangePercentage" style="display:none"></span></h5>
 						</div>
-						<div class="rangeSelection" id="above">
-							<h5 id="aboveTargetRangeText"><i class="foundicon-up-arrow">&nbsp; &nbsp;</i>Above target range&nbsp;<span id="highRangePercentage" style="display:none"></span></h5>
+						<div class="four columns rangeSelection" id="above">
+							<h5 id="aboveTargetRangeText"><i class="icon-up-open-big">&nbsp; &nbsp;</i>Above target range&nbsp;<span id="highRangePercentage" style="display:none"></span></h5>
 						</div>
 					</div>
 					
 				</div>
 			</div>
-			<hr id="features">
+			<hr id="browser">
 			<div class="row">
-				<div class="twelve columns">
+				<div class="twelve centered columns">
 					<div class="slab graph">
 						<div id="chart_container">
 							<div id="hoverbox" class="hoverbox"></div>
@@ -461,6 +461,7 @@
 		var joinedOn = dashboard.joinedOn;
 		var img = document.createElement("img");
 		img.src = profilePicture;
+		img.className = "avatar";
 		var src = document.getElementById("profilePic");
 		src.appendChild(img);
 		document.getElementById('userName').innerHTML = firstName + " " +lastName;
