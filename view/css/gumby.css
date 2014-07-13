@@ -1696,7 +1696,7 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 /* Data graph */
 #chart_container { position: relative; }
 
-#chart { position: relative; }
+#chart { position: relative; clear: both; margin-left: auto; margin-right: auto; display: block; }
 
 #y_axis { position: absolute; top: 0; bottom: 0; width: 40px; }
 
@@ -1711,8 +1711,7 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 
 li.navlink a:hover { cursor: pointer; color: #F2F2F2 !important; background-color: #888888 !important; }
 
-.slab { background-color: #fff; /* padding:20px;
-box-shadow: 2px 2px 6px #E5E5E4; */ }
+.slab { background-color: #fff; display: block; }
 
 .graph { height: 600px; }
 
