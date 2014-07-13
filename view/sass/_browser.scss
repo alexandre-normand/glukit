@@ -44,6 +44,10 @@
 
 #chart {
   position: relative;
+  clear: both;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;  
 }
 
 #y_axis {
@@ -84,18 +88,19 @@ li.navlink a:hover {
 
 .slab {
   background-color: #fff;
-  /* padding:20px;
-  box-shadow: 2px 2px 6px #E5E5E4; */
+  display: block;  
 }
+
 .graph{
   height: 600px;
 }
 .footer {
- width: 100%;
+  width: 100%;
 }
-  .footer a{
-    color: #446DB2;
-  }
+
+.footer a{
+  color: #446DB2;
+}
 
 .hidden{
   display: none;

@@ -99,7 +99,7 @@
 					<div class="slab graph">
 						<div id="chart_container">
 							<div id="hoverbox" class="hoverbox"></div>
-							<div id="chart" style="clear: both"></div>
+							<div id="chart"></div>
 						</div>
 						<div id="slider"></div>
 					</div>
@@ -176,7 +176,8 @@
 		} });
 		var svg = d3.select("#chart").append("svg")
 		.attr("width", width + margin.left + margin.right)
-		.attr("height", height + margin.top + margin.bottom);
+		.attr("height", height + margin.top + margin.bottom)
+		.attr("align", "center");
 		// That should be the lower bound of the times displayed on the graph
 		// driven by the "self" data
 		d3.json("/{{.PathPrefix}}data", function(error, data) {
