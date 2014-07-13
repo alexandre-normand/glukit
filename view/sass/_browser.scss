@@ -40,13 +40,10 @@
 /* Data graph */
 #chart_container {
   position: relative;
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 #chart {
-  position: absolute;
-  top: 0;
-  left: 40px;
+  position: relative;
 }
 
 #y_axis {
@@ -243,11 +240,11 @@ p.glucose {
   color: rgba(103, 121, 145, 0.8);
 }
 
-p.insulin {  
+p.Insulin {  
   color: rgba(86, 215, 232, 1);   
 }
 
-p.carbs {  
+p.Carbs {  
   color: rgba(255, 199, 69, 1);
 }
 

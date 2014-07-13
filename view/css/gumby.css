@@ -1694,9 +1694,9 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 #profilePic { max-width: 250% !important; min-width: 120% !important; }
 
 /* Data graph */
-#chart_container { position: relative; font-family: Arial, Helvetica, sans-serif; }
+#chart_container { position: relative; }
 
-#chart { position: absolute; top: 0; left: 40px; }
+#chart { position: relative; }
 
 #y_axis { position: absolute; top: 0; bottom: 0; width: 40px; }
 
@@ -1764,9 +1764,9 @@ path.Carbs { fill: #ffc745; stroke-width: 0px; }
 
 p.glucose { color: rgba(103, 121, 145, 0.8); }
 
-p.insulin { color: #56d7e8; }
+p.Insulin { color: #56d7e8; }
 
-p.carbs { color: #ffc745; }
+p.Carbs { color: #ffc745; }
 
 .focusLine { stroke-width: 0.8px; stroke: #B0B0B0; stroke-dasharray: 4, 2; }
 
