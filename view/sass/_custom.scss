@@ -5,8 +5,7 @@ $getting-started-background: image-url('background.svg', false, false);
 $steps-opacity: 0.75;
 $banner-header-color: #F2F2F2;
 $banner-text-color: lighten($banner-header-color, 10%);
-$welcome-image: image-url('sea-level-banner.svg', false, false);
-$welcome-image-hover: image-url('sea-level-banner-hover.svg', false, false);
+$welcome-image: image-url('sea-level-banner-hover.svg', false, false);
 $welcome-image-transition-duration: 0.3s;
 $avatar-shape: 'circle';
 
@@ -63,8 +62,7 @@ $avatar-shape: 'circle';
   width: 1074px;
   margin-top: 50px;
   margin-bottom: 50px;  
-  /* Preload the hover image */
-  background-image: $welcome-image-hover;
+  /* Preload the hover image */  
   background-image: $welcome-image;
   background-repeat: no-repeat;
   -o-transition: $welcome-image-transition-duration;
@@ -73,10 +71,6 @@ $avatar-shape: 'circle';
   -webkit-transition: $welcome-image-transition-duration;
   /* ...and now for the proper property */
   transition: $welcome-image-transition-duration;
-
-  &:hover {
-    background-image: $welcome-image-hover;
-  }
 }
 
 .story {
