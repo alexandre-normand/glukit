@@ -1,4 +1,35 @@
-/* Header */
+$normal-range-color: #2390de;
+$steady-sailor-color: #33ad33;
+$dashboard-height: 130px;
+$bubble-height: 120px;
+
+.self {
+  background-color: rgba($normal-range-color, 0.5);  
+}
+
+.sailor {
+  background-color: rgba($steady-sailor-color, 0.5);
+
+  .insights {
+    color:rgba(lighten($steady-sailor-color, 10%), 0.7);
+  }
+}
+
+.dashboard {
+  height: $dashboard-height;
+
+  .bubble {
+    padding-top: ($dashboard-height - $bubble-height) / 2;
+  }
+
+  .left {
+    padding-left: ($dashboard-height - $bubble-height) / 2;
+  }
+
+  .right {
+    padding-right: ($dashboard-height - $bubble-height) / 2;
+  }
+}
 
 .rangeSelection {
   cursor: pointer;
@@ -21,9 +52,9 @@
 
 .circle
 {
-  width:120px;
-  height:120px;
-  border-radius:110px;
+  width:$bubble-height;
+  height:$bubble-height;
+  border-radius:$bubble-height - 10;
   line-height:180%;
   text-align:center;
   vertical-align: middle;
@@ -37,6 +68,7 @@
 
   small {
     font-weight: normal;
+    font-size: 60%;
   }
 }
 
@@ -151,7 +183,7 @@ li.navlink a:hover {
 /* Styles for screens that are atleast 768px; */
 @media only screen and (min-width: 768px) {
 .insights {
-  color:#52C0E6;
+  color:rgba(lighten($normal-range-color, 10%), 0.7);
   font-weight:bold;
   font-size: 4em;}
 .datepicker{
@@ -164,7 +196,7 @@ li.navlink a:hover {
 /* Styles for screens that are less than 768px; */
 @media only screen and (max-width: 768px) {
 .insights {
-  color:#52C0E6;
+  color:rgba(lighten($normal-range-color, 10%), 0.7);
   font-weight:bold;
   font-size: 2em;
   float: right;}
@@ -220,10 +252,22 @@ path.Carbs {
 }
 
 .steadySailor {
-   stroke: #33ad33;
+   stroke: $steady-sailor-color;
    stroke-width: 1px;
    stroke-dasharray: 5, 7;
-   stroke-opacity: 0.5;
+   stroke-opacity: 0.8;
+
+   .NORMAL {
+    stroke: $steady-sailor-color;
+   }
+
+   .HIGH {
+    stroke: $steady-sailor-color;
+   }
+
+   .LOW {
+    stroke: $steady-sailor-color;
+   }
 }
 
 .background {  

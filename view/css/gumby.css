@@ -1682,7 +1682,16 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 
 .ie9 .radio.checked i, .ie9 .checkbox.checked i { top: 0; }
 
-/* Header */
+.self { background-color: rgba(35, 144, 222, 0.5); }
+
+.sailor { background-color: rgba(51, 173, 51, 0.5); }
+.sailor .insights { color: rgba(74, 201, 74, 0.7); }
+
+.dashboard { height: 130px; }
+.dashboard .bubble { padding-top: 5px; }
+.dashboard .left { padding-left: 5px; }
+.dashboard .right { padding-right: 5px; }
+
 .rangeSelection { cursor: pointer; background-color: #eee; border-style: solid; border-color: #fff; padding: 6px; padding-left: 6px; padding-right: 6px; padding-top: 14px; float: left; min-width: 300px; }
 
 .rangeSelection:hover, .rangeSelection:hover h5 { cursor: pointer; background-color: #9e2064 !important; color: #fff !important; }
@@ -1690,7 +1699,7 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 .circle { width: 120px; height: 120px; border-radius: 110px; line-height: 180%; text-align: center; vertical-align: middle; background: #eee; }
 
 .profile { margin-top: 10px; font-size: 120%; font-weight: bold; }
-.profile small { font-weight: normal; }
+.profile small { font-weight: normal; font-size: 60%; }
 
 #profilePic { max-width: 120px !important; min-width: 120px !important; }
 
@@ -1733,10 +1742,10 @@ li.navlink a:hover { cursor: pointer; color: #F2F2F2 !important; background-colo
 #droplet { height: 46px; padding-top: 16px; -moz-box-sizing: none; -webkit-box-sizing: none; box-sizing: none; }
 
 /* Styles for screens that are atleast 768px; */
-@media only screen and (min-width: 768px) { .insights { color: #52C0E6; font-weight: bold; font-size: 4em; }
+@media only screen and (min-width: 768px) { .insights { color: rgba(79, 166, 229, 0.7); font-weight: bold; font-size: 4em; }
   .datepicker { padding-bottom: 20px; display: block; float: left; } }
 /* Styles for screens that are less than 768px; */
-@media only screen and (max-width: 768px) { .insights { color: #52C0E6; font-weight: bold; font-size: 2em; float: right; }
+@media only screen and (max-width: 768px) { .insights { color: rgba(79, 166, 229, 0.7); font-weight: bold; font-size: 2em; float: right; }
   .datepicker { padding-bottom: 10px; display: block; float: left; font-size: 1.2em; } }
 svg { font: 10px sans-serif; }
 
@@ -1754,7 +1763,10 @@ path.Insulin { fill: #56d7e8; stroke-width: 0px; }
 
 path.Carbs { fill: #ffc745; stroke-width: 0px; }
 
-.steadySailor { stroke: #33ad33; stroke-width: 1px; stroke-dasharray: 5, 7; stroke-opacity: 0.5; }
+.steadySailor { stroke: #33ad33; stroke-width: 1px; stroke-dasharray: 5, 7; stroke-opacity: 0.8; }
+.steadySailor .NORMAL { stroke: #33ad33; }
+.steadySailor .HIGH { stroke: #33ad33; }
+.steadySailor .LOW { stroke: #33ad33; }
 
 .background { fill-opacity: 0; stroke-width: 0; }
 
