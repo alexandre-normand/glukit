@@ -554,8 +554,7 @@
             } else {
                 document.getElementById(sectionPrefix + "glukitScore").innerHTML = glukitScore;
             }
-            document.getElementById(sectionPrefix + "glukitScoreDates").innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');
-            document.getElementById(sectionPrefix + "since").innerHTML = moment(joinedOn, "YYYY-MM-DDHH:mm:ssZ").format('LL');
+            document.getElementById(sectionPrefix + "glukitScoreDates").innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');            
         }
 
         function toggleNormalRange() {

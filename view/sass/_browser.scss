@@ -4,11 +4,11 @@ $dashboard-height: 130px;
 $bubble-height: 120px;
 
 .self {
-  background-color: rgba($normal-range-color, 0.5);  
+  background-color: rgba($normal-range-color, 0.2);  
 }
 
 .sailor {
-  background-color: rgba($steady-sailor-color, 0.5);
+  background-color: rgba($steady-sailor-color, 0.2);
 
   .insights {
     color:rgba(lighten($steady-sailor-color, 10%), 0.7);

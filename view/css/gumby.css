@@ -1682,9 +1682,9 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 
 .ie9 .radio.checked i, .ie9 .checkbox.checked i { top: 0; }
 
-.self { background-color: rgba(35, 144, 222, 0.5); }
+.self { background-color: rgba(35, 144, 222, 0.2); }
 
-.sailor { background-color: rgba(51, 173, 51, 0.5); }
+.sailor { background-color: rgba(51, 173, 51, 0.2); }
 .sailor .insights { color: rgba(74, 201, 74, 0.7); }
 
 .dashboard { height: 130px; }
