@@ -328,7 +328,7 @@
                     })
                     .attr("y", height - 5);
                 var segments = splitReadsInRangeSegments(glucoseReads);
-                addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, viewfinderLine);
+                addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, true, viewfinderLine);
                 // Trying out the grouping, it doesn't actually use any of this
                 userEvents.forEach(function(d) {
                     d.date = parseDate(d.x * 1000);
@@ -441,18 +441,26 @@
                             });
                         }
                         sailorSegments = splitReadsInRangeSegments(steadySailor);
-                        addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine);
+                        addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine, false);
                     }
                 });
                 addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine);
             });
         }
 
-        function addToGraph(focus, className, context, segments, glucoseReads, y, glucoseLineFunc, viewfinderLineFunc) {
+        function addToGraph(focus, className, context, segments, glucoseReads, y, glucoseLineFunc, highlightSegments, viewfinderLineFunc) {
+        	console.log("highlightSegments is " + highlightSegments + " for className" + className);
             for (var i = 0; i < segments.length; i++) {
                 var segment = segments[i];
+                var segmentClass = className;
+
+                // if highlightSegments is enabled, append the segment name to the class names
+                if (highlightSegments === true) {
+                	segmentClass = className + " " + segment.range;
+                }
+
                 focus.append("path")
-                    .attr("class", className + " " + segment.range)
+                    .attr("class", segmentClass)
                     .attr("clip-path", "url(#clip)")
                     .datum(segment.reads)
                     .attr("d", glucoseLineFunc);
