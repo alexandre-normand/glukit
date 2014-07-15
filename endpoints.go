@@ -19,11 +19,14 @@ import (
 
 // Represents a DataResponse with an array of DataSeries and some metadata
 type DataResponse struct {
-	FirstName string       `json:"firstName"`
-	LastName  string       `json:"lastName"`
-	Data      []DataSeries `json:"data"`
-	Picture   string       `json:"picture"`
-	LastSync  time.Time    `json:"lastSync"`
+	FirstName    string            `json:"firstName"`
+	LastName     string            `json:"lastName"`
+	Picture      string            `json:"picture"`
+	LastSync     time.Time         `json:"lastSync"`
+	Score        *int64            `json:"score"`
+	ScoreDetails model.GlukitScore `json:"scoreDetails"`
+	JoinedOn     time.Time         `json:"joinedOn"`
+	Data         []DataSeries      `json:"data"`
 }
 
 // Represents a generic DataSeries structure with a series of DataPoints
@@ -85,7 +88,7 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{FirstName: glukitUser.FirstName, LastName: glukitUser.LastName, Data: generateDataSeriesFromData(reads, injections, carbs, exercises), Picture: glukitUser.PictureUrl, LastSync: glukitUser.MostRecentRead.GetTime()}
+		response := DataResponse{FirstName: glukitUser.FirstName, LastName: glukitUser.LastName, Picture: glukitUser.PictureUrl, LastSync: glukitUser.MostRecentRead.GetTime(), Score: engine.CalculateUserFacingScore(glukitUser.MostRecentScore), ScoreDetails: glukitUser.MostRecentScore, JoinedOn: glukitUser.AccountCreated, Data: generateDataSeriesFromData(reads, injections, carbs, exercises)}
 		writeAsJson(writer, response)
 	}
 }
@@ -124,7 +127,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{FirstName: steadySailor.FirstName, LastName: steadySailor.LastName, Data: generateDataSeriesFromData(reads, nil, nil, nil), Picture: steadySailor.PictureUrl, LastSync: steadySailor.MostRecentRead.GetTime()}
+		response := DataResponse{FirstName: steadySailor.FirstName, LastName: steadySailor.LastName, Picture: steadySailor.PictureUrl, LastSync: steadySailor.MostRecentRead.GetTime(), Score: engine.CalculateUserFacingScore(steadySailor.MostRecentScore), ScoreDetails: steadySailor.MostRecentScore, JoinedOn: steadySailor.AccountCreated, Data: generateDataSeriesFromData(reads, nil, nil, nil)}
 		writeAsJson(writer, response)
 	}
 }
@@ -179,7 +182,7 @@ func demoDashboard(writer http.ResponseWriter, request *http.Request) {
 func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
 
-	userProfile, _, upperBound, err := store.GetUserData(context, email)
+	_, _, upperBound, err := store.GetUserData(context, email)
 	lowerBound := util.GetEndOfDayBoundaryBefore(upperBound).Add(time.Duration(-1*24) * time.Hour)
 
 	if err != nil && err == store.ErrNoImportedDataFound {
@@ -193,32 +196,23 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 			util.Propagate(err)
 		}
 
-		writeDashboardDataAsJson(writer, request, reads, userProfile)
+		writeDashboardDataAsJson(writer, request, reads)
 	}
 }
 
 // writedashboardDataAsJson calculates dashboard statistics from an array of GlucoseReads and writes it
 // as json
-func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request, reads []apimodel.GlucoseRead, userProfile *model.GlukitUser) {
-	context := appengine.NewContext(request)
+func writeDashboardDataAsJson(writer http.ResponseWriter, request *http.Request, reads []apimodel.GlucoseRead) {
 	value := writer.Header()
 	value.Add("Content-type", "application/json")
 
 	var dashboardData model.DashboardData
 	if len(reads) > 0 {
 		sort.Sort(model.ReadStatsSlice(reads))
-		dashboardData.FirstName = userProfile.FirstName
-		dashboardData.LastName = userProfile.LastName
-		dashboardData.Picture = userProfile.PictureUrl
-		dashboardData.LastSync = userProfile.MostRecentRead.GetTime()
 		dashboardData.Average = stat.Mean(model.ReadStatsSlice(reads))
 		dashboardData.High, _ = stat.Max(model.ReadStatsSlice(reads))
 		dashboardData.Low, _ = stat.Min(model.ReadStatsSlice(reads))
 		dashboardData.Median = stat.MedianFromSortedData(model.ReadStatsSlice(reads))
-		dashboardData.Score = engine.CalculateUserFacingScore(userProfile.MostRecentScore)
-		dashboardData.ScoreDetails = userProfile.MostRecentScore
-		dashboardData.JoinedOn = userProfile.AccountCreated
-		context.Debugf("Calculated user score of [%d] from internal score of [%d]", dashboardData.Score, userProfile.MostRecentScore.Value)
 	}
 
 	enc := json.NewEncoder(writer)

@@ -23,7 +23,6 @@ import (
 var dataBrowserTemplate = template.Must(template.ParseFiles("view/templates/databrowser.html"))
 var reportTemplate = template.Must(template.ParseFiles("view/templates/report.html"))
 var landingTemplate = template.Must(template.ParseFiles("view/templates/landing.html"))
-var nodataTemplate = template.Must(template.ParseFiles("view/templates/nodata.html"))
 var muxRouter = mux.NewRouter()
 var initOnce sync.Once
 
@@ -64,7 +63,6 @@ func init() {
 
 	// Static pages
 	muxRouter.HandleFunc("/", landing)
-	muxRouter.HandleFunc("/nodata", nodata)
 
 	muxRouter.HandleFunc("/realuser", handleRealUser)
 	muxRouter.HandleFunc("/oauth2callback", oauthCallback)
@@ -89,14 +87,6 @@ func init() {
 // landing executes the landing page template
 func landing(w http.ResponseWriter, request *http.Request) {
 	if err := landingTemplate.Execute(w, nil); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// nodata renders the no-data available page that shows up when a user
-// first accesses the app and doesn't have any dexcom files on Google Drive
-func nodata(w http.ResponseWriter, request *http.Request) {
-	if err := nodataTemplate.Execute(w, nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
