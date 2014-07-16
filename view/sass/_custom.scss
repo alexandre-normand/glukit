@@ -53,10 +53,6 @@ $avatar-shape: 'circle';
   opacity: $steps-opacity;  
 }
 
-.login {
-  @include centre(both);	
-}
-
 .welcome-banner {  
   height: 300px;
   width: 1074px;
