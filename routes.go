@@ -39,6 +39,8 @@ type RenderVariables struct {
 
 // init initializes the routes and global initialization
 func init() {
+	appConfig = NewAppConfig()
+
 	http.Handle("/", muxRouter)
 
 	// Create user Glukit Bernstein as a fallback for comparisons
