@@ -55,7 +55,7 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 	}
 
 	transport := &oauth.Transport{
-		Config: config(),
+		Config: configuration(),
 		Transport: &urlfetch.Transport{
 			Context: context,
 		},
@@ -142,7 +142,7 @@ func enqueueFileImport(context appengine.Context, token *oauth.Token, file *driv
 func processSingleFile(context appengine.Context, token *oauth.Token, file *drive.File, userEmail string,
 	userProfileKey *datastore.Key) {
 	t := &oauth.Transport{
-		Config: config(),
+		Config: configuration(),
 		Transport: &urlfetch.Transport{
 			Context: context,
 		},

@@ -9,6 +9,7 @@ import (
 	"appengine/user"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -24,11 +25,11 @@ const (
 )
 
 var emptyDataPointSlice []apimodel.DataPoint
-var appConfig *AppConfig
+var appConfig *config.AppConfig
 
 // config returns the configuration information for OAuth and Drive.
-func config() *oauth.Config {
-	config := oauth.Config{
+func configuration() *oauth.Config {
+	configuration := oauth.Config{
 		ClientId:     appConfig.GoogleClientId,
 		ClientSecret: appConfig.GoogleClientSecret,
 		Scope:        "https://www.googleapis.com/auth/userinfo.profile " + drive.DriveReadonlyScope,
@@ -38,7 +39,7 @@ func config() *oauth.Config {
 		RedirectURL:  fmt.Sprintf("http://%s/oauth2callback", appConfig.Host),
 	}
 
-	return &config
+	return &configuration
 }
 
 // handleLoggedInUser is responsible for directing the user to the graph page after optionally:
@@ -81,7 +82,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 
 		context.Debugf("Initializing transport from token [%s]", oauthToken)
 		transport = &oauth.Transport{
-			Config: config(),
+			Config: configuration(),
 			Transport: &urlfetch.Transport{
 				Context: context,
 			},
@@ -157,7 +158,7 @@ func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oa
 
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
-	configuration := config()
+	configuration := configuration()
 	context.Debugf("Getting token with configuration [%v]...", configuration)
 
 	t := &oauth.Transport{
