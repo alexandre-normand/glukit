@@ -1,4 +1,5 @@
-package glukit
+// config package wraps configuration accessors
+package config
 
 import (
 	"appengine"
@@ -16,7 +17,7 @@ type AppConfig struct {
 
 // newTestAppConfig returns the AppConfig for a test environment
 func newTestAppConfig() *AppConfig {
-	appConfig = new(AppConfig)
+	appConfig := new(AppConfig)
 	appConfig.GoogleClientId = "***REMOVED***"
 	appConfig.GoogleClientSecret = "***REMOVED***"
 	appConfig.Host = "localhost:8080"
@@ -27,7 +28,7 @@ func newTestAppConfig() *AppConfig {
 
 // newProdAppConfig returns the AppConfig for the production environment
 func newProdAppConfig() *AppConfig {
-	appConfig = new(AppConfig)
+	appConfig := new(AppConfig)
 	appConfig.GoogleClientId = "***REMOVED***"
 	appConfig.GoogleClientSecret = "***REMOVED***"
 	appConfig.Host = "www.mygluk.it"

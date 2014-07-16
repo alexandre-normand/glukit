@@ -9,8 +9,10 @@ import (
 	"appengine/user"
 	"code.google.com/p/gorilla/mux"
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/payment"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
@@ -39,7 +41,7 @@ type RenderVariables struct {
 
 // init initializes the routes and global initialization
 func init() {
-	appConfig = NewAppConfig()
+	appConfig = config.NewAppConfig()
 
 	http.Handle("/", muxRouter)
 
@@ -189,7 +191,7 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 	if _, ok := err.(store.StoreError); err != nil && !ok || len(glukitUser.RefreshToken) == 0 {
 		context.Infof("Redirecting [%s], glukitUser [%v] for authorization. Error: [%v]", user.Email, glukitUser, err)
 
-		configuration := config()
+		configuration := configuration()
 		context.Debugf("We don't current have a refresh token (either lost or it's " +
 			"the first access). Let's set the ApprovalPrompt to force to get a new one...")
 
@@ -208,6 +210,9 @@ func warmUp(writer http.ResponseWriter, request *http.Request) {
 	initOnce.Do(func() {
 		c := appengine.NewContext(request)
 		c.Infof("Initializing application...")
+
+		stripeClient := payment.NewStripeClient(appConfig)
+		c.Debugf("TODO: Remove this and actually plug in payment logic: %v", stripeClient)
 		initializeApp(writer, request)
 	})
 }
