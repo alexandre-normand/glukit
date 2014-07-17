@@ -12,7 +12,7 @@
 <head>
     <meta charset="utf-8">
     <!-- Use the .htaccess and remove these lines to avoid edge case issues.
-		More info: h5bp.com/b/378 -->
+        More info: h5bp.com/b/378 -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>Glukit</title>
     <meta name="description" content="Glukit">
@@ -30,7 +30,7 @@
     <meta itemprop="image" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <!-- We highly recommend you use SASS and write your custom styles in sass/_custom.scss.
-		However, there is a blank style.css in the css directory should you prefer -->
+        However, there is a blank style.css in the css directory should you prefer -->
     <link rel="stylesheet" href="css/gumby.css">
     <!-- <link rel="stylesheet" href="css/style.css"> -->
     <script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>
@@ -42,12 +42,18 @@
 </head>
 
 <body>
-    <div class="navbar" id="landing-navigation">
+    <div class="navbar">
+
+        <a class="toggle" gumby-trigger="#navigation > ul" href="#"><i class="icon-menu"></i></a>
         <h1 class="four columns logo">
             <a href="/">
                 <img src="images/glukit.svg" gumby-retina="">
             </a>
         </h1>
+        <div class="push_eleven one columns">
+            <a href="#" class="switch" gumby-trigger="#donation"><i class="icon-heart"></i></a> 
+        </div>
+
     </div>
     <div class="row">
         <div class="ten centered columns">
@@ -59,7 +65,7 @@
                         </div>
                         <div class="six columns">
                             <div class="profile">
-                                <span id="self_dashboard.userName"></span>                                
+                                <span id="self_dashboard.userName"></span>
                             </div>
                             <div>Last sync
                                 <span id="self_dashboard.lastSync"></span>
@@ -82,7 +88,7 @@
                         </div>
                         <div class="six columns">
                             <div class="profile">
-                                <span id="sailor_dashboard.userName"></span>                                
+                                <span id="sailor_dashboard.userName"></span>
                             </div>
                             <div>Last sync
                                 <span id="sailor_dashboard.lastSync"></span>
@@ -135,6 +141,50 @@
                             <div id="chart"></div>
                         </div>
                         <div id="slider"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal" id="donation">
+            <div class="content">
+                <a class="close switch" gumby-trigger="|#donation"><i class="icon-cancel" /></i>
+                </a>
+                <div class="row">
+                    <div class="ten columns centered text-center">
+                        The 
+                        <form action="" method="POST" id="donation-form">
+                            You clicked! We <i class="icon-heart slow-love"></i> you too! If you feel like it, you can help us by making a donation. You really don't have to but anything helps. You can come back here and change it at anytime. We'll always love you, no mather what. <br/>
+
+                            <span class="payment-errors"></span>
+
+                            <div class="field">
+                                <label>
+                                    <span>Card Number</span>
+                                    <input class="input" type="text" size="20" data-stripe="number" />
+                                </label>
+                            </div>
+
+                            <div class="field">
+                                <label>
+                                    <span>CVC</span>
+                                    <input class="input" type="text" size="4" data-stripe="cvc" />
+                                </label>
+                            </div>
+
+                            <div class="field">
+                                <label>
+                                    <span>Expiration (MM/YYYY)</span>
+                                    <input class="input" type="text" size="2" data-stripe="exp-month" />
+                                </label>
+                                <span>/</span>
+                                <input class="input" type="text" size="4" data-stripe="exp-year" />
+                            </div>
+
+                            <button type="submit">Submit Payment</button>
+                        </form>
+                        <p class="btn primary medium">
+                            <a href="#" class="switch" gumby-trigger="|#donation">Close Modal</a>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -448,15 +498,14 @@
             });
         }
 
-        function addToGraph(focus, className, context, segments, glucoseReads, y, glucoseLineFunc, highlightSegments, viewfinderLineFunc) {
-        	console.log("highlightSegments is " + highlightSegments + " for className" + className);
+        function addToGraph(focus, className, context, segments, glucoseReads, y, glucoseLineFunc, highlightSegments, viewfinderLineFunc) {            
             for (var i = 0; i < segments.length; i++) {
                 var segment = segments[i];
                 var segmentClass = className;
 
                 // if highlightSegments is enabled, append the segment name to the class names
                 if (highlightSegments === true) {
-                	segmentClass = className + " " + segment.range;
+                    segmentClass = className + " " + segment.range;
                 }
 
                 focus.append("path")
@@ -562,7 +611,7 @@
             } else {
                 document.getElementById(sectionPrefix + "glukitScore").innerHTML = glukitScore;
             }
-            document.getElementById(sectionPrefix + "glukitScoreDates").innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');            
+            document.getElementById(sectionPrefix + "glukitScoreDates").innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');
         }
 
         function toggleNormalRange() {
@@ -664,8 +713,8 @@
         }
         </script>
         <!--
-					Include gumby.js followed by UI modules followed by gumby.init.js
-			Or concatenate and minify into a single file -->
+                    Include gumby.js followed by UI modules followed by gumby.init.js
+            Or concatenate and minify into a single file -->
         <script gumby-touch="js/libs" src="bower_components/gumby/js/libs/gumby.js"></script>
         <script src="bower_components/gumby/js/libs/ui/gumby.retina.js"></script>
         <script src="bower_components/gumby/js/libs/ui/gumby.fixed.js"></script>
@@ -678,24 +727,24 @@
         <script src="bower_components/gumby/js/libs/ui/jquery.validation.js"></script>
         <script src="bower_components/gumby/js/libs/gumby.init.js"></script>
         <!--
-					Google's recommended deferred loading of JS
-					gumby.min.js contains gumby.js, all UI modules and gumby.init.js
-					Note: If you opt to use this method of defered loading,
-					ensure that any javascript essential to the initial
-					display of the page is included separately in a normal
-					script tag.
-			<script type="text/javascript">
-			function downloadJSAtOnload() {
-			var element = document.createElement("script");
-			element.src = "js/libs/gumby.min.js";
-			document.body.appendChild(element);
-			}
-			if (window.addEventListener)
-			window.addEventListener("load", downloadJSAtOnload, false);
-			else if (window.attachEvent)
-			window.attachEvent("onload", downloadJSAtOnload);
-			else window.onload = downloadJSAtOnload;
-			</script> -->
+                    Google's recommended deferred loading of JS
+                    gumby.min.js contains gumby.js, all UI modules and gumby.init.js
+                    Note: If you opt to use this method of defered loading,
+                    ensure that any javascript essential to the initial
+                    display of the page is included separately in a normal
+                    script tag.
+            <script type="text/javascript">
+            function downloadJSAtOnload() {
+            var element = document.createElement("script");
+            element.src = "js/libs/gumby.min.js";
+            document.body.appendChild(element);
+            }
+            if (window.addEventListener)
+            window.addEventListener("load", downloadJSAtOnload, false);
+            else if (window.attachEvent)
+            window.attachEvent("onload", downloadJSAtOnload);
+            else window.onload = downloadJSAtOnload;
+            </script> -->
         <script src="bower_components/gumby/js/plugins.js"></script>
         <script src="bower_components/gumby/js/main.js"></script>
         <script>
