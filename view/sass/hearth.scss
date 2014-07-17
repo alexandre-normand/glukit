@@ -1,0 +1,63 @@
+$smallest-hearth-scale:scale(0.4);
+$small-hearth-scale:scale(0.6);
+$large-hearth-scale:scale(1.0);
+
+@mixin keyframes($animation-name) {
+  @-webkit-keyframes $animation-name {
+    @content;
+  }
+  @-moz-keyframes $animation-name {
+    @content;
+  }  
+  @-ms-keyframes $animation-name {
+    @content;
+  }
+  @-o-keyframes $animation-name {
+    @content;
+  }  
+  @keyframes $animation-name {
+    @content;
+  }
+}
+
+@mixin animation($str) {
+  -webkit-animation: #{$str};
+  -moz-animation: #{$str};
+  -ms-animation: #{$str};
+  -o-animation: #{$str};
+  animation: #{$str};      
+}
+
+@mixin transform($args...) {
+  -webkit-transform: $args;
+  -moz-transform: $args;
+  -ms-transform: $args;
+  -o-transform: $args;
+  transform: $args;
+}
+
+@include keyframes(beat) {
+    0% {        
+        @include transform($large-hearth-scale);
+    }
+    20% {        
+        @include transform($small-hearth-scale);
+    }
+    21% {        
+        @include transform($large-hearth-scale);
+    }
+    100% {        
+        @include transform($smallest-hearth-scale);
+    }
+}
+
+.love {
+	@include font-size($large);
+	color: $body-link-color;
+    @include animation('beat 1.2s infinite');
+}
+
+.slow-love {
+	@extend .love;
+    @include animation('beat 1.5s infinite');
+}
