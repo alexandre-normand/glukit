@@ -35,8 +35,9 @@ const (
 
 // Some variables that are used during rendering of templates
 type RenderVariables struct {
-	PathPrefix   string
-	ChannelToken string
+	PathPrefix           string
+	ChannelToken         string
+	StripePublishableKey string
 }
 
 // init initializes the routes and global initialization
@@ -156,7 +157,7 @@ func demoReport(w http.ResponseWriter, request *http.Request) {
 func report(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none"}
+	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -174,7 +175,7 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 		return
 	}
 
-	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token}
+	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey}
 
 	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())

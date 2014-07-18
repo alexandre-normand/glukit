@@ -9,10 +9,11 @@ import (
 // It has a test mode and a production as per the datastore's appengine
 // environment.
 type AppConfig struct {
-	GoogleClientId     string
-	GoogleClientSecret string
-	Host               string
-	StripeKey          string
+	GoogleClientId       string
+	GoogleClientSecret   string
+	Host                 string
+	StripeKey            string
+	StripePublishableKey string
 }
 
 // newTestAppConfig returns the AppConfig for a test environment
@@ -22,6 +23,7 @@ func newTestAppConfig() *AppConfig {
 	appConfig.GoogleClientSecret = "***REMOVED***"
 	appConfig.Host = "localhost:8080"
 	appConfig.StripeKey = "***REMOVED***"
+	appConfig.StripePublishableKey = "***REMOVED***"
 
 	return appConfig
 }
@@ -33,6 +35,7 @@ func newProdAppConfig() *AppConfig {
 	appConfig.GoogleClientSecret = "***REMOVED***"
 	appConfig.Host = "www.mygluk.it"
 	appConfig.StripeKey = "***REMOVED***"
+	appConfig.StripePublishableKey = "***REMOVED***"
 
 	return appConfig
 }
