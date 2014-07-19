@@ -292,5 +292,13 @@ func glukitScoresForEmail(writer http.ResponseWriter, request *http.Request, ema
 
 	enc := json.NewEncoder(writer)
 	enc.Encode(glukitScores)
+}
 
+func handleDonation(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	request.ParseForm()
+	context.Debugf("Received donation with stripe token [%s] for user [%s]", request.FormValue("stripeToken"), user)
+	writer.WriteHeader(200)
 }

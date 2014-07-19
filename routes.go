@@ -50,7 +50,7 @@ func init() {
 	muxRouter.HandleFunc("/_ah/warmup", warmUp)
 	muxRouter.HandleFunc("/initpower", warmUp)
 
-	// Json endpoints
+	// GAE Json endpoints
 	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
 	muxRouter.HandleFunc("/data", personalData)
 	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"steadySailor", demoSteadySailorData)
@@ -59,6 +59,7 @@ func init() {
 	muxRouter.HandleFunc("/dashboard", dashboard)
 	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"glukitScores", glukitScoresForDemo)
 	muxRouter.HandleFunc("/glukitScores", glukitScores)
+	muxRouter.HandleFunc("/donation", handleDonation)
 
 	// "main"-page for both demo and real users
 	muxRouter.HandleFunc("/demo", renderDemo)
