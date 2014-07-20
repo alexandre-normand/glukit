@@ -12,6 +12,7 @@ type AppConfig struct {
 	GoogleClientId       string
 	GoogleClientSecret   string
 	Host                 string
+	SSLHost              string
 	StripeKey            string
 	StripePublishableKey string
 }
@@ -22,6 +23,7 @@ func newTestAppConfig() *AppConfig {
 	appConfig.GoogleClientId = "***REMOVED***"
 	appConfig.GoogleClientSecret = "***REMOVED***"
 	appConfig.Host = "localhost:8080"
+	appConfig.SSLHost = "localhost:8080"
 	appConfig.StripeKey = "***REMOVED***"
 	appConfig.StripePublishableKey = "***REMOVED***"
 
@@ -34,6 +36,7 @@ func newProdAppConfig() *AppConfig {
 	appConfig.GoogleClientId = "***REMOVED***"
 	appConfig.GoogleClientSecret = "***REMOVED***"
 	appConfig.Host = "www.mygluk.it"
+	appConfig.SSLHost = "https://glukit.appspot.com"
 	appConfig.StripeKey = "***REMOVED***"
 	appConfig.StripePublishableKey = "***REMOVED***"
 
