@@ -253,9 +253,23 @@
         Stripe.setPublishableKey('{{.StripePublishableKey}}');
 
         jQuery(function($) {
-            $('.cc-num').payment('formatCardNumber');
-            $('.cc-exp').payment('formatCardExpiry');
-            $('.cc-cvc').payment('formatCardCVC');
+            $('input.cc-num').payment('formatCardNumber');
+            $('input.cc-exp').payment('formatCardExpiry');
+            $('input.cc-cvc').payment('formatCardCVC');
+
+            $('input.cc-num').blur(function(event) {
+                console.log("Event target is " + event.target)
+                $(event.target).parent().toggleClass('danger', !$.payment.validateCardNumber($('.cc-number').val()));
+            })
+
+            $('input.cc-num').blur(function(event) {
+                console.log("Event target is " + event.target)
+                if ($.payment.validateCardNumber($('.cc-number').val())) {
+                    $(event.target).parent().toggleClass('danger');    
+                } else {
+                    $(event.target).parent().toggleClass('success');    
+                }
+            })
 
             $('#donation-form').submit(function(event) {                
                 event.preventDefault();
