@@ -157,10 +157,10 @@
                 </a>
                 <div class="row">
                     <div class="ten columns centered">
-                        <form action="/donation" method="POST" id="donation-form">
+                        <form action="{{.SSLHost}}/donation" method="POST" id="donation-form" novalidate>
                             <div class="row">
                                 <div class="twelve columns importantMessage">
-                                    You clicked! We <i class="icon-heart slow-love"></i> you too! If you feel like it, you can help us by making a donation. You really don't have. Anything helps. If you do setup a monthly donation, you can come back here and change or cancel it at anytime.
+                                    You clicked! We <i class="icon-heart slow-love"></i> you too! If you feel like it, you can help us by making a donation. You really don't have to but we really appreciate it.
                                     <br/>
                                     <br/>Love,
                                 </div>
@@ -172,33 +172,32 @@
                             <div class="row">
                                 <div class="twelve columns centered">
 
-                                    <span class="payment-errors"></span>
+                                    <span class="danger payment-errors"></span>
 
                                     <div class="row">
                                         <div class="eight centered columns">
                                             <div class="row">
                                                 <div class="twelve left columns">
-                                                    <span class="append field">
-                                                        <input class="wide text input" type="text" size="20" data-stripe="number" placeholder="•••• •••• •••• ••••" />
+                                                    <span class="cc-number append field">
+                                                        <input class="wide text input cc-num" type="text" size="20" data-stripe="number" placeholder="•••• •••• •••• ••••" />
                                                         <span class="adjoined"><i class="icon-credit-card"></i>
                                                         </span>
                                                     </span>
                                                 </div>
                                             </div>
                                             <div class="row">
-                                                <div class="three columns">
-                                                    <span class="append field">
-                                                        <input class="narrow normal input" type="text" size="4" data-stripe="cvc" placeholder="123" />
+                                                <div class="four columns">
+                                                    <span class="append field cc-cvc">
+                                                        <input class="normal input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
                                                         <span class="adjoined"><i class="icon-lock"></i> 
                                                         </span>
                                                     </span>
                                                 </div>
                                                 <div class="eight columns">
-                                                    <span class="field">
-                                                        <input class="narrow text input" type="text" size="2" data-stripe="exp-month" placeholder="MM" />
-                                                    </span>
-                                                    <span class="append field">
-                                                        <input class="narrow text input" type="text" size="4" data-stripe="exp-year" placeholder="YYYY" />
+                                                    <span class="append field cc-exp">
+                                                        <input type="hidden" class="cc-exp-month" data-stripe="exp-month" />
+                                                        <input type="hidden" class="cc-exp-year" data-stripe="exp-year" />
+                                                        <input class="normal text input cc-exp" type="text" size="7" placeholder="MM/YYYY" />
                                                         <span class="adjoined"><i class="icon-calendar"></i>
                                                         </span>
                                                     </span>
@@ -206,15 +205,20 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <button class="btn primary medium" type="submit">Submit Payment</button>
+                                    </div>
+                                    <div class="row">
+                                        <div class="six centered columns">
+                                            <div class="btn default medium">
+                                                <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
+                                            </div>
+                                            <div class="medium default btn">
+                                                <input type="submit" value="Send Us &#x2764; (and pennies)"/>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </form>
-                        <p class="btn primary medium">
-                            <a href="#" class="switch" gumby-trigger="|#donation">Close Modal</a>
-                        </p>
                     </div>
                 </div>
             </div>
@@ -244,27 +248,53 @@
             }
         }
         </script>
+        <script src="js/jquery.payment.js"></script>
         <script type="text/javascript">
         Stripe.setPublishableKey('{{.StripePublishableKey}}');
 
         jQuery(function($) {
-            $('#donation-form').submit(function(event) {
+            $('.cc-num').payment('formatCardNumber');
+            $('.cc-exp').payment('formatCardExpiry');
+            $('.cc-cvc').payment('formatCardCVC');
+
+            $('#donation-form').submit(function(event) {                
+                event.preventDefault();
+
+                $('input').removeClass('invalid');
+                $('.validation').removeClass('success danger');
+
+                var cardType = $.payment.cardType($('.cc-number').val());
+
+                $('.cc-number').toggleClass('danger', !$.payment.validateCardNumber($('.cc-number').val()));
+                $('.cc-exp').toggleClass('danger', !$.payment.validateCardExpiry($('.cc-exp').payment('cardExpiryVal')));
+                $('.cc-cvc').toggleClass('danger', !$.payment.validateCardCVC($('.cc-cvc').val(), cardType));
+
+                if ($('input.invalid').length) {
+                    $('.validation').addClass('danger');
+                } else {
+                    $('.validation').addClass('success');
+                }
+                expiration = $('input.cc-exp').payment('cardExpiryVal')
+                console.log("Expiration is " + JSON.stringify(expiration))                
+                $('.cc-exp-month').val(!expiration.month ? "" : expiration.month)
+                $('.cc-exp-year').val(!expiration.year ? "" : expiration.year)
+                console.log("Expiration month is " + JSON.stringify(expiration))
+
                 var $form = $(this);
                 console.log("Submitting to stripe: " + $form);
-                $form.find('button').prop('disabled', true);
+                $form.find('input[type="submit"]').prop('active', false);
                 Stripe.card.createToken($form, stripeResponseHandler);
                 return false;
             });
         });
 
         function stripeResponseHandler(status, response) {
-            console.log("Handler");
             var $form = $('#donation-form');
 
             if (response.error) {
                 // Show the errors on the form
                 $form.find('.payment-errors').text(response.error.message);
-                $form.find('button').prop('disabled', false);
+                $form.find('input[type="submit"]').prop('active', true);
             } else {
                 // response contains id and card, which contains additional card details
                 var token = response.id;
@@ -276,9 +306,6 @@
         };
         </script>
 
-        <!--
-                    Include gumby.js followed by UI modules followed by gumby.init.js
-            Or concatenate and minify into a single file -->
         <script gumby-touch="js/libs" src="bower_components/gumby/js/libs/gumby.js"></script>
         <script src="bower_components/gumby/js/libs/ui/gumby.retina.js"></script>
         <script src="bower_components/gumby/js/libs/ui/gumby.fixed.js"></script>
@@ -290,25 +317,6 @@
         <script src="bower_components/gumby/js/libs/ui/gumby.navbar.js"></script>
         <script src="bower_components/gumby/js/libs/ui/jquery.validation.js"></script>
         <script src="bower_components/gumby/js/libs/gumby.init.js"></script>
-        <!--
-                    Google's recommended deferred loading of JS
-                    gumby.min.js contains gumby.js, all UI modules and gumby.init.js
-                    Note: If you opt to use this method of defered loading,
-                    ensure that any javascript essential to the initial
-                    display of the page is included separately in a normal
-                    script tag.
-            <script type="text/javascript">
-            function downloadJSAtOnload() {
-            var element = document.createElement("script");
-            element.src = "js/libs/gumby.min.js";
-            document.body.appendChild(element);
-            }
-            if (window.addEventListener)
-            window.addEventListener("load", downloadJSAtOnload, false);
-            else if (window.attachEvent)
-            window.attachEvent("onload", downloadJSAtOnload);
-            else window.onload = downloadJSAtOnload;
-            </script> -->
         <script src="bower_components/gumby/js/plugins.js"></script>
         <script src="bower_components/gumby/js/main.js"></script>
         <script src="js/browser.js"></script>

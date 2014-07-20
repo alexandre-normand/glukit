@@ -38,6 +38,7 @@ type RenderVariables struct {
 	PathPrefix           string
 	ChannelToken         string
 	StripePublishableKey string
+	SSLHost              string
 }
 
 // init initializes the routes and global initialization
@@ -146,7 +147,7 @@ func renderRealUser(w http.ResponseWriter, request *http.Request) {
 func demoReport(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none"}
+	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -158,7 +159,7 @@ func demoReport(w http.ResponseWriter, request *http.Request) {
 func report(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey}
+	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -176,7 +177,7 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 		return
 	}
 
-	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey}
+	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
 
 	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
