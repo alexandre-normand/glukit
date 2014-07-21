@@ -176,7 +176,6 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
 
 	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {

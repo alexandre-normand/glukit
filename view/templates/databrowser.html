@@ -188,7 +188,7 @@
                                             <div class="row">
                                                 <div class="four columns">
                                                     <span class="append field cc-cvc">
-                                                        <input class="normal input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
+                                                        <input class="normal text input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
                                                         <span class="adjoined"><i class="icon-lock"></i> 
                                                         </span>
                                                     </span>
@@ -256,43 +256,49 @@
             $('input.cc-num').payment('formatCardNumber');
             $('input.cc-exp').payment('formatCardExpiry');
             $('input.cc-cvc').payment('formatCardCVC');
-
-            $('input.cc-num').blur(function(event) {
-                console.log("Event target is " + event.target)
-                $(event.target).parent().toggleClass('danger', !$.payment.validateCardNumber($('.cc-number').val()));
-            })
-
-            $('input.cc-num').blur(function(event) {
-                console.log("Event target is " + event.target)
-                if ($.payment.validateCardNumber($('.cc-number').val())) {
-                    $(event.target).parent().toggleClass('danger');    
+        
+            $('input.cc-num').blur(function(event) {                
+                console.log("Number is " + $('input.cc-num').val());
+                if ($.payment.validateCardNumber($('input.cc-num').val())) {
+                    console.log("Validated to true");
+                    $(event.target).parent().addClass('success');    
+                    $(event.target).parent().removeClass('danger');    
                 } else {
-                    $(event.target).parent().toggleClass('success');    
+                    console.log("Validated to false");
+                    $(event.target).parent().addClass('danger');    
+                    $(event.target).parent().removeClass('success');    
                 }
-            })
+            });
+
+            $('input.cc-exp').blur(function(event) {                
+                if ($.payment.validateCardExpiry($('input.cc-exp').payment('cardExpiryVal'))) {
+                    $(event.target).parent().addClass('success');    
+                    $(event.target).parent().removeClass('danger');    
+                } else {
+                    $(event.target).parent().addClass('danger');    
+                    $(event.target).parent().removeClass('success');    
+                }
+            });
+
+            $('input.cc-cvc').blur(function(event) {                
+                var cardType = $.payment.cardType($('input.cc-number').val());
+                if ($.payment.validateCardCVC($('input.cc-cvc').val(), cardType)) {
+                    $(event.target).parent().addClass('success');    
+                    $(event.target).parent().removeClass('danger');    
+                } else {
+                    $(event.target).parent().addClass('danger');    
+                    $(event.target).parent().removeClass('success');    
+                }
+            });
 
             $('#donation-form').submit(function(event) {                
                 event.preventDefault();
-
-                $('input').removeClass('invalid');
-                $('.validation').removeClass('success danger');
-
-                var cardType = $.payment.cardType($('.cc-number').val());
-
-                $('.cc-number').toggleClass('danger', !$.payment.validateCardNumber($('.cc-number').val()));
-                $('.cc-exp').toggleClass('danger', !$.payment.validateCardExpiry($('.cc-exp').payment('cardExpiryVal')));
-                $('.cc-cvc').toggleClass('danger', !$.payment.validateCardCVC($('.cc-cvc').val(), cardType));
-
-                if ($('input.invalid').length) {
-                    $('.validation').addClass('danger');
-                } else {
-                    $('.validation').addClass('success');
-                }
+                
+                // Split Expiration Card field into month/year and set inputs for Stripe
+                // accordingly
                 expiration = $('input.cc-exp').payment('cardExpiryVal')
-                console.log("Expiration is " + JSON.stringify(expiration))                
                 $('.cc-exp-month').val(!expiration.month ? "" : expiration.month)
                 $('.cc-exp-year').val(!expiration.year ? "" : expiration.year)
-                console.log("Expiration month is " + JSON.stringify(expiration))
 
                 var $form = $(this);
                 console.log("Submitting to stripe: " + $form);

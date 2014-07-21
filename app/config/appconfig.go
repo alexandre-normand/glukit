@@ -23,7 +23,7 @@ func newTestAppConfig() *AppConfig {
 	appConfig.GoogleClientId = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
 	appConfig.GoogleClientSecret = "U3KV6G8sYqxa-qtjoxRnk6tX"
 	appConfig.Host = "localhost:8080"
-	appConfig.SSLHost = "localhost:8080"
+	appConfig.SSLHost = "http://localhost:8080"
 	appConfig.StripeKey = "sk_test_4PYk89tUHopayPe2fctjjtuh"
 	appConfig.StripePublishableKey = "pk_test_4PYkRwABg9hyrcISOgOgdfJY"
 
