@@ -1,0 +1,19 @@
+$donation-buddy-default: image-url('glukit-buddy/happy.svg', false, false);
+$donation-buddy-more-happy: image-url('glukit-buddy/blushing.svg', false, false);
+$donation-buddy-happiest: image-url('glukit-buddy/blushing-tears.svg', false, false);
+
+.donation-buddy {	
+	margin: auto;	
+
+	&.happy {
+		content: $donation-buddy-default;	
+	}
+
+	&.more-happy {
+		content: $donation-buddy-more-happy;	
+	}
+
+	&.happiest {
+		content: $donation-buddy-happiest;	
+	}
+}
