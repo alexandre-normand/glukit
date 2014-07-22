@@ -1816,6 +1816,11 @@ p.Carbs { color: #ffc745; }
 
 .slow-love { -webkit-animation: beat 1.5s infinite; -moz-animation: beat 1.5s infinite; -ms-animation: beat 1.5s infinite; -o-animation: beat 1.5s infinite; animation: beat 1.5s infinite; }
 
+.donation-buddy { margin: auto; }
+.donation-buddy.happy { content: url('/images/glukit-buddy/happy.svg'); }
+.donation-buddy.more-happy { content: url('/images/glukit-buddy/blushing.svg'); }
+.donation-buddy.happiest { content: url('/images/glukit-buddy/blushing-tears.svg'); }
+
 .getting-started { height: 450px; margin-bottom: 40px; background-image: url('/images/background.svg'); background-repeat: no-repeat; background-position: top center; background-color: #eeeeee; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover; position: relative; color: white; width: 100%; margin: 0 auto; padding: 0px 20px 0 20px; }
 .getting-started h1 { color: #f2f2f2; text-align: center; }
 

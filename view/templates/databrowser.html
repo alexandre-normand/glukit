@@ -170,63 +170,72 @@
                             </div>
 
                             <div class="row">
-                                <div class="twelve columns centered">
-
-                                    <span class="danger payment-errors"></span>
-
-                                    <div class="row">
-                                        <div class="eight centered columns">
-                                            <div class="row">
-                                                <div class="twelve left columns">
-                                                    <div class="picker">
-                                                        <select name="donation-amount">
-                                                            <option label="$2">200</option>   
-                                                            <option label="$5">500</option>   
-                                                            <option selected="selected" label="$10">1000</option>
-                                                            <option label="$15">1500</option>
-                                                            <option label="$20">2000</option>
-                                                            <option label="$50">5000</option>                                                            
-                                                        </select>
-                                                    </div>                                                    
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="twelve left columns">
-                                                    <span class="cc-number append field">
-                                                        <input class="wide text input cc-num" type="text" size="20" data-stripe="number" placeholder="•••• •••• •••• ••••" />
-                                                        <span class="adjoined"><i class="icon-credit-card"></i>
-                                                        </span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="four columns">
-                                                    <span class="append field cc-cvc">
-                                                        <input class="normal text input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
-                                                        <span class="adjoined"><i class="icon-lock"></i> 
-                                                        </span>
-                                                    </span>
-                                                </div>
-                                                <div class="eight columns">
-                                                    <span class="append field cc-exp">
-                                                        <input type="hidden" class="cc-exp-month" data-stripe="exp-month" />
-                                                        <input type="hidden" class="cc-exp-year" data-stripe="exp-year" />
-                                                        <input class="normal text input cc-exp" type="text" size="7" placeholder="MM/YYYY" />
-                                                        <span class="adjoined"><i class="icon-calendar"></i>
-                                                        </span>
-                                                    </span>
-
-                                                </div>
-                                            </div>
-                                        </div>
+                                <div class="three columns">
+                                    <div class="ten columns">
+                                        <img class="donation-buddy happy" id="donation-buddy" src="images/glukit-buddy/happy.svg" />
                                     </div>
+                                </div>
+                                <div class="nine columns">
                                     <div class="row">
-                                        <div class="six centered columns">
-                                            <div class="btn default medium">
-                                                <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
+                                        <div class="twelve columns centered">
+
+                                            <span class="danger payment-errors"></span>
+
+                                            <div class="row">
+                                                <div class="eight centered columns">
+                                                    <div class="row">
+                                                        <div class="twelve left columns">
+                                                            <div class="picker">
+                                                                <select id="donation-selection" name="donation-amount">
+                                                                    <option label="$2">200</option>
+                                                                    <option label="$5">500</option>
+                                                                    <option selected="selected" label="$10">1000</option>
+                                                                    <option label="$15">1500</option>
+                                                                    <option label="$20">2000</option>
+                                                                    <option label="$50">5000</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="twelve left columns">
+                                                            <span class="cc-number append field">
+                                                                <input class="wide text input cc-num" type="text" size="20" data-stripe="number" placeholder="•••• •••• •••• ••••" />
+                                                                <span class="adjoined"><i class="icon-credit-card"></i>
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="four columns">
+                                                            <span class="append field cc-cvc">
+                                                                <input class="normal text input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
+                                                                <span class="adjoined"><i class="icon-lock"></i> 
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                        <div class="eight columns">
+                                                            <span class="append field cc-exp">
+                                                                <input type="hidden" class="cc-exp-month" data-stripe="exp-month" />
+                                                                <input type="hidden" class="cc-exp-year" data-stripe="exp-year" />
+                                                                <input class="normal text input cc-exp" type="text" size="7" placeholder="MM/YYYY" />
+                                                                <span class="adjoined"><i class="icon-calendar"></i>
+                                                                </span>
+                                                            </span>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="medium default btn">
-                                                <input type="submit" value="Send Us &#x2764; (and pennies)" />
+                                            <div class="row">
+                                                <div class="six centered columns">
+                                                    <div class="btn default medium">
+                                                        <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
+                                                    </div>
+                                                    <div class="medium default btn">
+                                                        <input type="submit" value="Send Us &#x2764; (and pennies)" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -263,6 +272,23 @@
         }
         </script>
         <script src="js/jquery.payment.js"></script>
+        <script>
+        $('#donation-selection').change(function(event) {
+            donationAmount = $(this).val()
+
+            imageElement = $('#donation-buddy');
+            if (donationAmount < 1500) {
+                imageElement.addClass('happy');
+                imageElement.removeClass('more-happy happiest');
+            } else if (donationAmount < 5000) {
+                imageElement.addClass('more-happy');
+                imageElement.removeClass('happy happiest');
+            } else {
+                imageElement.addClass('happiest');
+                imageElement.removeClass('happy more-happy');
+            }
+        });
+        </script>
         <script type="text/javascript">
         Stripe.setPublishableKey('{{.StripePublishableKey}}');
 
@@ -272,13 +298,10 @@
             $('input.cc-cvc').payment('formatCardCVC');
 
             $('input.cc-num').blur(function(event) {
-                console.log("Number is " + $('input.cc-num').val());
                 if ($.payment.validateCardNumber($('input.cc-num').val())) {
-                    console.log("Validated to true");
                     $(event.target).parent().addClass('success');
                     $(event.target).parent().removeClass('danger');
                 } else {
-                    console.log("Validated to false");
                     $(event.target).parent().addClass('danger');
                     $(event.target).parent().removeClass('success');
                 }
