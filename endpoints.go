@@ -299,10 +299,14 @@ func handleDonation(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
+	r.ParseForm()
+	token := r.FormValue(STRIPE_TOKEN)
+	amountInCentsVal := r.FormValue(DONATION_AMOUNT)
+
 	stripeClient := payment.NewStripeClient(appConfig)
-	err := stripeClient.SubmitDonation(request)
+	err := stripeClient.SubmitDonation(context, token, amountInCentsVal)
 	if err != nil {
-		context.Warningf("Error processing donation from [%s] for request [%v]: [%v]", user.Email, request.Form, err)
+		context.Warningf("Error processing donation from [%s] of [%d] cents with token [%s]: [%v]", user.Email, amountInCentsVal, token, err)
 		writer.WriteHeader(502)
 	} else {
 		writer.WriteHeader(200)
