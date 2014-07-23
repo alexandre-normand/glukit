@@ -12,7 +12,6 @@ import (
 	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/model"
-	"github.com/alexandre-normand/glukit/app/payment"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
@@ -212,9 +211,6 @@ func warmUp(writer http.ResponseWriter, request *http.Request) {
 	initOnce.Do(func() {
 		c := appengine.NewContext(request)
 		c.Infof("Initializing application...")
-
-		stripeClient := payment.NewStripeClient(appConfig)
-		c.Debugf("TODO: Remove this and actually plug in payment logic: %v", stripeClient)
 		initializeApp(writer, request)
 	})
 }

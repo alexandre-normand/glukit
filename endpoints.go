@@ -8,6 +8,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/payment"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
@@ -298,7 +299,12 @@ func handleDonation(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	request.ParseForm()
-	context.Debugf("Received donation with stripe token [%s] for user [%s]", request.FormValue("stripeToken"), user)
-	writer.WriteHeader(200)
+	stripeClient := payment.NewStripeClient(appConfig)
+	err := stripeClient.SubmitDonation(request)
+	if err != nil {
+		context.Warningf("Error processing donation from [%s] for request [%v]: [%v]", user.Email, request.Form, err)
+		writer.WriteHeader(502)
+	} else {
+		writer.WriteHeader(200)
+	}
 }
