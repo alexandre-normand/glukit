@@ -299,9 +299,9 @@ func handleDonation(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 	user := user.Current(context)
 
-	r.ParseForm()
-	token := r.FormValue(STRIPE_TOKEN)
-	amountInCentsVal := r.FormValue(DONATION_AMOUNT)
+	request.ParseForm()
+	token := request.FormValue(payment.STRIPE_TOKEN)
+	amountInCentsVal := request.FormValue(payment.DONATION_AMOUNT)
 
 	stripeClient := payment.NewStripeClient(appConfig)
 	err := stripeClient.SubmitDonation(context, token, amountInCentsVal)
