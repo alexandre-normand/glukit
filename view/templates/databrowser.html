@@ -49,7 +49,7 @@
                 <a class="toggle" gumby-trigger="#navigation > ul" href="#"><i class="icon-menu"></i></a>
                 <h1 class="four columns logo">
                     <a href="/">
-                        <img src="images/glukit.svg" gumby-retina="">
+                        <img src="images/glukit.png" gumby-retina="">
                     </a>
                 </h1>
             </div>
@@ -171,73 +171,69 @@
 
                             <div class="row">
                                 <div class="three columns">
-                                    <div class="ten columns">
-                                        <img class="donation-buddy happy" id="donation-buddy" src="images/glukit-buddy/happy.svg" />
+                                    <div class="row">
+                                        <div class="ten centered columns">
+                                            <img class="donation-buddy happy" id="donation-buddy" src="images/glukit-buddy/happy.svg" />
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="nine columns">
+                                <div class="eight push_one columns">
                                     <div class="row">
-                                        <div class="twelve columns centered">
+                                        <div class="twelve columns">
 
                                             <span class="danger payment-errors"></span>
-
-                                            <div class="row">
-                                                <div class="eight centered columns">
-                                                    <div class="row">
-                                                        <div class="twelve left columns">
-                                                            <div class="picker">
-                                                                <select id="donation-selection" name="donation-amount">
-                                                                    <option label="$2">200</option>
-                                                                    <option label="$5">500</option>
-                                                                    <option selected="selected" label="$10">1000</option>
-                                                                    <option label="$15">1500</option>
-                                                                    <option label="$20">2000</option>
-                                                                    <option label="$50">5000</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="twelve left columns">
-                                                            <span class="cc-number append field">
-                                                                <input class="wide text input cc-num" type="text" size="20" data-stripe="number" placeholder="•••• •••• •••• ••••" />
-                                                                <span class="adjoined"><i class="icon-credit-card"></i>
-                                                                </span>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="four columns">
-                                                            <span class="append field cc-cvc">
-                                                                <input class="normal text input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
-                                                                <span class="adjoined"><i class="icon-lock"></i> 
-                                                                </span>
-                                                            </span>
-                                                        </div>
-                                                        <div class="eight columns">
-                                                            <span class="append field cc-exp">
-                                                                <input type="hidden" class="cc-exp-month" data-stripe="exp-month" />
-                                                                <input type="hidden" class="cc-exp-year" data-stripe="exp-year" />
-                                                                <input class="normal text input cc-exp" type="text" size="7" placeholder="MM/YYYY" />
-                                                                <span class="adjoined"><i class="icon-calendar"></i>
-                                                                </span>
-                                                            </span>
-
-                                                        </div>
+                                            <div class="row credit-card">
+                                                <div class="twelve left columns">
+                                                    <div class="picker">
+                                                        <select id="donation-selection" name="donation-amount">
+                                                            <option label="$2">200</option>
+                                                            <option label="$5">500</option>
+                                                            <option selected="selected" label="$10">1000</option>
+                                                            <option label="$15">1500</option>
+                                                            <option label="$20">2000</option>
+                                                            <option label="$50">5000</option>
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <div class="six centered columns">
-                                                    <div class="btn default medium">
-                                                        <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
-                                                    </div>
-                                                    <div class="medium default btn">
-                                                        <input type="submit" value="Send Us &#x2764; (and pennies)" />
-                                                    </div>
+                                            <div class="row credit-card">
+                                                <div class="twelve columns">
+                                                    <span class="cc-number append field">
+                                                        <input class="wide text input cc-num" type="text" size="20" data-stripe="number" placeholder="•••• •••• •••• ••••" />
+                                                        <span class="adjoined"><i class="icon-credit-card"></i>
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="row credit-card">
+                                                <div class="four columns">
+                                                    <span class="append field cc-cvc">
+                                                        <input class="normal text input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
+                                                        <span class="adjoined"><i class="icon-lock"></i> 
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                                <div class="eight columns">
+                                                    <span class="append field cc-exp">
+                                                        <input type="hidden" class="cc-exp-month" data-stripe="exp-month" />
+                                                        <input type="hidden" class="cc-exp-year" data-stripe="exp-year" />
+                                                        <input class="normal text input cc-exp" type="text" size="7" placeholder="MM/YYYY" />
+                                                        <span class="adjoined"><i class="icon-calendar"></i>
+                                                        </span>
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="six centered columns">
+                                    <div class="btn default medium">
+                                        <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
+                                    </div>
+                                    <div class="medium default btn">
+                                        <input type="submit" value="Send Us &#x2764; (and pennies)" />
                                     </div>
                                 </div>
                             </div>
