@@ -157,10 +157,10 @@
                 </a>
                 <div class="row">
                     <div class="ten columns centered">
-                        <form action="{{.SSLHost}}/donation" method="POST" id="donation-form" novalidate>
+                        <form action="#" method="POST" id="donation-form" novalidate>
                             <div class="row">
                                 <div class="twelve columns importantMessage">
-                                    You clicked! We <i class="icon-heart slow-love"></i> you too! If you feel like it, you can help us by making a donation. You really don't have to but we really appreciate it.
+                                    You clicked! We <i class="icon-heart slow-love"></i> you too! If you feel like it, you can help us by making a donation. You really don't have to but we also really appreciate it.
                                     <br/>
                                     <br/>Love,
                                 </div>
@@ -181,7 +181,7 @@
                                     <div class="row">
                                         <div class="twelve columns">
 
-                                            <span class="danger payment-errors"></span>
+                                            <div class="danger alert" id="payment-errors"></div>
                                             <div class="row credit-card">
                                                 <div class="twelve left columns">
                                                     <div class="picker">
@@ -228,12 +228,18 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="six centered columns">
-                                    <div class="btn default medium">
-                                        <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
-                                    </div>
-                                    <div class="medium default btn">
-                                        <input type="submit" value="Send Us &#x2764; (and pennies)" />
+                                <div class="twelve centered columns">
+                                    <div class="row">
+                                        <div class="push_three two columns" style="text-align: center;">
+                                            <div class="rounded btn default medium">
+                                                <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
+                                            </div>
+                                        </div>
+                                        <div class="two columns">
+                                            <div class="rounded btn default medium">
+                                                <input type="submit" id="submit-donation" value="Send Us &#x2764; (and pennies)" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -266,6 +272,8 @@
                 document.write('<script src="bower_components/gumby/js/libs/jquery-1.10.1.min.js"><\/script>');
             }
         }
+        </script>
+        <script src="http://malsup.github.io/min/jquery.form.min.js">
         </script>
         <script src="js/jquery.payment.js"></script>
         <script>
@@ -334,8 +342,8 @@
                 $('.cc-exp-year').val(!expiration.year ? "" : expiration.year)
 
                 var $form = $(this);
-                console.log("Submitting to stripe: " + $form);
-                $form.find('input[type="submit"]').prop('active', false);
+                console.log("Submitting to stripe..");
+                $form.find('#submit-donation').prop('disabled', true);
                 Stripe.card.createToken($form, stripeResponseHandler);
                 return false;
             });
@@ -346,17 +354,38 @@
 
             if (response.error) {
                 // Show the errors on the form
-                $form.find('.payment-errors').text(response.error.message);
-                $form.find('input[type="submit"]').prop('active', true);
+                $form.find('#payment-errors').text(response.error.message);
+                $form.find('#submit-donation').prop('disabled', false);
             } else {
                 // response contains id and card, which contains additional card details
                 var token = response.id;
                 // Insert the token into the form so it gets submitted to the server
                 $form.append($('<input type="hidden" name="stripeToken" />').val(token));
-                // and submit
-                $form.get(0).submit();
+
+                $form.ajaxSubmit({
+                    url: '{{.SSLHost}}/donation',
+                    type: 'post',
+                    success: donationSuccess,
+                    error: donationError
+                });
+
+                return false;
             }
         };
+
+        function donationSuccess(data) {
+            var $form = $('#donation-form');
+            $form.resetForm();
+            $form.find('#payment-errors').text("");
+            $form.find('#submit-donation').prop('disabled', false);
+            $('#donation').toggleClass("active");
+        }
+
+        function donationError(jqXHR, textStatus, errorThrown) {
+            var $form = $('#donation-form');
+            $form.find('#payment-errors').text("uh oh, we couldn't process your donation, our fault.");
+            $form.find('#submit-donation').prop('disabled', false);
+        }
         </script>
 
         <script gumby-touch="js/libs" src="bower_components/gumby/js/libs/gumby.js"></script>
