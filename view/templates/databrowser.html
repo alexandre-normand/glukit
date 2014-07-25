@@ -181,7 +181,7 @@
                                     <div class="row">
                                         <div class="twelve columns">
 
-                                            <div class="danger alert" id="payment-errors"></div>
+                                            <div id="payment-errors"></div>
                                             <div class="row credit-card">
                                                 <div class="twelve left columns">
                                                     <div class="picker">
@@ -354,7 +354,7 @@
 
             if (response.error) {
                 // Show the errors on the form
-                $form.find('#payment-errors').text(response.error.message);
+                $form.find('#payment-errors').html("<div class=\"danger alert\">" + response.error.message + "</div>");
                 $form.find('#submit-donation').prop('disabled', false);
             } else {
                 // response contains id and card, which contains additional card details
@@ -374,17 +374,24 @@
         };
 
         function donationSuccess(data) {
-            var $form = $('#donation-form');
-            $form.resetForm();
-            $form.find('#payment-errors').text("");
-            $form.find('#submit-donation').prop('disabled', false);
+            resetForm();
             $('#donation').toggleClass("active");
         }
 
         function donationError(jqXHR, textStatus, errorThrown) {
             var $form = $('#donation-form');
-            $form.find('#payment-errors').text("uh oh, we couldn't process your donation, our fault.");
+            $form.find('#payment-errors').html("<div class=\"danger alert\">uh oh, we couldn't process your donation, our fault.</div>");
             $form.find('#submit-donation').prop('disabled', false);
+        }
+
+        function resetForm() {
+            var $form = $('#donation-form');
+            $form.resetForm();
+            $form.find('#payment-errors').html("");
+            $form.find('#submit-donation').prop('disabled', false);
+            $('input.cc-num').parent().removeClass('danger success');
+            $('input.cc-exp').parent().removeClass('danger success');
+            $('input.cc-cvc').parent().removeClass('danger success');
         }
         </script>
 
@@ -396,7 +403,7 @@
         <script src="bower_components/gumby/js/libs/ui/gumby.checkbox.js"></script>
         <script src="bower_components/gumby/js/libs/ui/gumby.radiobtn.js"></script>
         <script src="bower_components/gumby/js/libs/ui/gumby.tabs.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.navbar.js"></script>
+        <script src="bower_components/gumby/js/libs/ui/gumby.navbar.js"></script>        
         <script src="bower_components/gumby/js/libs/ui/jquery.validation.js"></script>
         <script src="bower_components/gumby/js/libs/gumby.init.js"></script>
         <script src="bower_components/gumby/js/plugins.js"></script>
