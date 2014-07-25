@@ -323,3 +323,22 @@ p.Carbs {
   fill: rgba(107, 107, 107, 0.8);
   font-size: 18px;
 }
+
+i[class^="icon-"].score-trend { 
+  font-size: $norm;
+  position: absolute;
+  z-index:100;
+  vertical-align: super;  
+
+  &.up {
+    color: $success-color; 
+  }
+
+  &.down {
+    color: $warning-color; 
+  }
+}
+
+.glukit-score {
+  position: relative;
+}
