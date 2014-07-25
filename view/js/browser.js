@@ -86,6 +86,8 @@ function showDataBrowser(pathPrefix) {
     // driven by the "self" data
     d3.json("/" + pathPrefix + "data", function(error, data) {
         showProfile(data, "self_dashboard");
+        addTrendToProfile(pathPrefix, data, "self_dashboard");
+
         glucoseReads = data.data[0].data;
         userEvents = data.data[1].data;
         timeRangeLowerBound = glucoseReads[0].x;
@@ -392,11 +394,11 @@ function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, heig
 }
 
 function showProfile(dashboardData, sectionName) {
-    sectionPrefix = sectionName + "."
+    var sectionPrefix = sectionName + ".";
+    var glukitScore = dashboardData.score;
     var profilePicture = dashboardData.picture;
     var firstName = dashboardData.firstName;
     var lastName = dashboardData.lastName;
-    var glukitScore = dashboardData.score;
     var lastSync = dashboardData.lastSync;
     var lowerBound = dashboardData.scoreDetails.LowerBound;
     var upperBound = dashboardData.scoreDetails.UpperBound;
@@ -414,6 +416,18 @@ function showProfile(dashboardData, sectionName) {
         document.getElementById(sectionPrefix + "glukitScore").innerHTML = glukitScore;
     }
     document.getElementById(sectionPrefix + "glukitScoreDates").innerHTML = moment(lowerBound, "YYYY-MM-DDHH:mm:ssZ").format('LL') + ' - ' + moment(upperBound, "YYYY-MM-DDHH:mm:ssZ").format('LL');
+}
+
+function addTrendToProfile(pathPrefix, dashboardData, sectionName) {
+    var sectionPrefix = sectionName + ".";
+    var glukitScore = dashboardData.score;
+    $.getJSON("/" + pathPrefix + "glukitScores?limit=8", function(data) {
+        var mostRecentScore = data[0].Value;
+        var referenceScore = data[data.length - 1].Value;
+        var trendClass = mostRecentScore < referenceScore ? "icon-up-dir score-trend up" : "icon-down-dir score-trend down";
+
+        document.getElementById(sectionPrefix + "glukitScore").innerHTML = glukitScore + "<i class=\"" + trendClass + "\"></i>";
+    });
 }
 
 function toggleNormalRange() {
