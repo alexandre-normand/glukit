@@ -9,6 +9,7 @@ import (
 	"appengine/user"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
@@ -24,21 +25,21 @@ const (
 )
 
 var emptyDataPointSlice []apimodel.DataPoint
+var appConfig *config.AppConfig
 
 // config returns the configuration information for OAuth and Drive.
-func config() *oauth.Config {
-	host, clientId, clientSecret := getEnvSettings()
-	config := oauth.Config{
-		ClientId:     clientId,
-		ClientSecret: clientSecret,
+func configuration() *oauth.Config {
+	configuration := oauth.Config{
+		ClientId:     appConfig.GoogleClientId,
+		ClientSecret: appConfig.GoogleClientSecret,
 		Scope:        "https://www.googleapis.com/auth/userinfo.profile " + drive.DriveReadonlyScope,
 		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
 		TokenURL:     "https://accounts.google.com/o/oauth2/token",
 		AccessType:   "offline",
-		RedirectURL:  fmt.Sprintf("http://%s/oauth2callback", host),
+		RedirectURL:  fmt.Sprintf("http://%s/oauth2callback", appConfig.Host),
 	}
 
-	return &config
+	return &configuration
 }
 
 // handleLoggedInUser is responsible for directing the user to the graph page after optionally:
@@ -81,7 +82,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 
 		context.Debugf("Initializing transport from token [%s]", oauthToken)
 		transport = &oauth.Transport{
-			Config: config(),
+			Config: configuration(),
 			Transport: &urlfetch.Transport{
 				Context: context,
 			},
@@ -157,7 +158,7 @@ func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oa
 
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
-	configuration := config()
+	configuration := configuration()
 	context.Debugf("Getting token with configuration [%v]...", configuration)
 
 	t := &oauth.Transport{
@@ -172,23 +173,6 @@ func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oa
 
 	context.Infof("Got brand new oauth token [%v] with refresh token [%s]", token, token.RefreshToken)
 	return *token, t
-}
-
-// getEnvSettings returns either the production of the dev environment settings.
-// TODO: check what best practices are surrounding the maintenance of clientIds and secrets.
-func getEnvSettings() (host, clientId, clientSecret string) {
-	if appengine.IsDevAppServer() {
-		host = "localhost:8080"
-		clientId = "414109645872-g5og4q7pmua0na6sod0jtnvt16mdl4fh.apps.googleusercontent.com"
-		clientSecret = "U3KV6G8sYqxa-qtjoxRnk6tX"
-
-	} else {
-		host = "www.mygluk.it"
-		clientId = "414109645872-actrhemoam4scv3b7dqco3b5ai5fov6o.apps.googleusercontent.com"
-		clientSecret = "_gTyIGfjBTO7PmiQ6l8jEEE8"
-	}
-
-	return host, clientId, clientSecret
 }
 
 // buildPerfectBaseline generates an array of reads that represents the target/perfection

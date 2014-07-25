@@ -9,6 +9,7 @@ import (
 	"appengine/user"
 	"code.google.com/p/gorilla/mux"
 	"github.com/alexandre-normand/glukit/app/apimodel"
+	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
@@ -33,19 +34,23 @@ const (
 
 // Some variables that are used during rendering of templates
 type RenderVariables struct {
-	PathPrefix   string
-	ChannelToken string
+	PathPrefix           string
+	ChannelToken         string
+	StripePublishableKey string
+	SSLHost              string
 }
 
 // init initializes the routes and global initialization
 func init() {
+	appConfig = config.NewAppConfig()
+
 	http.Handle("/", muxRouter)
 
 	// Create user Glukit Bernstein as a fallback for comparisons
 	muxRouter.HandleFunc("/_ah/warmup", warmUp)
 	muxRouter.HandleFunc("/initpower", warmUp)
 
-	// Json endpoints
+	// GAE Json endpoints
 	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"data", demoContent)
 	muxRouter.HandleFunc("/data", personalData)
 	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"steadySailor", demoSteadySailorData)
@@ -54,6 +59,7 @@ func init() {
 	muxRouter.HandleFunc("/dashboard", dashboard)
 	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"glukitScores", glukitScoresForDemo)
 	muxRouter.HandleFunc("/glukitScores", glukitScores)
+	muxRouter.HandleFunc("/donation", handleDonation)
 
 	// "main"-page for both demo and real users
 	muxRouter.HandleFunc("/demo", renderDemo)
@@ -140,7 +146,7 @@ func renderRealUser(w http.ResponseWriter, request *http.Request) {
 func demoReport(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none"}
+	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -152,7 +158,7 @@ func demoReport(w http.ResponseWriter, request *http.Request) {
 func report(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
 
-	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none"}
+	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -169,8 +175,7 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token}
+	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
 
 	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -187,7 +192,7 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 	if _, ok := err.(store.StoreError); err != nil && !ok || len(glukitUser.RefreshToken) == 0 {
 		context.Infof("Redirecting [%s], glukitUser [%v] for authorization. Error: [%v]", user.Email, glukitUser, err)
 
-		configuration := config()
+		configuration := configuration()
 		context.Debugf("We don't current have a refresh token (either lost or it's " +
 			"the first access). Let's set the ApprovalPrompt to force to get a new one...")
 

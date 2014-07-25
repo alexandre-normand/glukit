@@ -1689,6 +1689,7 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 
 .dashboard { height: 130px; }
 .dashboard .bubble { padding-top: 5px; }
+.dashboard img.bubble { height: 120px; }
 .dashboard .left { padding-left: 5px; }
 .dashboard .right { padding-right: 5px; }
 
@@ -1786,6 +1787,42 @@ p.Carbs { color: #ffc745; }
 
 .dayBoundary { fill: rgba(107, 107, 107, 0.8); font-size: 18px; }
 
+@-webkit-keyframes beat { 0% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  20% { -webkit-transform: scale(0.6); -moz-transform: scale(0.6); -ms-transform: scale(0.6); -o-transform: scale(0.6); transform: scale(0.6); }
+  21% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  100% { -webkit-transform: scale(0.4); -moz-transform: scale(0.4); -ms-transform: scale(0.4); -o-transform: scale(0.4); transform: scale(0.4); } }
+
+@-moz-keyframes beat { 0% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  20% { -webkit-transform: scale(0.6); -moz-transform: scale(0.6); -ms-transform: scale(0.6); -o-transform: scale(0.6); transform: scale(0.6); }
+  21% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  100% { -webkit-transform: scale(0.4); -moz-transform: scale(0.4); -ms-transform: scale(0.4); -o-transform: scale(0.4); transform: scale(0.4); } }
+
+@-ms-keyframes beat { 0% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  20% { -webkit-transform: scale(0.6); -moz-transform: scale(0.6); -ms-transform: scale(0.6); -o-transform: scale(0.6); transform: scale(0.6); }
+  21% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  100% { -webkit-transform: scale(0.4); -moz-transform: scale(0.4); -ms-transform: scale(0.4); -o-transform: scale(0.4); transform: scale(0.4); } }
+
+@-o-keyframes beat { 0% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  20% { -webkit-transform: scale(0.6); -moz-transform: scale(0.6); -ms-transform: scale(0.6); -o-transform: scale(0.6); transform: scale(0.6); }
+  21% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  100% { -webkit-transform: scale(0.4); -moz-transform: scale(0.4); -ms-transform: scale(0.4); -o-transform: scale(0.4); transform: scale(0.4); } }
+
+@keyframes beat { 0% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  20% { -webkit-transform: scale(0.6); -moz-transform: scale(0.6); -ms-transform: scale(0.6); -o-transform: scale(0.6); transform: scale(0.6); }
+  21% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
+  100% { -webkit-transform: scale(0.4); -moz-transform: scale(0.4); -ms-transform: scale(0.4); -o-transform: scale(0.4); transform: scale(0.4); } }
+
+.love, .slow-love { font-size: 26px; font-size: 1.625rem; color: #c43b20; -webkit-animation: beat 1.2s infinite; -moz-animation: beat 1.2s infinite; -ms-animation: beat 1.2s infinite; -o-animation: beat 1.2s infinite; animation: beat 1.2s infinite; }
+
+.slow-love { -webkit-animation: beat 1.5s infinite; -moz-animation: beat 1.5s infinite; -ms-animation: beat 1.5s infinite; -o-animation: beat 1.5s infinite; animation: beat 1.5s infinite; }
+
+.donation-buddy { margin: auto; }
+.donation-buddy.happy { content: url('/images/glukit-buddy/happy.svg'); }
+.donation-buddy.more-happy { content: url('/images/glukit-buddy/blushing.svg'); }
+.donation-buddy.happiest { content: url('/images/glukit-buddy/blushing-tears.svg'); }
+
+.credit-card { padding-top: 5px; padding-bottom: 5px; }
+
 .getting-started { height: 450px; margin-bottom: 40px; background-image: url('/images/background.svg'); background-repeat: no-repeat; background-position: top center; background-color: #eeeeee; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover; position: relative; color: white; width: 100%; margin: 0 auto; padding: 0px 20px 0 20px; }
 .getting-started h1 { color: #f2f2f2; text-align: center; }
 
@@ -1795,10 +1832,12 @@ p.Carbs { color: #ffc745; }
 
 .step-number { padding: 0px 80px 0px 80px; width: 100%; margin: 0 auto; filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=75); opacity: 0.75; }
 
-.login { position: absolute; top: 50%; left: 50%; -webkit-transform: translate(-50%, -50%); -moz-transform: translate(-50%, -50%); -ms-transform: translate(-50%, -50%); -o-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
-
 .welcome-banner { height: 300px; width: 1074px; margin-top: 50px; margin-bottom: 50px; /* Preload the hover image */ background-image: url('/images/sea-level-banner-hover.svg'); background-repeat: no-repeat; -o-transition: 0.3s; -ms-transition: 0.3s; -moz-transition: 0.3s; -webkit-transition: 0.3s; /* ...and now for the proper property */ transition: 0.3s; }
 
 .story { margin-top: 50px; }
 
 .avatar { -webkit-border-radius: 1000px; -moz-border-radius: 1000px; -ms-border-radius: 1000px; -o-border-radius: 1000px; border-radius: 1000px; }
+
+.importantMessage { font-size: 18px; font-size: 1.125rem; }
+
+.donation-link { font-size: 48px; font-size: 3rem; position: relative; height: 100%; line-height: 100%; text-align: right; margin-top: auto; margin-bottom: auto; }
