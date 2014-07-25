@@ -19,7 +19,11 @@ $bubble-height: 120px;
   height: $dashboard-height;
 
   .bubble {
-    padding-top: ($dashboard-height - $bubble-height) / 2;
+    padding-top: ($dashboard-height - $bubble-height) / 2;    
+  }
+
+  img.bubble {
+    height: $bubble-height;
   }
 
   .left {
@@ -28,7 +32,7 @@ $bubble-height: 120px;
 
   .right {
     padding-right: ($dashboard-height - $bubble-height) / 2;
-  }
+  }  
 }
 
 .rangeSelection {
@@ -73,8 +77,8 @@ $bubble-height: 120px;
 }
 
 #profilePic {
-  max-width: 120px !important;
-  min-width: 120px !important;
+  max-width: $bubble-height !important;
+  min-width: $bubble-height !important;
 }
 /* Data graph */
 #chart_container {
