@@ -28,6 +28,7 @@ type DataResponse struct {
 	ScoreDetails model.GlukitScore `json:"scoreDetails"`
 	JoinedOn     time.Time         `json:"joinedOn"`
 	Data         []DataSeries      `json:"data"`
+	Trend        string            `json:"trend"`
 }
 
 // Represents a generic DataSeries structure with a series of DataPoints
