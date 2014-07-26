@@ -403,11 +403,7 @@ function showProfile(dashboardData, sectionName) {
     var lowerBound = dashboardData.scoreDetails.LowerBound;
     var upperBound = dashboardData.scoreDetails.UpperBound;
     var joinedOn = dashboardData.joinedOn;
-    var img = document.createElement("img");
-    img.src = profilePicture;
-    img.className = "avatar bubble";
-    var src = document.getElementById(sectionPrefix + "profilePic");
-    src.appendChild(img);
+    $("#" + sectionName + "-profilePic").html("<img src=\"" + profilePicture + "\" class=\"avatar bubble\"/>");
     document.getElementById(sectionPrefix + "userName").innerHTML = firstName + " " + lastName;
     document.getElementById(sectionPrefix + "lastSync").innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();
     if (glukitScore == null) {

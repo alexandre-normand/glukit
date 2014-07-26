@@ -67,7 +67,7 @@
                 <div class="six columns">
                     <div class="row self dashboard" id="self_dashboard">
                         <div class="three columns left bubble">
-                            <div id="self_dashboard.profilePic"></div>
+                            <div id="self_dashboard-profilePic"></div>
                         </div>
                         <div class="six columns">
                             <div class="profile">
@@ -418,7 +418,10 @@
             highlightLines();
         };
         socket.onmessage = function(message) {
-            console.log("onMessage: " + message.data);
+            // We assume it's always a refresh
+            console.log(message.data);
+            showDataBrowser("{{.PathPrefix}}");
+            highlightLines();
         };
         socket.onerror = function() {
             console.log("error");
