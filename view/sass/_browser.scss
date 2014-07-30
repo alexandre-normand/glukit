@@ -2,6 +2,14 @@ $normal-range-color: #2390de;
 $steady-sailor-color: #33ad33;
 $dashboard-height: 130px;
 $bubble-height: 120px;
+$normal-range-color: rgba(35, 144, 222, 1);
+$low-range-color: rgba(222, 35, 51, 1);
+$high-range-color: rgba(222, 35, 51, 1);
+$selected-range-color: rgba(255, 255, 255, 1);
+$range-color: rgba(64, 64, 65, 1);
+$range-background-color: rgba(238, 238, 238, 1);
+$selected-range-background-color: rgba(158, 32, 100, 1);
+$inactive-line-color: rgba(221, 221, 221, 1);
 
 .self {
   background-color: rgba($normal-range-color, 0.2);  
@@ -144,10 +152,6 @@ li.navlink a:hover {
 
 .footer a{
   color: #446DB2;
-}
-
-.hidden{
-  display: none;
 }
 
 /* Styling for overlay when user has no data */
@@ -342,3 +346,30 @@ i[class^="icon-"].score-trend {
 .glukit-score {
   position: relative;
 }
+
+.glucoseLine {
+   stroke: $inactive-line-color; 
+
+   &.NORMAL.active { 
+     stroke: $normal-range-color;
+   }
+
+   &.HIGH.active { 
+     stroke: $high-range-color;
+   }
+
+   &.LOW.active { 
+     stroke: $low-range-color;
+   }
+}
+
+.rangeContainer {
+  background-color: $range-background-color;
+  color: $range-color;
+
+  &.active {
+    background-color: $selected-range-background-color;
+    color: $selected-range-color;
+  }
+}
+
