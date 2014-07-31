@@ -123,20 +123,20 @@
                 </div>
                 <div class="row">
                     <div class="twelve centered columns">
-                        <div class="four columns rangeSelection toggle" id="inRange" gumby-on="click">
-                            <h5 id="inTargetRangeText" class="rangeText"><i class="icon-thumbs-up">&nbsp; &nbsp;</i>In target range&nbsp;
-                                <span id="normalRangePercentage" class="rangePercentage nonVisible"></span>
-                            </h5>
+                        <div class="four columns rangeSelection toggle active" id="inRange" gumby-on="click">
+                            <div id="inTargetRangeText" class="rangeText"><i class="icon-thumbs-up">&nbsp; &nbsp;</i>In target range&nbsp;
+                                <span id="normalRangePercentage" class="rangePercentage"></span>
+                            </div>
                         </div>
                         <div class="four columns rangeSelection toggle" id="below" gumby-on="click">
-                            <h5 id="belowTargetRangeText" class="rangeText"><i class="icon-down-open-big">&nbsp; &nbsp;</i>Below target range&nbsp;
+                            <div id="belowTargetRangeText" class="rangeText"><i class="icon-down-open-big">&nbsp; &nbsp;</i>Below target range&nbsp;
                                 <span id="lowRangePercentage" class="rangePercentage nonVisible"></span>
-                            </h5>
+                            </div>
                         </div>
                         <div class="four columns rangeSelection toggle" id="above" gumby-on="click">
-                            <h5 id="aboveTargetRangeText" class="rangeText"><i class="icon-up-open-big">&nbsp; &nbsp;</i>Above target range&nbsp;
+                            <div id="aboveTargetRangeText" class="rangeText"><i class="icon-up-open-big">&nbsp; &nbsp;</i>Above target range&nbsp;
                                 <span id="highRangePercentage" class="rangePercentage nonVisible"></span>
-                            </h5>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -418,13 +418,13 @@
         socket.onopen = function() {
             console.log("connected");
             showDataBrowser("{{.PathPrefix}}");
-            highlightLines();
+            enableRangeSelection();
         };
         socket.onmessage = function(message) {
             // We assume it's always a refresh
             console.log(message.data);
             showDataBrowser("{{.PathPrefix}}");
-            highlightLines();
+            enableRangeSelection();
         };
         socket.onerror = function() {
             console.log("error");
