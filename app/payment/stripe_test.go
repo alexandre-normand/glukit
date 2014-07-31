@@ -23,12 +23,19 @@ func TestDonationWithNoUser(t *testing.T) {
 	client := NewStripeClient(appConfig)
 
 	err = client.SubmitDonation(c, "testtoken", "100")
-	if err == nil {
-		t.Error("TestDonationWithNoUser should have failed")
+	httpClient := urlfetch.Client(c)
+	sc := &stripe.Client{}
+	sc.Init(appConfig.StripeKey, httpClient, nil)
+	tokenParams := &stripe.TokenParams{Card: &stripe.CardParams{Number: "4242 4242 4242 4242", CVC: "1234", Month: "12", Year: "2030"}}
+	token, err := sc.Tokens.Create(tokenParams)
+	if err != nil {
+		t.Errorf("TestDonationWithNoUser needs a token to test but couldn't get one from stripe: [%v]", err)
 	}
 
-	if !strings.Contains(err.Error(), "User is nil") {
-		t.Errorf("TestDonationWithNoUser should have failed with a \"User is nil\" error but failed with [%s]", err.Error())
+	err = client.SubmitDonation(c, token.Id, "100")
+
+	if err != nil {
+		t.Errorf("TestDonationWithNoUser should have succeeded but failed with error: [%v]", err)
 	}
 }
 

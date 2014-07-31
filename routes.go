@@ -63,14 +63,14 @@ func init() {
 
 	// "main"-page for both demo and real users
 	muxRouter.HandleFunc("/demo", renderDemo)
-	muxRouter.HandleFunc("/graph", renderRealUser)
+	muxRouter.HandleFunc("/browse", renderRealUser)
 	muxRouter.HandleFunc("/"+DEMO_PATH_PREFIX+"report", demoReport)
 	muxRouter.HandleFunc("/report", report)
 
 	// Static pages
 	muxRouter.HandleFunc("/", landing)
 
-	muxRouter.HandleFunc("/realuser", handleRealUser)
+	muxRouter.HandleFunc("/googleauth", handleRealUser)
 	muxRouter.HandleFunc("/oauth2callback", oauthCallback)
 
 	// Client API endpoints

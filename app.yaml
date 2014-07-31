@@ -23,7 +23,7 @@ handlers:
 - url: /fonts
   static_dir: view/fonts
 
-- url: /graph
+- url: /browse
   script: _go_app
   login: required
 
@@ -38,17 +38,13 @@ handlers:
 - url: /demo.report
   script: _go_app
 
-- url: /realuser
+- url: /googleauth
   script: _go_app
   login: required
 
 - url: /initpower
   script: _go_app  
   login: admin
-
-- url: /alr
-  script: _go_app
-  login: required
 
 - url: /v1/calibrations
   script: _go_app 
