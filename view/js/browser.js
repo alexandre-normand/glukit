@@ -309,7 +309,7 @@ function addToGraph(focus, className, context, segments, glucoseReads, y, glucos
 
         // if highlightSegments is enabled, append the segment name to the class names
         if (highlightSegments === true) {
-            segmentClass = className + " " + segment.range;
+            segmentClass = className + " glucoseLine " + segment.range;
         }
 
         focus.append("path")
@@ -403,11 +403,7 @@ function showProfile(dashboardData, sectionName) {
     var lowerBound = dashboardData.scoreDetails.LowerBound;
     var upperBound = dashboardData.scoreDetails.UpperBound;
     var joinedOn = dashboardData.joinedOn;
-    var img = document.createElement("img");
-    img.src = profilePicture;
-    img.className = "avatar bubble";
-    var src = document.getElementById(sectionPrefix + "profilePic");
-    src.appendChild(img);
+    $("#" + sectionName + "-profilePic").html("<img src=\"" + profilePicture + "\" class=\"avatar bubble\"/>");
     document.getElementById(sectionPrefix + "userName").innerHTML = firstName + " " + lastName;
     document.getElementById(sectionPrefix + "lastSync").innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();
     if (glukitScore == null) {
@@ -431,62 +427,59 @@ function addTrendToProfile(pathPrefix, dashboardData, sectionName) {
 }
 
 function toggleNormalRange() {
-    $("#normalRangePercentage").show();
-    $("#lowRangePercentage").hide();
-    $("#highRangePercentage").hide();
-    //change the color of the text to white and the background to pink
-    $("#inTargetRangeText").css("color", "#fff");
-    $("#inRange").css("background", "#9e2064");
-    //reset the other div colors
-    $("#belowTargetRangeText").css("color", "#404041");
-    $("#below").css("background", "#eee");
-    $("#aboveTargetRangeText").css("color", "#404041");
-    $("#above").css("background", "#eee");
-    $("#below").show();
-    $("#above").show();
-    $('.NORMAL').css("stroke", "#2390de");
-    $('.LOW').css("stroke", "#ddd");
-    $('.HIGH').css("stroke", "#ddd");
+    $rangeSelection = $('#inRange');
+
+    $rangeSelection.find(".rangePercentage").removeClass("nonVisible");
+    $('.self.glucoseLine.NORMAL').attr("class", "self glucoseLine NORMAL active");
 }
 
-function highlightLines() {
-    $("#inRange").click(toggleNormalRange);
-    $("#below").click(function() {
-        $("#above").show();
-        $("#inRange").show();
-        //change colors of selected div
-        $("#belowTargetRangeText").css("color", "#fff");
-        $("#below").css("background", "#9e2064");
-        //reset the other div colors
-        $("#inTargetRangeText").css("color", "#404041");
-        $("#inRange").css("background", "#eee");
-        $("#aboveTargetRangeText").css("color", "#404041");
-        $("#above").css("background", "#eee");
-        //show and hide percentages
-        $("#normalRangePercentage").hide();
-        $("#lowRangePercentage").show();
-        $("#highRangePercentage").hide();
-        //Highlight relevant pieces of the graph
-        $('.NORMAL').css("stroke", "#ddd");
-        $('.LOW').css("stroke", "#de2333");
-        $('.HIGH').css("stroke", "#ddd");
-    });
-    $("#above").click(function() {
-        //change colors of selected div
-        $("#above").css("background", "#9e2064");
-        $("#aboveTargetRangeText").css("color", "#fff");
-        //reset colors of other divs
-        $("#below").css("background", "#eee");
-        $("#belowTargetRangeText").css("color", "#404041");
-        $("#inRange").css("background", "#eee");
-        $("#inTargetRangeText").css("color", "#404041");
-        $("#below").show();
-        $("#inRange").show();
-        $("#normalRangePercentage").hide();
-        $("#lowRangePercentage").hide();
-        $("#highRangePercentage").show();
-        $('.NORMAL').css("stroke", "#ddd");
-        $('.LOW').css("stroke", "#ddd");
-        $('.HIGH').css("stroke", "#de2333");
+function toggleRangeLines(isActive) {
+    for (i = 1; i < arguments.length; i++) {
+        var newClasses = "self glucoseLine " + arguments[i];
+        if (isActive) {
+            newClasses = newClasses + " active";
+        }
+
+        $(".self.glucoseLine." + arguments[i]).attr("class", newClasses);
+    }
+}
+
+function toggleRangeSelectionBoxes(isActive) {
+    for (i = 1; i < arguments.length; i++) {
+        $box = $("#" + arguments[i])
+        if (isActive) {
+            $box.addClass("active");
+            console.log("removing nonvisible from " + $box.find(".rangePercentage"));
+            $box.find(".rangePercentage").removeClass("nonVisible");
+        } else {
+            $box.removeClass("active");
+            $box.find(".rangePercentage").addClass("nonVisible");
+        }
+    }
+}
+
+function enableRangeSelection() {
+    $('.rangeSelection').on('gumby.onTrigger', function(e) {
+        $(".rangeSelection:not(#" + e.target.id + ")").each(function() {
+            toggleRangeSelectionBoxes(false, this.id);
+        });
+
+        toggleRangeSelectionBoxes(true, this.id);
+
+
+        switch (e.target.id) {
+            case "below":
+                toggleRangeLines(false, "HIGH", "NORMAL");
+                toggleRangeLines(true, "LOW");
+                break;
+            case "above":
+                toggleRangeLines(false, "LOW", "NORMAL");
+                toggleRangeLines(true, "HIGH");
+                break;
+            case "inRange":
+                toggleRangeLines(false, "LOW", "HIGH");
+                toggleRangeLines(true, "NORMAL");
+                break;
+        }
     });
 }

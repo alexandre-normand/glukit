@@ -5,7 +5,6 @@ import (
 	"appengine"
 	"appengine/urlfetch"
 	"appengine/user"
-	"errors"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/cosn/stripe"
@@ -29,8 +28,9 @@ func NewStripeClient(appConfig *config.AppConfig) (c *StripeClient) {
 
 func (c *StripeClient) SubmitDonation(ctx appengine.Context, token string, amountInCentsVal string) error {
 	user := user.Current(ctx)
-	if user == nil {
-		return errors.New("User is nil, can't proceed with donation.")
+	email := ""
+	if user != nil {
+		email = user.Email
 	}
 
 	client := urlfetch.Client(ctx)
@@ -45,7 +45,7 @@ func (c *StripeClient) SubmitDonation(ctx appengine.Context, token string, amoun
 
 	amountInDollars := float32(amountInCents) / 100.
 
-	ctx.Debugf("Received donation request of [%.2f] with stripe token [%s] for user [%s]", amountInDollars, token, user)
+	ctx.Debugf("Received donation request of [%.2f] with stripe token [%s] for user [%s]", amountInDollars, token, email)
 
 	params := &stripe.ChargeParams{
 		Token:    token,
@@ -53,16 +53,16 @@ func (c *StripeClient) SubmitDonation(ctx appengine.Context, token string, amoun
 		Currency: stripe.USD,
 		Desc:     fmt.Sprintf("Generous donation of $%.2f to Glukit.", amountInDollars),
 		Meta: map[string]string{
-			"email": user.Email,
+			"email": email,
 		},
 		Statement: "Donation",
-		Email:     user.Email,
+		Email:     email,
 	}
 
 	if charge, err := sc.Charges.Create(params); err != nil {
 		return err
 	} else {
-		ctx.Infof("Charged donation of [%.2f] to [%s] successfully: [%v]", amountInDollars, user.Email, charge)
+		ctx.Infof("Charged donation of [%.2f] to [%s] successfully: [%v]", amountInDollars, email, charge)
 	}
 
 	return nil
