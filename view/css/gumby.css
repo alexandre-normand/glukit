@@ -1693,10 +1693,6 @@ table.rounded thead th, table.rounded thead td, table.rounded caption + tbody tr
 .dashboard .left { padding-left: 5px; }
 .dashboard .right { padding-right: 5px; }
 
-.rangeSelection { cursor: pointer; background-color: #eee; border-style: solid; border-color: #fff; padding: 6px; padding-left: 6px; padding-right: 6px; padding-top: 14px; float: left; min-width: 300px; }
-
-.rangeSelection:hover, .rangeSelection:hover h5 { cursor: pointer; background-color: #9e2064 !important; color: #fff !important; }
-
 .circle { width: 120px; height: 120px; border-radius: 110px; line-height: 180%; text-align: center; vertical-align: middle; background: #eee; }
 
 .profile { margin-top: 10px; font-size: 120%; font-weight: bold; }
@@ -1796,8 +1792,9 @@ i[class^="icon-"].score-trend.down { color: #f6b83f; }
 .glucoseLine.HIGH.active { stroke: #de2333; }
 .glucoseLine.LOW.active { stroke: #de2333; }
 
-.rangeContainer { background-color: #eeeeee; color: #404041; }
-.rangeContainer.active { background-color: #9e2064; color: white; }
+.rangeSelection { cursor: pointer; background-color: #eeeeee; color: #404041; border-style: solid; border-color: #fff; padding: 6px; padding-left: 6px; padding-right: 6px; padding-top: 14px; float: left; min-width: 300px; font-size: 16px; font-size: 1rem; }
+.rangeSelection:hover { background-color: #9e2064 !important; color: white !important; }
+.rangeSelection.active { background-color: #9e2064 !important; color: white !important; }
 
 @-webkit-keyframes beat { 0% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
   20% { -webkit-transform: scale(0.6); -moz-transform: scale(0.6); -ms-transform: scale(0.6); -o-transform: scale(0.6); transform: scale(0.6); }

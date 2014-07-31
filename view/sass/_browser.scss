@@ -43,25 +43,6 @@ $inactive-line-color: rgba(221, 221, 221, 1);
   }  
 }
 
-.rangeSelection {
-  cursor: pointer;
-  background-color: #eee;
-  border-style: solid;
-  border-color: #fff;
-  padding: 6px;
-  padding-left: 6px;
-  padding-right: 6px;
-  padding-top: 14px;
-  float:left;
-  min-width: 300px;
-}
-
-.rangeSelection:hover, .rangeSelection:hover h5 {
-  cursor: pointer;
-  background-color: #9e2064 !important;
-  color:#fff !important;
-}
-
 .circle
 {
   width:$bubble-height;
@@ -363,13 +344,26 @@ i[class^="icon-"].score-trend {
    }
 }
 
-.rangeContainer {
+.rangeSelection {
+  cursor: pointer;
   background-color: $range-background-color;
-  color: $range-color;
+  color: $range-color;  
+  border-style: solid;
+  border-color: #fff;
+  padding: 6px;
+  padding-left: 6px;
+  padding-right: 6px;
+  padding-top: 14px;
+  float:left;
+  min-width: 300px;
+  @include font-size($norm);
+  &:hover {
+    background-color: $selected-range-background-color !important;
+    color:$selected-range-color !important;      
+  }
 
   &.active {
-    background-color: $selected-range-background-color;
-    color: $selected-range-color;
+    background-color: $selected-range-background-color !important;
+    color: $selected-range-color !important;
   }
 }
-
