@@ -7,7 +7,7 @@ $getting-started-background: image-url('background.svg', false, false);
 $steps-opacity: 0.75;
 $banner-header-color: #F2F2F2;
 $banner-text-color: lighten($banner-header-color, 10%);
-$welcome-image: image-url('sea-level-banner-hover.svg', false, false);
+$welcome-image: image-url('sea-level-banner.png', false, false);
 $welcome-image-transition-duration: 0.3s;
 $avatar-shape: 'circle';
 
@@ -59,8 +59,7 @@ $avatar-shape: 'circle';
   height: 300px;
   width: 1074px;
   margin-top: 50px;
-  margin-bottom: 50px;  
-  /* Preload the hover image */  
+  margin-bottom: 50px;    
   background-image: $welcome-image;
   background-repeat: no-repeat;
   -o-transition: $welcome-image-transition-duration;
@@ -99,4 +98,8 @@ $avatar-shape: 'circle';
   clip: rect(0 0 0 0); 
   height: 1px; width: 1px; 
   margin: -1px; padding: 0; border: 0; 
+}
+
+.spacer {
+  height: 40px;
 }

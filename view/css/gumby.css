@@ -1841,7 +1841,7 @@ i[class^="icon-"].score-trend.down { color: #f6b83f; }
 
 .step-number { padding: 0px 80px 0px 80px; width: 100%; margin: 0 auto; filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=75); opacity: 0.75; }
 
-.welcome-banner { height: 300px; width: 1074px; margin-top: 50px; margin-bottom: 50px; /* Preload the hover image */ background-image: url('/images/sea-level-banner-hover.svg'); background-repeat: no-repeat; -o-transition: 0.3s; -ms-transition: 0.3s; -moz-transition: 0.3s; -webkit-transition: 0.3s; /* ...and now for the proper property */ transition: 0.3s; }
+.welcome-banner { height: 300px; width: 1074px; margin-top: 50px; margin-bottom: 50px; background-image: url('/images/sea-level-banner.png'); background-repeat: no-repeat; -o-transition: 0.3s; -ms-transition: 0.3s; -moz-transition: 0.3s; -webkit-transition: 0.3s; /* ...and now for the proper property */ transition: 0.3s; }
 
 .story { margin-top: 50px; }
 
@@ -1852,3 +1852,5 @@ i[class^="icon-"].score-trend.down { color: #f6b83f; }
 .donation-link { font-size: 48px; font-size: 3rem; position: relative; height: 100%; line-height: 100%; text-align: right; margin-top: auto; margin-bottom: auto; }
 
 .nonVisible { position: absolute; overflow: hidden; clip: rect(0 0 0 0); height: 1px; width: 1px; margin: -1px; padding: 0; border: 0; }
+
+.spacer { height: 40px; }
