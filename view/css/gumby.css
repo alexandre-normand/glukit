@@ -1849,7 +1849,7 @@ i[class^="icon-"].score-trend.down { color: #f6b83f; }
 
 .importantMessage { font-size: 18px; font-size: 1.125rem; }
 
-.donation-link { font-size: 48px; font-size: 3rem; position: relative; height: 100%; line-height: 100%; text-align: right; margin-top: auto; margin-bottom: auto; }
+.menu-icon { font-size: 48px; font-size: 3rem; position: relative; height: 100%; line-height: 100%; text-align: right; margin-top: auto; margin-bottom: auto; }
 
 .nonVisible { position: absolute; overflow: hidden; clip: rect(0 0 0 0); height: 1px; width: 1px; margin: -1px; padding: 0; border: 0; }
 
