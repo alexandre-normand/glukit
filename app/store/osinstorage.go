@@ -87,6 +87,17 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 		c.Warningf("Failed to initialize oauth server: %v", err)
 	}
 
+	err = s.addClient(&osin.Client{
+		Id:          "chromadex1.mygluk.it",
+		Secret:      "***REMOVED***",
+		RedirectUri: "urn:ietf:wg:oauth:2.0:oob",
+		UserData:    "",
+	}, c)
+
+	if err != nil {
+		c.Warningf("Failed to initialize oauth server: %v", err)
+	}
+
 	return s
 }
 
