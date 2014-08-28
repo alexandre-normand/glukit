@@ -371,6 +371,7 @@
                 $form.ajaxSubmit({
                     url: '{{.SSLHost}}/donation',
                     type: 'post',
+                    timeout: 10000,
                     success: donationSuccess,
                     error: donationError
                 });
@@ -394,6 +395,7 @@
             var $form = $('#donation-form');
             $form.resetForm();
             $form.find('#payment-errors').html("");
+            $form.find('input[name="stripeToken"]').val("");
             $form.find('#submit-donation').prop('disabled', false);
             $('input.cc-num').parent().removeClass('danger success');
             $('input.cc-exp').parent().removeClass('danger success');

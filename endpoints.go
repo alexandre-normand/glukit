@@ -307,7 +307,7 @@ func handleDonation(writer http.ResponseWriter, request *http.Request) {
 	stripeClient := payment.NewStripeClient(appConfig)
 	err := stripeClient.SubmitDonation(context, token, amountInCentsVal)
 	if err != nil {
-		context.Warningf("Error processing donation from [%s] of [%d] cents with token [%s]: [%v]", user.Email, amountInCentsVal, token, err)
+		context.Warningf("Error processing donation from [%v] of [%d] cents with token [%s]: [%v]", user, amountInCentsVal, token, err)
 		writer.WriteHeader(502)
 	} else {
 		writer.WriteHeader(200)
