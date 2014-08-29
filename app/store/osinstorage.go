@@ -88,9 +88,20 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
-		Id:          "chromadex1.mygluk.it",
+		Id:          "***REMOVED***",
 		Secret:      "***REMOVED***",
-		RedirectUri: "urn:ietf:wg:oauth:2.0:oob",
+		RedirectUri: "chrome-extension://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
+		UserData:    "",
+	}, c)
+
+	if err != nil {
+		c.Warningf("Failed to initialize oauth server: %v", err)
+	}
+
+	err = s.addClient(&osin.Client{
+		Id:          "***REMOVED***",
+		Secret:      "***REMOVED***",
+		RedirectUri: "chrome-extension://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
 		UserData:    "",
 	}, c)
 
