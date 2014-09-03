@@ -15,7 +15,7 @@ import (
 
 const (
 	// Number of GlukitScores to batch in a single PutMulti
-	GLUKIT_SCORE_PUT_MULTI_SIZE = 25
+	GLUKIT_SCORE_PUT_MULTI_SIZE = 10
 )
 
 // Error interface to distinguish between temporary errors from permanent ones
