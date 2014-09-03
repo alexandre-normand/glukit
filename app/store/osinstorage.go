@@ -90,7 +90,7 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	err = s.addClient(&osin.Client{
 		Id:          "***REMOVED***",
 		Secret:      "***REMOVED***",
-		RedirectUri: "chrome-extension://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
+		RedirectUri: "https://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
 		UserData:    "",
 	}, c)
 
@@ -101,7 +101,7 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	err = s.addClient(&osin.Client{
 		Id:          "***REMOVED***",
 		Secret:      "***REMOVED***",
-		RedirectUri: "chrome-extension://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
+		RedirectUri: "https://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
 		UserData:    "",
 	}, c)
 
