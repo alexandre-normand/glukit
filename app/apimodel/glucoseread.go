@@ -87,7 +87,7 @@ func (slice GlucoseReadSlice) GetEpochTime(i int) (epochTime int64) {
 }
 
 // ToDataPointSlice converts a GlucoseReadSlice into a generic DataPoint array
-func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
+func (slice GlucoseReadSlice) ToDataPointSlice(glucoseUnit GlucoseUnit) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		localTime, err := slice[i].Time.Format()
@@ -96,12 +96,12 @@ func (slice GlucoseReadSlice) ToDataPointSlice() (dataPoints []DataPoint) {
 		}
 
 		// It's pretty terrible if this happens and we crash the app but this is a coding error and I want to know early
-		mgPerDlValue, err := slice[i].GetNormalizedValue(MG_PER_DL)
+		convertedValue, err := slice[i].GetNormalizedValue(glucoseUnit)
 		if err != nil {
 			util.Propagate(err)
 		}
 
-		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), mgPerDlValue, mgPerDlValue, GLUCOSE_READ_TAG, MG_PER_DL}
+		dataPoint := DataPoint{localTime, slice.GetEpochTime(i), convertedValue, convertedValue, GLUCOSE_READ_TAG, glucoseUnit}
 		dataPoints[i] = dataPoint
 	}
 	return dataPoints

@@ -52,7 +52,7 @@ func (slice InjectionSlice) GetEpochTime(i int) (epochTime int64) {
 }
 
 // ToDataPointSlice converts an InjectionSlice into a generic DataPoint array
-func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
+func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead, glucoseUnit GlucoseUnit) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 
 	for i := range slice {
@@ -62,7 +62,7 @@ func (slice InjectionSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataP
 		}
 
 		dataPoint := DataPoint{localTime, slice.GetEpochTime(i),
-			linearInterpolateY(matchingReads, slice[i].Time), slice[i].Units, INSULIN_TAG, "units"}
+			linearInterpolateY(matchingReads, slice[i].Time, glucoseUnit), slice[i].Units, INSULIN_TAG, "units"}
 		dataPoints[i] = dataPoint
 	}
 

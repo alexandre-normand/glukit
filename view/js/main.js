@@ -118,16 +118,16 @@ function generateEventMarkers(userEventGroup) {
     return parts;
 }
 
-function splitReadsInRangeSegments(glucoseReads) {
+function splitReadsInRangeSegments(glucoseReads, unit) {
     var segments = [];
     if (glucoseReads.length > 0) {
-        previousRange = getRange(glucoseReads[0].y);
+        previousRange = getRange(glucoseReads[0].y, unit);
         previousRead = glucoseReads[0];
         var reads = [];
         for (var i = 0; i < glucoseReads.length; i++) {
             reads.push(previousRead);
             currentRead = glucoseReads[i];
-            range = getRange(currentRead.y);
+            range = getRange(currentRead.y, unit);
 
             if (range != previousRange) {
                 // We could interpolate a read directly on the boundary 
@@ -223,12 +223,12 @@ function addRangeToAggregate(range, durationInMinutes, aggregate) {
     return aggregate;
 }
 
-function getRange(glucoseValue) {
-    if (glucoseValue > TARGET_RANGE_UPPER_BOUND) {
+function getRange(glucoseValue, targetRangeUpperValue, targetRangeLowerValue) {
+    if (glucoseValue > targetRangeUpperValue) {
         return RANGES.HIGH;
-    } else if (glucoseValue <= TARGET_RANGE_UPPER_BOUND && glucoseValue >= TARGET_RANGE_LOWER_BOUND) {
+    } else if (glucoseValue <= targetRangeUpperValue && glucoseValue >= targetRangeLowerValue) {
         return RANGES.NORMAL;
-    } else if (glucoseValue < TARGET_RANGE_LOWER_BOUND) {
+    } else if (glucoseValue < targetRangeLowerValue) {
         return RANGES.LOW;
     }
 }

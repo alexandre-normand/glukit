@@ -6,7 +6,7 @@ import (
 
 // linearInterpolateY does a linear interpolation of the Y value of a given GlucoseRead for a given
 // time value
-func linearInterpolateY(reads []GlucoseRead, timeValue Time) (yValue float32) {
+func linearInterpolateY(reads []GlucoseRead, timeValue Time, unit GlucoseUnit) (yValue float32) {
 	lowerIndex := 0
 	upperIndex := len(reads) - 1
 
@@ -30,11 +30,11 @@ func linearInterpolateY(reads []GlucoseRead, timeValue Time) (yValue float32) {
 
 	lowerTimeValue := reads[lowerIndex].Time
 	upperTimeValue := reads[upperIndex].Time
-	lowerYValue, err := reads[lowerIndex].GetNormalizedValue(MG_PER_DL)
+	lowerYValue, err := reads[lowerIndex].GetNormalizedValue(unit)
 	if err != nil {
 		util.Propagate(err)
 	}
-	upperYValue, err := reads[upperIndex].GetNormalizedValue(MG_PER_DL)
+	upperYValue, err := reads[upperIndex].GetNormalizedValue(unit)
 	if err != nil {
 		util.Propagate(err)
 	}

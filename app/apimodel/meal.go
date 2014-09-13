@@ -54,7 +54,7 @@ func (slice MealSlice) GetEpochTime(i int) (epochTime int64) {
 }
 
 // ToDataPointSlice converts an MealSlice into a generic DataPoint array
-func (slice MealSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints []DataPoint) {
+func (slice MealSlice) ToDataPointSlice(matchingReads []GlucoseRead, glucoseUnit GlucoseUnit) (dataPoints []DataPoint) {
 	dataPoints = make([]DataPoint, len(slice))
 	for i := range slice {
 		localTime, err := slice[i].Time.Format()
@@ -63,7 +63,7 @@ func (slice MealSlice) ToDataPointSlice(matchingReads []GlucoseRead) (dataPoints
 		}
 
 		dataPoint := DataPoint{localTime, slice.GetEpochTime(i),
-			linearInterpolateY(matchingReads, slice[i].Time), slice[i].Carbohydrates, CARB_TAG, "grams"}
+			linearInterpolateY(matchingReads, slice[i].Time, glucoseUnit), slice[i].Carbohydrates, CARB_TAG, "grams"}
 		dataPoints[i] = dataPoint
 	}
 

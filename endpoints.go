@@ -70,6 +70,12 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
+		unitValue, err := resolveGlucoseUnit(email, request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		reads, err := store.GetGlucoseReads(context, email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
@@ -90,7 +96,7 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{FirstName: glukitUser.FirstName, LastName: glukitUser.LastName, Picture: glukitUser.PictureUrl, LastSync: glukitUser.MostRecentRead.GetTime(), Score: engine.CalculateUserFacingScore(glukitUser.MostRecentScore), ScoreDetails: glukitUser.MostRecentScore, JoinedOn: glukitUser.AccountCreated, Data: generateDataSeriesFromData(reads, injections, carbs, exercises)}
+		response := DataResponse{FirstName: glukitUser.FirstName, LastName: glukitUser.LastName, Picture: glukitUser.PictureUrl, LastSync: glukitUser.MostRecentRead.GetTime(), Score: engine.CalculateUserFacingScore(glukitUser.MostRecentScore), ScoreDetails: glukitUser.MostRecentScore, JoinedOn: glukitUser.AccountCreated, Data: generateDataSeriesFromData(reads, injections, carbs, exercises, *unitValue)}
 		writeAsJson(writer, response)
 	}
 }
@@ -121,6 +127,12 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
+		unitValue, err := resolveGlucoseUnit(recipientEmail, request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		reads, err := store.GetGlucoseReads(context, steadySailor.Email, lowerBound, upperBound)
 		if err != nil {
 			util.Propagate(err)
@@ -129,7 +141,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 		value := writer.Header()
 		value.Add("Content-type", "application/json")
 
-		response := DataResponse{FirstName: steadySailor.FirstName, LastName: steadySailor.LastName, Picture: steadySailor.PictureUrl, LastSync: steadySailor.MostRecentRead.GetTime(), Score: engine.CalculateUserFacingScore(steadySailor.MostRecentScore), ScoreDetails: steadySailor.MostRecentScore, JoinedOn: steadySailor.AccountCreated, Data: generateDataSeriesFromData(reads, nil, nil, nil)}
+		response := DataResponse{FirstName: steadySailor.FirstName, LastName: steadySailor.LastName, Picture: steadySailor.PictureUrl, LastSync: steadySailor.MostRecentRead.GetTime(), Score: engine.CalculateUserFacingScore(steadySailor.MostRecentScore), ScoreDetails: steadySailor.MostRecentScore, JoinedOn: steadySailor.AccountCreated, Data: generateDataSeriesFromData(reads, nil, nil, nil, *unitValue)}
 		writeAsJson(writer, response)
 	}
 }
@@ -141,17 +153,17 @@ func writeAsJson(writer http.ResponseWriter, response DataResponse) {
 	enc.Encode(response)
 }
 
-func generateDataSeriesFromData(reads []apimodel.GlucoseRead, injections []apimodel.Injection, carbs []apimodel.Meal, exercises []apimodel.Exercise) (dataSeries []DataSeries) {
+func generateDataSeriesFromData(reads []apimodel.GlucoseRead, injections []apimodel.Injection, carbs []apimodel.Meal, exercises []apimodel.Exercise, glucoseUnit apimodel.GlucoseUnit) (dataSeries []DataSeries) {
 	data := make([]DataSeries, 1)
 
-	data[0] = DataSeries{"GlucoseReads", apimodel.GlucoseReadSlice(reads).ToDataPointSlice(), "GlucoseReads"}
+	data[0] = DataSeries{"GlucoseReads", apimodel.GlucoseReadSlice(reads).ToDataPointSlice(glucoseUnit), "GlucoseReads"}
 	var userEvents []apimodel.DataPoint
 	if injections != nil {
-		userEvents = apimodel.MergeDataPointArrays(userEvents, apimodel.InjectionSlice(injections).ToDataPointSlice(reads))
+		userEvents = apimodel.MergeDataPointArrays(userEvents, apimodel.InjectionSlice(injections).ToDataPointSlice(reads, glucoseUnit))
 	}
 
 	if carbs != nil {
-		userEvents = apimodel.MergeDataPointArrays(userEvents, apimodel.MealSlice(carbs).ToDataPointSlice(reads))
+		userEvents = apimodel.MergeDataPointArrays(userEvents, apimodel.MealSlice(carbs).ToDataPointSlice(reads, glucoseUnit))
 	}
 
 	// TODO: clean up exercise from all the app or restore it. We won't be using it at the moment as we don't think the exercise data

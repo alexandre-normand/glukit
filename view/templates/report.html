@@ -163,7 +163,7 @@
       x.domain(d3.extent(glucoseReads.map(function(d) { return d.date; })));
       y.domain([0, highestOnChart]);            
 
-      var segments = splitReadsInRangeSegments(glucoseReads);
+      var segments = splitReadsInRangeSegments(glucoseReads, "{{.GlucoseUnit}}");
       rangeAggregate = getRangeAggregate(segments, moment.unix(glucoseReads[0].x).toDate(), moment.unix(glucoseReads[glucoseReads.length - 1].x).toDate());
 
       var lowRangePercentage = Math.floor(rangeAggregate.lowTimeInMinutes / rangeAggregate.getTotalTime() * 100);
