@@ -223,7 +223,9 @@ function addRangeToAggregate(range, durationInMinutes, aggregate) {
     return aggregate;
 }
 
-function getRange(glucoseValue, targetRangeUpperValue, targetRangeLowerValue) {
+function getRange(glucoseValue, unit) {
+    var targetRangeUpperValue = getUpperRangeValue(unit);
+    var targetRangeLowerValue = getLowerRangeValue(unit);
     if (glucoseValue > targetRangeUpperValue) {
         return RANGES.HIGH;
     } else if (glucoseValue <= targetRangeUpperValue && glucoseValue >= targetRangeLowerValue) {
