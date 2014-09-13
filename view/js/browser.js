@@ -1,5 +1,3 @@
-var TARGET_RANGE_LOWER_BOUND = 63;
-var TARGET_RANGE_UPPER_BOUND = 127;
 // Default to 5 hours
 var SNAP_DISTANCE_IN_MILLIS = 5 * 2700000;
 var RANGES = {
@@ -8,7 +6,27 @@ var RANGES = {
     LOW: "LOW"
 }
 
-function showDataBrowser(pathPrefix) {
+function getUpperRangeValue(unit) {
+    return unit === "mmolPerL" ? 7.0484288108690105 : 127;
+}
+
+function getLowerRangeValue(unit) {
+    return unit === "mmolPerL" ? 3.496464685706674 : 63;
+}
+
+function getGlucoseUnitString(unit) {
+    return unit === "mmolPerL" ? "mmol/L" : "mg/dL";
+}
+
+function formatGlucoseValue(value, unit) {
+    return unit === "mmolPerL" ? (Math.round(value * 100) / 100).toFixed(2) : Math.round(value);
+}
+
+function showDataBrowser(pathPrefix, unit) {
+    var highChartOffset = unit === "mmolPerL" ? 5.55 : 100;
+    var TARGET_RANGE_LOWER_BOUND = getLowerRangeValue(unit);
+    var TARGET_RANGE_UPPER_BOUND = getUpperRangeValue(unit)
+
     var chartNode = document.getElementById("chart");
     chartNode.innerHTML = '';
     var margin = {
@@ -84,7 +102,7 @@ function showDataBrowser(pathPrefix) {
         .attr("align", "center");
     // That should be the lower bound of the times displayed on the graph
     // driven by the "self" data
-    d3.json("/" + pathPrefix + "data", function(error, data) {
+    d3.json("/" + pathPrefix + "data?unit=" + unit, function(error, data) {
         showProfile(data, "self_dashboard");
         addTrendToProfile(pathPrefix, data, "self_dashboard");
 
@@ -96,7 +114,7 @@ function showDataBrowser(pathPrefix) {
         });
         var highestOnChart = d3.max(glucoseReads, function(d) {
             return d.y;
-        }) + 100;
+        }) + highChartOffset;
         x.domain(d3.extent(glucoseReads.map(function(d) {
             return d.date;
         })));
@@ -181,7 +199,7 @@ function showDataBrowser(pathPrefix) {
                 return x(d.start);
             })
             .attr("y", height - 5);
-        var segments = splitReadsInRangeSegments(glucoseReads);
+        var segments = splitReadsInRangeSegments(glucoseReads, unit);
         addToGraph(focus, "self", context, segments, glucoseReads, y, glucoseLine, true, viewfinderLine);
         // Trying out the grouping, it doesn't actually use any of this
         userEvents.forEach(function(d) {
@@ -262,6 +280,7 @@ function showDataBrowser(pathPrefix) {
         brushRange = getDayRangeFromUpperBound(mostRecentReadTimeInSeconds);
         // 1 snap every day for 7 days
         var snapGuides = getDateSnapGuides(moment.unix(glucoseReads[0].x).toDate(), moment.unix(mostRecentReadTimeInSeconds).toDate());
+
         var brush = d3.svg.brush()
             .x(x2)
             .extent(brushRange)
@@ -282,7 +301,7 @@ function showDataBrowser(pathPrefix) {
         brushed();
         toggleNormalRange();
         // Add steady sailor data
-        d3.json("/" + pathPrefix + "steadySailor", function(error, data) {
+        d3.json("/" + pathPrefix + "steadySailor?unit=" + unit, function(error, data) {
             if (data != undefined) {
                 showProfile(data, "sailor_dashboard");
                 rawSteadySailor = data.data[0].data;
@@ -294,11 +313,11 @@ function showDataBrowser(pathPrefix) {
                         element.date = parseDate(element.x * 1000);
                     });
                 }
-                sailorSegments = splitReadsInRangeSegments(steadySailor);
+                sailorSegments = splitReadsInRangeSegments(steadySailor, unit);
                 addToGraph(focus, "steadySailor", context, sailorSegments, steadySailor, y, glucoseLine, false);
             }
         });
-        addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine);
+        addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine, unit);
     });
 }
 
@@ -339,7 +358,7 @@ function addTargetRangeClip(svg, canvasWidth, canvasHeight, id, lowerBound, uppe
         .attr("height", canvasHeight);
 }
 
-function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine) {
+function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, height, x, y, focusCoordinates, chartContainerElement, hoverbox, focusLine, unit) {
     // We add a background so that we have a svg area to register the mouse
     // movement
     var background = focus.append("rect")
@@ -363,7 +382,7 @@ function addBackgroundAndHover(focus, glucoseReads, userEventGroups, width, heig
         hoverbox.text(null);
         hoverbox.append("p")
             .attr("class", "glucose")
-            .text(Math.round(coordinates.y) + " mg/dl");
+            .text(formatGlucoseValue(coordinates.y, unit) + " " + getGlucoseUnitString(unit));
         var userEventGroupIndex = Math.abs(binaryIndexOf.call(userEventGroups, time));
         // We beyond the last event group, check if the last is close enough
         if (userEventGroupIndex >= userEventGroups.length) {

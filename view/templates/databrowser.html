@@ -422,13 +422,13 @@
         socket = channel.open();
         socket.onopen = function() {
             console.log("connected");
-            showDataBrowser("{{.PathPrefix}}");
+            showDataBrowser("{{.PathPrefix}}", "{{.GlucoseUnit}}");
             enableRangeSelection();
         };
         socket.onmessage = function(message) {
             // We assume it's always a refresh
             console.log(message.data);
-            showDataBrowser("{{.PathPrefix}}");
+            showDataBrowser("{{.PathPrefix}}", "{{.GlucoseUnit}}");
             enableRangeSelection();
         };
         socket.onerror = function() {

@@ -28,8 +28,9 @@ var muxRouter = mux.NewRouter()
 var initOnce sync.Once
 
 const (
-	DEMO_PATH_PREFIX = "demo."
-	DEMO_PICTURE_URL = "http://farm8.staticflickr.com/7389/10813078553_ab4e1397f4_b_d.jpg"
+	DEMO_PATH_PREFIX       = "demo."
+	DEMO_PICTURE_URL       = "http://farm8.staticflickr.com/7389/10813078553_ab4e1397f4_b_d.jpg"
+	GLUCOSE_UNIT_PARAMETER = "unit"
 )
 
 // Some variables that are used during rendering of templates
@@ -38,6 +39,7 @@ type RenderVariables struct {
 	ChannelToken         string
 	StripePublishableKey string
 	SSLHost              string
+	GlucoseUnit          apimodel.GlucoseUnit
 }
 
 // init initializes the routes and global initialization
@@ -145,8 +147,14 @@ func renderRealUser(w http.ResponseWriter, request *http.Request) {
 // report executes the report page template
 func demoReport(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
+	user := user.Current(context)
+	unitValue, err := resolveGlucoseUnit(user.Email, request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
+	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -157,8 +165,14 @@ func demoReport(w http.ResponseWriter, request *http.Request) {
 // report executes the report page template
 func report(w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
+	user := user.Current(context)
+	unitValue, err := resolveGlucoseUnit(user.Email, request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
+	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
@@ -175,11 +189,35 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost}
+
+	unitValue, err := resolveGlucoseUnit(email, request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
 
 	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {
 		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func resolveGlucoseUnit(email string, request *http.Request) (unit *apimodel.GlucoseUnit, err error) {
+	rawUnitValue := request.FormValue(GLUCOSE_UNIT_PARAMETER)
+	if rawUnitValue != apimodel.MMOL_PER_L && rawUnitValue != apimodel.MG_PER_DL {
+		context := appengine.NewContext(request)
+		glukitUser, _, _, err := store.GetUserData(context, email)
+		if err != nil {
+			return nil, err
+		}
+
+		unitValue := glukitUser.MostRecentRead.Unit
+		return &unitValue, nil
+	} else {
+		unitValue := apimodel.GlucoseUnit(rawUnitValue)
+		return &unitValue, nil
 	}
 }
 

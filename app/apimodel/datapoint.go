@@ -2,12 +2,12 @@ package apimodel
 
 // Represents a generic data point in time
 type DataPoint struct {
-	LocalTime string  `json:"label"`
-	EpochTime int64   `json:"x"`
-	Y         float32 `json:"y"`
-	Value     float32 `json:"value"`
-	Tag       string  `json:"tag"`
-	Unit      string  `json:"unit"`
+	LocalTime string      `json:"label"`
+	EpochTime int64       `json:"x"`
+	Y         float32     `json:"y"`
+	Value     float32     `json:"value"`
+	Tag       string      `json:"tag"`
+	Unit      GlucoseUnit `json:"unit"`
 }
 
 type DataPointSlice []DataPoint
