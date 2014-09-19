@@ -19,7 +19,7 @@ function getGlucoseUnitString(unit) {
 }
 
 function formatGlucoseValue(value, unit) {
-    return unit === "mmolPerL" ? (Math.round(value * 100) / 100).toFixed(2) : Math.round(value);
+    return unit === "mmolPerL" ? (Math.round(value * 100) / 100).toFixed(1) : Math.round(value);
 }
 
 function showDataBrowser(pathPrefix, unit) {
