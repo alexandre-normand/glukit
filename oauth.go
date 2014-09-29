@@ -84,15 +84,20 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 
 			server.FinishAuthorizeRequest(resp, req, ar)
 
+			data := resp.Output
 			if resp.URL == "urn:ietf:wg:oauth:2.0:oob" {
 				// Render a page with the title including the code
-				data := resp.Output
 				renderVariables := &OauthRenderVariables{Code: data["code"].(string), State: data["state"].(string)}
 
 				if err := authorizeLocalAppTemplate.Execute(w, renderVariables); err != nil {
 					c.Criticalf("Error executing template [%s]", authorizeLocalAppTemplate.Name())
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
+			} else {
+				redirectUrl := fmt.Sprintf("%s?code=%s", resp.URL, data["code"].(string))
+				c.Infof("Redirecting to [%s] with valid code.", redirectUrl)
+				http.Redirect(w, req, redirectUrl, 200)
+				return
 			}
 		}
 		if resp.IsError && resp.InternalError != nil {
