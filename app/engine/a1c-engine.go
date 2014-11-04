@@ -2,6 +2,8 @@ package engine
 
 import (
 	"appengine"
+	"errors"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
@@ -21,10 +23,11 @@ func CalculateA1CEstimate(context appengine.Context, reads []apimodel.GlucoseRea
 	context.Debugf("Estimating a1c from [%d] reads from [%s] to [%s]", len(reads), lowerBound, upperBound)
 
 	coverage := upperBound.Sub(lowerBound)
-	days := coverage / time.Hour
+	days := coverage / (time.Hour * 24)
+	context.Debugf("Coverage is [%d]", days)
 
 	if days < A1C_READ_COVERAGE_REQUIREMENT_IN_DAYS {
-		return &model.UNDEFINED_A1C_ESTIMATE, nil
+		return nil, errors.New(fmt.Sprintf("Insufficient read coverage to estimate a1c, got [%d] days but requires [%d]", days, A1C_READ_COVERAGE_REQUIREMENT_IN_DAYS))
 	} else {
 		average := stat.Mean(model.ReadStatsSlice(reads))
 		a1c := (average + 77.3) / 35.6

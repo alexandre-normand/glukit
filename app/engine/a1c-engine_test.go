@@ -21,6 +21,26 @@ func TestA1cEstimationsFromFixedMeans(t *testing.T) {
 	testA1CEstimateFromFixedAverage(t, 403, 13.5)
 }
 
+func TestCalculationWithInsufficientCoverage(t *testing.T) {
+	c, err := aetest.NewContext(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	r := make([]apimodel.GlucoseRead, NUM_READS_FOR_3_MONTHS-1)
+	ct, _ := time.Parse("02/01/2006 15:04", "18/04/2014 00:00")
+	for i := 0; i < NUM_READS_FOR_3_MONTHS-1; i++ {
+		readTime := ct.Add(time.Duration(i*5) * time.Minute)
+		r[i] = apimodel.GlucoseRead{apimodel.Time{apimodel.GetTimeMillis(readTime), "America/Los_Angeles"}, apimodel.MG_PER_DL, float32(80)}
+	}
+
+	a1cEstimate, err := engine.CalculateA1CEstimate(c, r)
+	if err == nil {
+		t.Errorf("TestCalculationWithInsufficientCoverage failed: should return error when coverage is insufficient but calculated a1c of [%v]", a1cEstimate)
+	}
+}
+
 func testA1CEstimateFromFixedAverage(t *testing.T, average float32, expectedA1C float64) {
 	c, err := aetest.NewContext(nil)
 	if err != nil {
