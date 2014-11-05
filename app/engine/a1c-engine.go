@@ -6,17 +6,22 @@ import (
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
+	"github.com/alexandre-normand/glukit/app/store"
+	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
 	"time"
 )
 
 const (
 	A1C_READ_COVERAGE_REQUIREMENT_IN_DAYS = 90
+
+	// A1C estimation scoring period requirement
+	A1C_ESTIMATION_SCORE_PERIOD = 95
 )
 
 // CalculateA1CEstimate calculates an estimate of a a1c given the last 3 months of data. The current algo is naively assuming that the average of the last
 // 3 months will be an approximation of the a1c.
-func CalculateA1CEstimate(context appengine.Context, reads []apimodel.GlucoseRead) (glukitScore *model.A1CEstimate, err error) {
+func CalculateA1CEstimate(context appengine.Context, reads []apimodel.GlucoseRead) (a1c *model.A1CEstimate, err error) {
 	lowerBound := reads[0].GetTime()
 	upperBound := reads[len(reads)-1].GetTime()
 
@@ -37,5 +42,18 @@ func CalculateA1CEstimate(context appengine.Context, reads []apimodel.GlucoseRea
 			UpperBound:     upperBound,
 			CalculatedOn:   time.Now(),
 			ScoringVersion: SCORING_VERSION}, nil
+	}
+}
+
+func EstimateA1C(context appengine.Context, glukitUser *model.GlukitUser, endOfPeriod time.Time) (a1c *model.A1CEstimate, err error) {
+	// Get the last period's worth of reads
+	upperBound := util.GetMidnightUTCBefore(endOfPeriod)
+	lowerBound := upperBound.AddDate(0, 0, -1*A1C_ESTIMATION_SCORE_PERIOD)
+
+	context.Debugf("Getting reads for a1c estimate calculation from [%s] to [%s]", lowerBound, upperBound)
+	if reads, err := store.GetGlucoseReads(context, glukitUser.Email, lowerBound, upperBound); err != nil {
+		return &model.UNDEFINED_A1C_ESTIMATE, err
+	} else {
+		return CalculateA1CEstimate(context, reads)
 	}
 }
