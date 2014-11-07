@@ -864,10 +864,10 @@ func GetGlukitScores(context appengine.Context, email string, scanQuery ScoreSca
 
 	query := datastore.NewQuery("GlukitScore").Ancestor(key)
 	if scanQuery.From != nil {
-		query = query.Filter("upperBound >=", scanQuery.From)
+		query = query.Filter("upperBound >=", *scanQuery.From)
 	}
 	if scanQuery.To != nil {
-		query = query.Filter("upperBound <=", scanQuery.To)
+		query = query.Filter("upperBound <=", *scanQuery.To)
 	}
 	if scanQuery.Limit != nil {
 		query = query.Limit(*scanQuery.Limit)
@@ -925,10 +925,10 @@ func GetA1CEstimates(context appengine.Context, email string, scanQuery ScoreSca
 
 	query := datastore.NewQuery("A1CEstimate").Ancestor(key)
 	if scanQuery.From != nil {
-		query = query.Filter("upperBound >=", scanQuery.From)
+		query = query.Filter("upperBound >=", *scanQuery.From)
 	}
 	if scanQuery.To != nil {
-		query = query.Filter("upperBound <=", scanQuery.To)
+		query = query.Filter("upperBound <=", *scanQuery.To)
 	}
 	if scanQuery.Limit != nil {
 		query = query.Limit(*scanQuery.Limit)
