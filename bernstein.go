@@ -39,7 +39,7 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
 		userProfileKey, err := store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{GLUKIT_BERNSTEIN_EMAIL, "Glukit", "Bernstein", BERNSTEIN_BIRTH_DATE, model.DIABETES_TYPE_1, "America/New_York", time.Now(),
-				BERNSTEIN_MOST_RECENT_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, "", time.Now()})
+				BERNSTEIN_MOST_RECENT_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, "", time.Now(), model.UNDEFINED_A1C_ESTIMATE})
 		if err != nil {
 			util.Propagate(err)
 		}
@@ -59,10 +59,15 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 		} else {
 			// Start batch calculation of the glukit scores
-			err := engine.CalculateGlukitScoreBatch(context, glukitUser)
+			err := engine.StartGlukitScoreBatch(context, glukitUser)
 
 			if err != nil {
 				context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
+			}
+
+			err = engine.StartA1CCalculationBatch(context, glukitUser)
+			if err != nil {
+				context.Warningf("Error starting batch calculation of a1cs for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 			}
 		}
 	} else if err != nil {

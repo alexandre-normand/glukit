@@ -63,7 +63,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 				// If the user doesn't exist already, create it
 				glukitUser := model.GlukitUser{user.Email, "", "", time.Now(),
 					model.DIABETES_TYPE_1, "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
-					model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now()}
+					model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now(), model.UNDEFINED_A1C_ESTIMATE}
 				_, err = store.StoreUserProfile(c, time.Now(), glukitUser)
 				if err != nil {
 					resp.SetError(osin.E_SERVER_ERROR, fmt.Sprintf("Fail to initialize user for email [%s]: [%v]", user.Email, err))

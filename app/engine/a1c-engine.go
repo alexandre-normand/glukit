@@ -22,6 +22,9 @@ const (
 // CalculateA1CEstimate calculates an estimate of a a1c given the last 3 months of data. The current algo is naively assuming that the average of the last
 // 3 months will be an approximation of the a1c.
 func CalculateA1CEstimate(context appengine.Context, reads []apimodel.GlucoseRead) (a1c *model.A1CEstimate, err error) {
+	if len(reads) == 0 {
+		return nil, errors.New(fmt.Sprintf("Insufficient read coverage to estimate a1c, got no reads"))
+	}
 	lowerBound := reads[0].GetTime()
 	upperBound := reads[len(reads)-1].GetTime()
 

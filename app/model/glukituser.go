@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// TODO: Add most recent A1C estimate
 // Represents a GlukitUser profile
 type GlukitUser struct {
 	Email           string               `datastore:"email"`
@@ -23,6 +24,7 @@ type GlukitUser struct {
 	Internal        bool                 `datastore:"internal"`
 	PictureUrl      string               `datastore:"pictureUrl,noindex"`
 	AccountCreated  time.Time            `datastore:"joinedOn"`
+	MostRecentA1C   A1CEstimate          `datastore:"mostRecentA1C"`
 }
 
 // Represents a GlukitScore value, the lower and upper bounds

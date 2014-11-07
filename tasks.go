@@ -92,7 +92,8 @@ func updateUserData(context appengine.Context, userEmail string, autoScheduleNex
 		}
 	}
 
-	engine.CalculateGlukitScoreBatch(context, glukitUser)
+	engine.StartGlukitScoreBatch(context, glukitUser)
+	engine.StartA1CCalculationBatch(context, glukitUser)
 
 	if autoScheduleNextRun {
 		task, err := refreshUserData.Task(userEmail, autoScheduleNextRun)
@@ -182,7 +183,7 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 				context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", userEmail, err)
 			} else {
 				// Calculate Glukit Score batch here for the newly imported data
-				err := engine.CalculateGlukitScoreBatch(context, glukitUser)
+				err := engine.StartGlukitScoreBatch(context, glukitUser)
 				if err != nil {
 					context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", userEmail, err)
 				}
@@ -222,7 +223,7 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	if userProfile, err := store.GetUserProfile(context, userProfileKey); err != nil {
 		context.Warningf("Error while persisting score for %s: %v", DEMO_EMAIL, err)
 	} else {
-		if err := engine.CalculateGlukitScoreBatch(context, userProfile); err != nil {
+		if err := engine.StartGlukitScoreBatch(context, userProfile); err != nil {
 			context.Warningf("Error while starting batch calculation of glukit scores for %s: %v", DEMO_EMAIL, err)
 		}
 	}

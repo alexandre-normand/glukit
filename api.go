@@ -168,9 +168,14 @@ func processNewGlucoseReadData(writer http.ResponseWriter, request *http.Request
 		context.Warningf("Couldn't get glukit user profile [%s] to recalculate score: %v", user.Email, err)
 	}
 
-	err = engine.CalculateGlukitScoreBatch(context, glukitUser)
+	err = engine.StartGlukitScoreBatch(context, glukitUser)
 	if err != nil {
 		context.Warningf("Error starting glukit score calculation batch for user [%s]: %v", user.Email, err)
+	}
+
+	err = engine.StartA1CCalculationBatch(context, glukitUser)
+	if err != nil {
+		context.Warningf("Error starting a1c calculation batch for user [%s]: %v", user.Email, err)
 	}
 
 	// Notify a user that is currently connected that there's new data available

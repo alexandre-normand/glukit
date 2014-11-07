@@ -26,6 +26,9 @@ const (
 	SCORING_VERSION = 1
 )
 
+// January 1st, 2014
+var A1C_CALCULATION_START = time.Unix(1388534400, 0)
+
 // CalculateGlukitScore computes the GlukitScore for a given user. This is done in a few steps:
 //   1. Get the latest GLUKIT_SCORE_PERIOD days of reads
 //   2. For the most recent reads up to READS_REQUIREMENT, calculate the individual score
@@ -106,8 +109,8 @@ func CalculateUserFacingScore(internal model.GlukitScore) (external *int64) {
 	}
 }
 
-// CalculateGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
-func CalculateGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
+// StartGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
+func StartGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
 	lowerBoundOfLastScore := glukitUser.MostRecentScore.LowerBound
 	// Set the lower bound to one day after the last lower bound
 	lowerBound := lowerBoundOfLastScore.AddDate(0, 0, -1*GLUKIT_SCORE_PERIOD+1)
@@ -115,11 +118,36 @@ func CalculateGlukitScoreBatch(context appengine.Context, glukitUser *model.Gluk
 	// Kick off the first chunk of glukit score calculation
 	task, err := RunGlukitScoreCalculationChunk.Task(glukitUser.Email, lowerBound)
 	if err != nil {
-		context.Criticalf("Couldn't schedule the next execution of runGlukitScoreCalculationChunk for user [%s]. "+
-			"This breaks batch calculation of glukit scores for that user!: %v", glukitUser.Email, err)
+		context.Criticalf("Couldn't schedule the next execution of [%s] for user [%s]. "+
+			"This breaks batch calculation of glukit scores for that user!: %v", GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, glukitUser.Email, err)
 	}
 	taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
 	context.Infof("Queued up first chunk of glukit score calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lowerBound.Format(util.TIMEFORMAT))
+
+	return nil
+}
+
+// StartA1CCalculationBatch tries to calculate a1c estimates for any week following the most recent calculated glukit score (a hack, we should have the most recent
+// a1c calculation date)
+func StartA1CCalculationBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
+	lowerBoundOfLastA1C := glukitUser.MostRecentA1C.LowerBound
+
+	// Uninitialized, default to January 1st, 2014
+	if lowerBoundOfLastA1C.Before(A1C_CALCULATION_START) {
+		lowerBoundOfLastA1C = A1C_CALCULATION_START
+	}
+
+	// Set the lower bound to one day after the last lower bound
+	lowerBound := lowerBoundOfLastA1C.AddDate(0, 0, -1*A1C_ESTIMATION_SCORE_PERIOD+1)
+
+	// Kick off the first chunk of glukit score calculation
+	task, err := RunA1CCalculationChunk.Task(glukitUser.Email, lowerBound)
+	if err != nil {
+		context.Criticalf("Couldn't schedule the next execution of [%s] for user [%s]. "+
+			"This breaks batch calculation of a1c estimates scores for that user!: %v", A1C_BATCH_CALCULATION_FUNCTION_NAME, glukitUser.Email, err)
+	}
+	taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
+	context.Infof("Queued up first chunk of a1c calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lowerBound.Format(util.TIMEFORMAT))
 
 	return nil
 }

@@ -28,7 +28,7 @@ func (e StoreError) Error() string {
 	return e.msg
 }
 
-type GlukitScoreScanQuery struct {
+type ScoreScanQuery struct {
 	Limit *int
 	From  *time.Time
 	To    *time.Time
@@ -857,7 +857,7 @@ func storeGlukitScoreChunk(context appengine.Context, parentKey *datastore.Key, 
 }
 
 // GetGlukitScores returns all GlukitScores for the given email address and matching the query parameters
-func GetGlukitScores(context appengine.Context, email string, scanQuery GlukitScoreScanQuery) (scores []model.GlukitScore, err error) {
+func GetGlukitScores(context appengine.Context, email string, scanQuery ScoreScanQuery) (scores []model.GlukitScore, err error) {
 	key := GetUserKey(context, email)
 
 	context.Infof("Scanning for glukit scores with limit [%d], from [%s], to [%s]", scanQuery.Limit, scanQuery.From, scanQuery.To)
@@ -881,5 +881,66 @@ func GetGlukitScores(context appengine.Context, email string, scanQuery GlukitSc
 	}
 
 	context.Infof("Found [%d] glukit scores.", len(scores))
+	return scores, nil
+}
+
+// StoreA1CBatch stores a batch of A1C calculations. The array could be of any size. A large batch of A1CEstimates
+// will be internally split into multiple PutMultis.
+func StoreA1CBatch(context appengine.Context, userEmail string, a1cs []model.A1CEstimate) error {
+	parentKey := GetUserKey(context, userEmail)
+
+	totalBatchSize := float64(len(a1cs))
+	for chunkStartIndex := 0; chunkStartIndex < len(a1cs); chunkStartIndex = chunkStartIndex + GLUKIT_SCORE_PUT_MULTI_SIZE {
+		chunkEndIndex := int(math.Min(float64(chunkStartIndex+GLUKIT_SCORE_PUT_MULTI_SIZE), totalBatchSize))
+		a1cChunk := a1cs[chunkStartIndex:chunkEndIndex]
+		storeA1CChunk(context, parentKey, a1cChunk)
+	}
+
+	return nil
+}
+
+func storeA1CChunk(context appengine.Context, parentKey *datastore.Key, a1cChunk []model.A1CEstimate) (keys []*datastore.Key, err error) {
+	context.Debugf("Storing chunk of [%d] a1c calculations", len(a1cChunk))
+
+	elementKeys := make([]*datastore.Key, len(a1cChunk))
+	for i := range a1cChunk {
+		elementKeys[i] = datastore.NewKey(context, "A1CEstimate", "", a1cChunk[i].UpperBound.Unix(), parentKey)
+	}
+
+	context.Infof("Emitting a PutMulti with [%d] keys for all [%d] a1cs of chunk", len(elementKeys), len(a1cChunk))
+	keys, error := datastore.PutMulti(context, elementKeys, a1cChunk)
+	if error != nil {
+		context.Criticalf("Error writing [%d] a1c calculations with keys [%s]: %v", len(elementKeys), elementKeys, error)
+		return nil, error
+	}
+
+	return elementKeys, nil
+}
+
+// GetA1CEstimates returns all a1c calculations for the given email address and matching the query parameters
+func GetA1CEstimates(context appengine.Context, email string, scanQuery ScoreScanQuery) (scores []model.A1CEstimate, err error) {
+	key := GetUserKey(context, email)
+
+	context.Infof("Scanning for a1c estimates scores with limit [%d], from [%s], to [%s]", scanQuery.Limit, scanQuery.From, scanQuery.To)
+
+	query := datastore.NewQuery("A1CEstimate").Ancestor(key)
+	if scanQuery.From != nil {
+		query = query.Filter("upperBound >=", scanQuery.From)
+	}
+	if scanQuery.To != nil {
+		query = query.Filter("upperBound <=", scanQuery.To)
+	}
+	if scanQuery.Limit != nil {
+		query = query.Limit(*scanQuery.Limit)
+	}
+	query = query.Order("-upperBound")
+
+	_, err = query.GetAll(context, &scores)
+
+	if err != datastore.Done {
+		util.Propagate(err)
+	}
+
+	context.Infof("Found [%d] a1c estimates.", len(scores))
 	return scores, nil
 }

@@ -4,6 +4,7 @@ import (
 	"appengine"
 	"appengine/user"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/engine"
@@ -248,50 +249,12 @@ func glukitScoresForDemo(writer http.ResponseWriter, request *http.Request) {
 func glukitScoresForEmail(writer http.ResponseWriter, request *http.Request, email string) {
 	context := appengine.NewContext(request)
 
-	limit := request.FormValue(QUERY_PARAM_LIMIT)
-	fromTimestamp := request.FormValue(QUERY_PARAM_FROM)
-	toTimestamp := request.FormValue(QUERY_PARAM_TO)
-
-	// The request must include at least one of from/to/limit to be considered valid
-	// as leaving it too open would could open the door for costly queries
-	if len(limit) == 0 && len(fromTimestamp) == 0 && len(toTimestamp) == 0 {
-		http.Error(writer, fmt.Sprintf("Query must specify at least one of: %s, %s or %s.",
-			QUERY_PARAM_LIMIT, QUERY_PARAM_FROM, QUERY_PARAM_TO), 400)
+	scanQuery, err := newScanQuery(request)
+	if err != nil {
+		http.Error(writer, err.Error(), 400)
 		return
 	}
-
-	var scanQuery store.GlukitScoreScanQuery
-	if len(limit) > 0 {
-		if limitValue, err := strconv.ParseInt(limit, 10, 32); err != nil {
-			http.Error(writer, fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_LIMIT, err), 400)
-			return
-		} else {
-			limitVal := int(limitValue)
-			scanQuery.Limit = &limitVal
-		}
-	}
-
-	if len(fromTimestamp) > 0 {
-		if fromValue, err := strconv.ParseInt(fromTimestamp, 10, 64); err != nil {
-			http.Error(writer, fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_FROM, err), 400)
-			return
-		} else {
-			fromTime := time.Unix(fromValue, 0)
-			scanQuery.From = &fromTime
-		}
-	}
-
-	if len(toTimestamp) > 0 {
-		if toValue, err := strconv.ParseInt(toTimestamp, 10, 64); err != nil {
-			http.Error(writer, fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_TO, err), 400)
-			return
-		} else {
-			toTime := time.Unix(toValue, 0)
-			scanQuery.To = &toTime
-		}
-	}
-
-	glukitScores, err := store.GetGlukitScores(context, email, scanQuery)
+	glukitScores, err := store.GetGlukitScores(context, email, *scanQuery)
 	if err != nil {
 		util.Propagate(err)
 	}
@@ -306,6 +269,87 @@ func glukitScoresForEmail(writer http.ResponseWriter, request *http.Request, ema
 
 	enc := json.NewEncoder(writer)
 	enc.Encode(glukitScores)
+}
+
+func a1cEstimates(writer http.ResponseWriter, request *http.Request) {
+	context := appengine.NewContext(request)
+	user := user.Current(context)
+
+	a1csForEmail(writer, request, user.Email)
+}
+
+func a1cEstimatesForDemo(writer http.ResponseWriter, request *http.Request) {
+	a1csForEmail(writer, request, DEMO_EMAIL)
+}
+
+// a1cs is the endpoint to retrieve a list of a1cs.
+func a1csForEmail(writer http.ResponseWriter, request *http.Request, email string) {
+	context := appengine.NewContext(request)
+
+	scanQuery, err := newScanQuery(request)
+	if err != nil {
+		http.Error(writer, err.Error(), 400)
+		return
+	}
+
+	a1cs, err := store.GetA1CEstimates(context, email, *scanQuery)
+	if err != nil {
+		util.Propagate(err)
+	}
+
+	if len(a1cs) < 1 {
+		http.Error(writer, "No a1c estimated yet.", 204)
+		return
+	}
+
+	value := writer.Header()
+	value.Add("Content-type", "application/json")
+
+	enc := json.NewEncoder(writer)
+	enc.Encode(a1cs)
+}
+
+func newScanQuery(request *http.Request) (scanQuery *store.ScoreScanQuery, err error) {
+	limit := request.FormValue(QUERY_PARAM_LIMIT)
+	fromTimestamp := request.FormValue(QUERY_PARAM_FROM)
+	toTimestamp := request.FormValue(QUERY_PARAM_TO)
+
+	scanQuery = new(store.ScoreScanQuery)
+	// The request must include at least one of from/to/limit to be considered valid
+	// as leaving it too open would could open the door for costly queries
+	if len(limit) == 0 && len(fromTimestamp) == 0 && len(toTimestamp) == 0 {
+		return nil, errors.New(fmt.Sprintf("Query must specify at least one of: %s, %s or %s.",
+			QUERY_PARAM_LIMIT, QUERY_PARAM_FROM, QUERY_PARAM_TO))
+	}
+
+	if len(limit) > 0 {
+		if limitValue, err := strconv.ParseInt(limit, 10, 32); err != nil {
+			return nil, errors.New(fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_LIMIT, err))
+		} else {
+			limitVal := int(limitValue)
+			scanQuery.Limit = &limitVal
+		}
+	}
+
+	if len(fromTimestamp) > 0 {
+		if fromValue, err := strconv.ParseInt(fromTimestamp, 10, 64); err != nil {
+			return nil, errors.New(fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_FROM, err))
+		} else {
+			fromTime := time.Unix(fromValue, 0)
+			scanQuery.From = &fromTime
+		}
+	}
+
+	if len(toTimestamp) > 0 {
+		if toValue, err := strconv.ParseInt(toTimestamp, 10, 64); err != nil {
+			return nil, errors.New(fmt.Sprintf("Invalid value for %s: [%v].", QUERY_PARAM_TO, err))
+		} else {
+			toTime := time.Unix(toValue, 0)
+			scanQuery.To = &toTime
+		}
+	}
+
+	return scanQuery, nil
 }
 
 func handleDonation(writer http.ResponseWriter, request *http.Request) {
