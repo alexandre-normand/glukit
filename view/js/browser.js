@@ -422,6 +422,7 @@ function showProfile(dashboardData, sectionName) {
     var lowerBound = dashboardData.scoreDetails.LowerBound;
     var upperBound = dashboardData.scoreDetails.UpperBound;
     var joinedOn = dashboardData.joinedOn;
+    $(".a1cNeedle").attr("style", "-ms-transform: rotate(270deg); -moz-transform:rotate(270deg); -webkit-transform:rotate(270deg); ");
     $("#" + sectionName + "-profilePic").html("<img src=\"" + profilePicture + "\" class=\"avatar bubble\"/>");
     document.getElementById(sectionPrefix + "userName").innerHTML = firstName + " " + lastName;
     document.getElementById(sectionPrefix + "lastSync").innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();

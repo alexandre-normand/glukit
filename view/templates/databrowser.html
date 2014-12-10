@@ -7,391 +7,390 @@
 <!-- Consider adding an manifest.appcache: h5bp.com/d/Offline -->
 <!--[if gt IE 9]><!-->
 <html class="no-js" lang="en" itemscope="" itemtype="http://schema.org/Product">
-<!--<![endif]-->
-
-<head>
-    <meta charset="utf-8">
-    <!-- Use the .htaccess and remove these lines to avoid edge case issues.
+    <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <!-- Use the .htaccess and remove these lines to avoid edge case issues.
         More info: h5bp.com/b/378 -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Glukit</title>
-    <meta name="description" content="Glukit">
-    <meta name="keywords" content="diabetes T1D">
-    <meta name="author" content="humans.txt">
-    <link rel="shortcut icon" href="./images/Glukit.ico">
-    <link href="./images/mobile/Glukit-76x76.png" rel="apple-touch-icon" sizes="76x76" />
-    <link href="./images/mobile/Glukit-120x120.png" rel="apple-touch-icon" sizes="120x120" />
-    <link href="./images/mobile/Glukit-152x152.png" rel="apple-touch-icon" sizes="152x152" />    
-    <!-- Facebook Metadata /-->
-    <meta property="fb:page_id" content="">
-    <meta property="og:image" content="">
-    <meta property="og:description" content="Glukit, Keeping Your Blood Sugar Steadier than a Drunken Sailor">
-    <meta property="og:title" content="Glukit">
-    <!-- Google+ Metadata /-->
-    <meta itemprop="name" content="Glukit">
-    <meta itemprop="description" content="Glukit, Keeping Your Blood Sugar Steadier than a Drunken Sailor">
-    <meta itemprop="image" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <!-- We highly recommend you use SASS and write your custom styles in sass/_custom.scss.
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Glukit</title>
+        <meta name="description" content="Glukit">
+        <meta name="keywords" content="diabetes T1D">
+        <meta name="author" content="humans.txt">
+        <link rel="shortcut icon" href="./images/Glukit.ico">
+        <link href="./images/mobile/Glukit-76x76.png" rel="apple-touch-icon" sizes="76x76" />
+        <link href="./images/mobile/Glukit-120x120.png" rel="apple-touch-icon" sizes="120x120" />
+        <link href="./images/mobile/Glukit-152x152.png" rel="apple-touch-icon" sizes="152x152" />
+        <!-- Facebook Metadata /-->
+        <meta property="fb:page_id" content="">
+        <meta property="og:image" content="">
+        <meta property="og:description" content="Glukit, Keeping Your Blood Sugar Steadier than a Drunken Sailor">
+        <meta property="og:title" content="Glukit">
+        <!-- Google+ Metadata /-->
+        <meta itemprop="name" content="Glukit">
+        <meta itemprop="description" content="Glukit, Keeping Your Blood Sugar Steadier than a Drunken Sailor">
+        <meta itemprop="image" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+        <!-- We highly recommend you use SASS and write your custom styles in sass/_custom.scss.
         However, there is a blank style.css in the css directory should you prefer -->
-    <link rel="stylesheet" href="css/gumby.css">
-    <!-- <link rel="stylesheet" href="css/style.css"> -->
-    <script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>
-    <script type="text/javascript" src="/_ah/channel/jsapi"></script>
-    <script src="js/d3.v3.min.js"></script>
-    <script src="js/moment-with-langs.min.js"></script>
-
-    <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
-    <script src="js/main.js"></script>
-</head>
-
-<body>
-    <div class="navbar">
-        <div class="row">
-            <div class="ten columns">
-                <a class="toggle" gumby-trigger="#navigation > ul" href="#"><i class="icon-menu"></i></a>
-                <h1 class="four columns logo">
+        <link rel="stylesheet" href="css/gumby.css">
+        <!-- <link rel="stylesheet" href="css/style.css"> -->
+        <script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>
+        <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+        <script src="js/d3.v3.min.js"></script>
+        <script src="js/moment-with-langs.min.js"></script>
+        <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+        <script src="js/main.js"></script>
+    </head>
+    <body>
+        <div class="navbar">
+            <div class="row">
+                <div class="ten columns">
+                    <a class="toggle" gumby-trigger="#navigation > ul" href="#"><i class="icon-menu"></i></a>
+                    <h1 class="four columns logo">
                     <a href="/">
                         <img src="images/glukit.png" gumby-retina="">
                     </a>
-                </h1>
-            </div>
-
-            <div class="one columns menu-icon">
-                <a href="mailto:alexandre.normand@mygluk.it"><i class="icon-mail"></i></a> 
-            </div>
-
-            <div class="one columns menu-icon">
-                <a href="#" class="switch" gumby-trigger="#donation"><i class="icon-heart"></i></a> 
+                    </h1>
+                </div>
+                <div class="one columns menu-icon">
+                    <a href="mailto:alexandre.normand@mygluk.it"><i class="icon-mail"></i></a>
+                </div>
+                <div class="one columns menu-icon">
+                    <a href="#" class="switch" gumby-trigger="#donation"><i class="icon-heart"></i></a>
+                </div>
             </div>
         </div>
-
-    </div>
-    <div class="row">
-        <div class="twelve centered columns">
-            <div class="row">
-                <div class="six columns">
-                    <div class="row self dashboard" id="self_dashboard">
-                        <div class="three columns left bubble">
-                            <div id="self_dashboard-profilePic"></div>
-                        </div>
-                        <div class="six columns">
-                            <div class="profile">
-                                <span id="self_dashboard.userName"></span>
-                            </div>
-                            <div>Last sync
-                                <span id="self_dashboard.lastSync"></span>
-                            </div>
-                            <div>
-                                Glukit Score based on data from:
-                                <br/>
-                                <small id="self_dashboard.glukitScoreDates"></small>
-                            </div>
-                        </div>
-                        <div class="three columns right bubble">
-                            <div class="insights circle glukit-score" id="self_dashboard.glukitScore"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="six columns">
-                    <div class="row sailor dashboard" id="sailor_dashboard">
-                        <div class="three columns left bubble">
-                            <div id="sailor_dashboard-profilePic"></div>
-                        </div>
-                        <div class="six columns">
-                            <div class="profile">
-                                <span id="sailor_dashboard.userName"></span>
-                            </div>
-                            <div>Last sync
-                                <span id="sailor_dashboard.lastSync"></span>
-                            </div>
-                            <div>
-                                Glukit Score based on data from:
-                                <br/>
-                                <small id="sailor_dashboard.glukitScoreDates"></small>
-                            </div>
-                        </div>
-                        <div class="three columns right bubble">
-                            <div class="insights circle" id="sailor_dashboard.glukitScore"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <hr id="features">
-            <div class="row dashboard">
+        <div class="row">
+            <div class="twelve centered columns">
                 <div class="row">
-                    <div class="twelve columns">
-                        <h4>How you're doing</h4>
+                    <div class="six columns">
+                        <div class="row self dashboard" id="self_dashboard">
+                            <div class="three columns left bubble">
+                                <div id="self_dashboard-profilePic"></div>
+                            </div>
+                            <div class="six columns">
+                                <div class="profile">
+                                    <span id="self_dashboard.userName"></span>
+                                </div>
+                                <div>Last sync
+                                    <span id="self_dashboard.lastSync"></span>
+                                </div>
+                                <div>
+                                    Glukit Score based on data from:
+                                    <br/>
+                                    <small id="self_dashboard.glukitScoreDates"></small>
+                                </div>
+                            </div>
+                            <div class="three columns right bubble">
+                                <div class="insights circle glukit-score" id="self_dashboard.glukitScore"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="six columns">
+                        <div class="row sailor dashboard" id="sailor_dashboard">
+                            <div class="three columns left bubble">
+                                <div id="sailor_dashboard-profilePic"></div>
+                            </div>
+                            <div class="six columns">
+                                <div class="profile">
+                                    <span id="sailor_dashboard.userName"></span>
+                                </div>
+                                <div>Last sync
+                                    <span id="sailor_dashboard.lastSync"></span>
+                                </div>
+                                <div>
+                                    Glukit Score based on data from:
+                                    <br/>
+                                    <small id="sailor_dashboard.glukitScoreDates"></small>
+                                </div>
+                            </div>
+                            <div class="three columns right bubble">
+                                <div class="insights circle" id="sailor_dashboard.glukitScore"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <hr id="features">
+                <div class="row dashboard">
+                    <div class="row">
+                        <div class="twelve columns">
+                            <h4>How you're doing</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        Here's your estimated A1C based on your most recent data:
+                        <div class="three centered columns right bubble">
+                            
+                            
+                            <div class="wheel">
+                            <div class="center">
+                                <div class="a1c">4.6</div>
+                                                                
+                            </div>
+                                <ul class="umbrella">
+                                    <li class="color"></li>
+                                    <li class="color"></li>
+                                    <li class="color"></li>
+                                    <li class="color"></li>                                   
+                                </ul>
+                                <div class="a1cNeedle"></div>
+                            </div>
+                            
+                            <!-- <div class="insights a1c umbrella" id="a1c_dashboard"></div> -->
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="twelve centered columns">
+                            <div class="four columns rangeSelection toggle active" id="inRange" gumby-on="click">
+                                <div id="inTargetRangeText" class="rangeText"><i class="icon-thumbs-up">&nbsp; &nbsp;</i>In target range&nbsp;
+                                    <span id="normalRangePercentage" class="rangePercentage"></span>
+                                </div>
+                            </div>
+                            <div class="four columns rangeSelection toggle" id="below" gumby-on="click">
+                                <div id="belowTargetRangeText" class="rangeText"><i class="icon-down-open-big">&nbsp; &nbsp;</i>Below target range&nbsp;
+                                    <span id="lowRangePercentage" class="rangePercentage nonVisible"></span>
+                                </div>
+                            </div>
+                            <div class="four columns rangeSelection toggle" id="above" gumby-on="click">
+                                <div id="aboveTargetRangeText" class="rangeText"><i class="icon-up-open-big">&nbsp; &nbsp;</i>Above target range&nbsp;
+                                    <span id="highRangePercentage" class="rangePercentage nonVisible"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr id="browser">
                 <div class="row">
                     <div class="twelve centered columns">
-                        <div class="four columns rangeSelection toggle active" id="inRange" gumby-on="click">
-                            <div id="inTargetRangeText" class="rangeText"><i class="icon-thumbs-up">&nbsp; &nbsp;</i>In target range&nbsp;
-                                <span id="normalRangePercentage" class="rangePercentage"></span>
+                        <div class="slab graph">
+                            <div id="chart_container">
+                                <div id="hoverbox" class="hoverbox"></div>
+                                <div id="chart"></div>
                             </div>
-                        </div>
-                        <div class="four columns rangeSelection toggle" id="below" gumby-on="click">
-                            <div id="belowTargetRangeText" class="rangeText"><i class="icon-down-open-big">&nbsp; &nbsp;</i>Below target range&nbsp;
-                                <span id="lowRangePercentage" class="rangePercentage nonVisible"></span>
-                            </div>
-                        </div>
-                        <div class="four columns rangeSelection toggle" id="above" gumby-on="click">
-                            <div id="aboveTargetRangeText" class="rangeText"><i class="icon-up-open-big">&nbsp; &nbsp;</i>Above target range&nbsp;
-                                <span id="highRangePercentage" class="rangePercentage nonVisible"></span>
-                            </div>
+                            <div id="slider"></div>
                         </div>
                     </div>
                 </div>
             </div>
-            <hr id="browser">
-            <div class="row">
-                <div class="twelve centered columns">
-                    <div class="slab graph">
-                        <div id="chart_container">
-                            <div id="hoverbox" class="hoverbox"></div>
-                            <div id="chart"></div>
-                        </div>
-                        <div id="slider"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal" id="donation">
-            <div class="content">
-                <a class="close switch" gumby-trigger="|#donation"><i class="icon-cancel" /></i>
-                </a>
-                <div class="row">
-                    <div class="ten columns centered">
-                        <form action="#" method="POST" id="donation-form" novalidate>
-                            <div class="row">
-                                <div class="twelve columns importantMessage">
-                                    You clicked! We <i class="icon-heart slow-love"></i> you too! If you feel like it, you can help us by making a donation. You really don't have to but we also really appreciate it.
-                                    <br/>
-                                    <br/>Love,
-                                </div>
-                            </div>
-                            <div class="row">
-                                <br/>
-                            </div>
-
-                            <div class="row">
-                                <div class="three columns">
-                                    <div class="row">
-                                        <div class="ten centered columns">
-                                            <img class="donation-buddy happy" id="donation-buddy" src="images/glukit-buddy/happy.svg" />
-                                        </div>
+            <div class="modal" id="donation">
+                <div class="content">
+                    <a class="close switch" gumby-trigger="|#donation"><i class="icon-cancel" /></i>
+                    </a>
+                    <div class="row">
+                        <div class="ten columns centered">
+                            <form action="#" method="POST" id="donation-form" novalidate>
+                                <div class="row">
+                                    <div class="twelve columns importantMessage">
+                                        You clicked! We <i class="icon-heart slow-love"></i> you too! If you feel like it, you can help us by making a donation. You really don't have to but we also really appreciate it.
+                                        <br/>
+                                        <br/>Love,
                                     </div>
                                 </div>
-                                <div class="eight push_one columns">
-                                    <div class="row">
-                                        <div class="twelve columns">
-
-                                            <div id="payment-errors"></div>
-                                            <div class="row credit-card">
-                                                <div class="twelve left columns">
-                                                    <div class="picker">
-                                                        <select id="donation-selection" name="donation-amount">
-                                                            <option label="$2">200</option>
-                                                            <option label="$5">500</option>
-                                                            <option selected="selected" label="$10">1000</option>
-                                                            <option label="$15">1500</option>
-                                                            <option label="$20">2000</option>
-                                                            <option label="$50">5000</option>
-                                                        </select>
+                                <div class="row">
+                                    <br/>
+                                </div>
+                                <div class="row">
+                                    <div class="three columns">
+                                        <div class="row">
+                                            <div class="ten centered columns">
+                                                <img class="donation-buddy happy" id="donation-buddy" src="images/glukit-buddy/happy.svg" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="eight push_one columns">
+                                        <div class="row">
+                                            <div class="twelve columns">
+                                                <div id="payment-errors"></div>
+                                                <div class="row credit-card">
+                                                    <div class="twelve left columns">
+                                                        <div class="picker">
+                                                            <select id="donation-selection" name="donation-amount">
+                                                                <option label="$2">200</option>
+                                                                <option label="$5">500</option>
+                                                                <option selected="selected" label="$10">1000</option>
+                                                                <option label="$15">1500</option>
+                                                                <option label="$20">2000</option>
+                                                                <option label="$50">5000</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="row credit-card">
-                                                <div class="twelve columns">
-                                                    <span class="cc-number append field">
+                                                <div class="row credit-card">
+                                                    <div class="twelve columns">
+                                                        <span class="cc-number append field">
                                                         <input class="wide text input cc-num" type="text" size="20" data-stripe="number" placeholder="•••• •••• •••• ••••" />
                                                         <span class="adjoined"><i class="icon-credit-card"></i>
                                                         </span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="row credit-card">
-                                                <div class="four columns">
-                                                    <span class="append field cc-cvc">
-                                                        <input class="normal text input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
-                                                        <span class="adjoined"><i class="icon-lock"></i> 
                                                         </span>
-                                                    </span>
+                                                    </div>
                                                 </div>
-                                                <div class="eight columns">
-                                                    <span class="append field cc-exp">
+                                                <div class="row credit-card">
+                                                    <div class="four columns">
+                                                        <span class="append field cc-cvc">
+                                                        <input class="normal text input cc-cvc" type="text" size="4" data-stripe="cvc" placeholder="123" />
+                                                        <span class="adjoined"><i class="icon-lock"></i>
+                                                        </span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="eight columns">
+                                                        <span class="append field cc-exp">
                                                         <input type="hidden" class="cc-exp-month" data-stripe="exp-month" />
                                                         <input type="hidden" class="cc-exp-year" data-stripe="exp-year" />
                                                         <input class="normal text input cc-exp" type="text" size="7" placeholder="MM/YYYY" />
                                                         <span class="adjoined"><i class="icon-calendar"></i>
                                                         </span>
-                                                    </span>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="twelve centered columns">
-                                    <div class="row">
-                                        <div class="push_three two columns" style="text-align: center;">
-                                            <div class="rounded btn default medium">
-                                                <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
+                                <div class="row">
+                                    <div class="twelve centered columns">
+                                        <div class="row">
+                                            <div class="push_three two columns" style="text-align: center;">
+                                                <div class="rounded btn default medium">
+                                                    <a href="#" class="switch" gumby-trigger="|#donation">Cancel</a>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="two columns">
-                                            <div class="rounded btn default medium">
-                                                <input type="submit" id="submit-donation" value="Send Us &#x2764; (and pennies)" />
+                                            <div class="two columns">
+                                                <div class="rounded btn default medium">
+                                                    <input type="submit" id="submit-donation" value="Send Us &#x2764; (and pennies)" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="footer">
-                <div class="twelve columns" style="height:30px">
+            <div class="row">
+                <div class="footer">
+                    <div class="twelve columns" style="height:30px">
+                    </div>
                 </div>
             </div>
-        </div>
-        <!-- Grab Google CDN's jQuery, fall back to local if offline -->
-        <!-- 2.0 for modern browsers, 1.10 for .oldie -->
-        <script>
-        var oldieCheck = Boolean(document.getElementsByTagName('html')[0].className.match(/\soldie\s/g));
-        if (!oldieCheck) {
-            document.write('<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"><\/script>');
-        } else {
-            document.write('<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"><\/script>');
-        }
-        </script>
-        <script>
-        if (!window.jQuery) {
+            <!-- Grab Google CDN's jQuery, fall back to local if offline -->
+            <!-- 2.0 for modern browsers, 1.10 for .oldie -->
+            <script>
+            var oldieCheck = Boolean(document.getElementsByTagName('html')[0].className.match(/\soldie\s/g));
             if (!oldieCheck) {
-                document.write('<script src="bower_components/gumby/js/libs/jquery-2.0.2.min.js"><\/script>');
+            document.write('<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"><\/script>');
             } else {
-                document.write('<script src="bower_components/gumby/js/libs/jquery-1.10.1.min.js"><\/script>');
+            document.write('<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"><\/script>');
             }
-        }
-        </script>
-        <script src="http://malsup.github.io/min/jquery.form.min.js">
-        </script>
-        <script src="js/jquery.payment.js"></script>
-        <script>
-        $('#donation-selection').change(function(event) {
+            </script>
+            <script>
+            if (!window.jQuery) {
+            if (!oldieCheck) {
+            document.write('<script src="bower_components/gumby/js/libs/jquery-2.0.2.min.js"><\/script>');
+            } else {
+            document.write('<script src="bower_components/gumby/js/libs/jquery-1.10.1.min.js"><\/script>');
+            }
+            }
+            </script>
+            <script src="http://malsup.github.io/min/jquery.form.min.js">
+            </script>
+            <script src="js/jquery.payment.js"></script>
+            <script>
+            $('#donation-selection').change(function(event) {
             donationAmount = $(this).val()
-
             imageElement = $('#donation-buddy');
             if (donationAmount < 1500) {
-                imageElement.addClass('happy');
-                imageElement.removeClass('more-happy happiest');
+            imageElement.addClass('happy');
+            imageElement.removeClass('more-happy happiest');
             } else if (donationAmount < 5000) {
-                imageElement.addClass('more-happy');
-                imageElement.removeClass('happy happiest');
+            imageElement.addClass('more-happy');
+            imageElement.removeClass('happy happiest');
             } else {
-                imageElement.addClass('happiest');
-                imageElement.removeClass('happy more-happy');
+            imageElement.addClass('happiest');
+            imageElement.removeClass('happy more-happy');
             }
-        });
-        </script>
-        <script type="text/javascript">
-        Stripe.setPublishableKey('{{.StripePublishableKey}}');
-
-        jQuery(function($) {
+            });
+            </script>
+            <script type="text/javascript">
+            Stripe.setPublishableKey('{{.StripePublishableKey}}');
+            jQuery(function($) {
             $('input.cc-num').payment('formatCardNumber');
             $('input.cc-exp').payment('formatCardExpiry');
             $('input.cc-cvc').payment('formatCardCVC');
-
             $('input.cc-num').blur(function(event) {
-                if ($.payment.validateCardNumber($('input.cc-num').val())) {
-                    $(event.target).parent().addClass('success');
-                    $(event.target).parent().removeClass('danger');
-                } else {
-                    $(event.target).parent().addClass('danger');
-                    $(event.target).parent().removeClass('success');
-                }
-            });
-
-            $('input.cc-exp').blur(function(event) {
-                if ($.payment.validateCardExpiry($('input.cc-exp').payment('cardExpiryVal'))) {
-                    $(event.target).parent().addClass('success');
-                    $(event.target).parent().removeClass('danger');
-                } else {
-                    $(event.target).parent().addClass('danger');
-                    $(event.target).parent().removeClass('success');
-                }
-            });
-
-            $('input.cc-cvc').blur(function(event) {
-                var cardType = $.payment.cardType($('input.cc-number').val());
-                if ($.payment.validateCardCVC($('input.cc-cvc').val(), cardType)) {
-                    $(event.target).parent().addClass('success');
-                    $(event.target).parent().removeClass('danger');
-                } else {
-                    $(event.target).parent().addClass('danger');
-                    $(event.target).parent().removeClass('success');
-                }
-            });
-
-            $('#donation-form').submit(function(event) {
-                event.preventDefault();
-
-                // Split Expiration Card field into month/year and set inputs for Stripe
-                // accordingly
-                expiration = $('input.cc-exp').payment('cardExpiryVal')
-                $('.cc-exp-month').val(!expiration.month ? "" : expiration.month)
-                $('.cc-exp-year').val(!expiration.year ? "" : expiration.year)
-
-                var $form = $(this);
-                console.log("Submitting to stripe..");
-                $form.find('#submit-donation').prop('disabled', true);
-                Stripe.card.createToken($form, stripeResponseHandler);
-                return false;
-            });
-        });
-
-        function stripeResponseHandler(status, response) {
-            var $form = $('#donation-form');
-
-            if (response.error) {
-                // Show the errors on the form
-                $form.find('#payment-errors').html("<div class=\"danger alert\">" + response.error.message + "</div>");
-                $form.find('#submit-donation').prop('disabled', false);
+            if ($.payment.validateCardNumber($('input.cc-num').val())) {
+            $(event.target).parent().addClass('success');
+            $(event.target).parent().removeClass('danger');
             } else {
-                // response contains id and card, which contains additional card details
-                var token = response.id;
-                // Insert the token into the form so it gets submitted to the server
-                $form.append($('<input type="hidden" name="stripeToken" />').val(token));
-
-                $form.ajaxSubmit({
-                    url: '{{.SSLHost}}/donation',
-                    type: 'post',
-                    timeout: 10000,
-                    success: donationSuccess,
-                    error: donationError
-                });
-
-                return false;
+            $(event.target).parent().addClass('danger');
+            $(event.target).parent().removeClass('success');
             }
-        };
-
-        function donationSuccess(data) {
+            });
+            $('input.cc-exp').blur(function(event) {
+            if ($.payment.validateCardExpiry($('input.cc-exp').payment('cardExpiryVal'))) {
+            $(event.target).parent().addClass('success');
+            $(event.target).parent().removeClass('danger');
+            } else {
+            $(event.target).parent().addClass('danger');
+            $(event.target).parent().removeClass('success');
+            }
+            });
+            $('input.cc-cvc').blur(function(event) {
+            var cardType = $.payment.cardType($('input.cc-number').val());
+            if ($.payment.validateCardCVC($('input.cc-cvc').val(), cardType)) {
+            $(event.target).parent().addClass('success');
+            $(event.target).parent().removeClass('danger');
+            } else {
+            $(event.target).parent().addClass('danger');
+            $(event.target).parent().removeClass('success');
+            }
+            });
+            $('#donation-form').submit(function(event) {
+            event.preventDefault();
+            // Split Expiration Card field into month/year and set inputs for Stripe
+            // accordingly
+            expiration = $('input.cc-exp').payment('cardExpiryVal')
+            $('.cc-exp-month').val(!expiration.month ? "" : expiration.month)
+            $('.cc-exp-year').val(!expiration.year ? "" : expiration.year)
+            var $form = $(this);
+            console.log("Submitting to stripe..");
+            $form.find('#submit-donation').prop('disabled', true);
+            Stripe.card.createToken($form, stripeResponseHandler);
+            return false;
+            });
+            });
+            function stripeResponseHandler(status, response) {
+            var $form = $('#donation-form');
+            if (response.error) {
+            // Show the errors on the form
+            $form.find('#payment-errors').html("<div class=\"danger alert\">" + response.error.message + "</div>");
+            $form.find('#submit-donation').prop('disabled', false);
+            } else {
+            // response contains id and card, which contains additional card details
+            var token = response.id;
+            // Insert the token into the form so it gets submitted to the server
+            $form.append($('<input type="hidden" name="stripeToken" />').val(token));
+            $form.ajaxSubmit({
+            url: '{{.SSLHost}}/donation',
+            type: 'post',
+            timeout: 10000,
+            success: donationSuccess,
+            error: donationError
+            });
+            return false;
+            }
+            };
+            function donationSuccess(data) {
             resetForm();
             $('#donation').toggleClass("active");
-        }
-
-        function donationError(jqXHR, textStatus, errorThrown) {
+            }
+            function donationError(jqXHR, textStatus, errorThrown) {
             var $form = $('#donation-form');
             $form.find('#payment-errors').html("<div class=\"danger alert\">uh oh, we couldn't process your donation, our fault.</div>");
             $form.find('#submit-donation').prop('disabled', false);
-        }
-
-        function resetForm() {
+            }
+            function resetForm() {
             var $form = $('#donation-form');
             $form.resetForm();
             $form.find('#payment-errors').html("");
@@ -400,54 +399,53 @@
             $('input.cc-num').parent().removeClass('danger success');
             $('input.cc-exp').parent().removeClass('danger success');
             $('input.cc-cvc').parent().removeClass('danger success');
-        }
-        </script>
-
-        <script gumby-touch="js/libs" src="bower_components/gumby/js/libs/gumby.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.retina.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.fixed.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.skiplink.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.toggleswitch.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.checkbox.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.radiobtn.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.tabs.js"></script>
-        <script src="bower_components/gumby/js/libs/ui/gumby.navbar.js"></script>        
-        <script src="bower_components/gumby/js/libs/ui/jquery.validation.js"></script>
-        <script src="bower_components/gumby/js/libs/gumby.init.js"></script>
-        <script src="bower_components/gumby/js/plugins.js"></script>
-        <script src="bower_components/gumby/js/main.js"></script>
-        <script src="js/browser.js"></script>
-        <script>
-        channel = new goog.appengine.Channel('{{.ChannelToken}}');
-        socket = channel.open();
-        socket.onopen = function() {
+            }
+            </script>
+            <script gumby-touch="js/libs" src="bower_components/gumby/js/libs/gumby.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.retina.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.fixed.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.skiplink.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.toggleswitch.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.checkbox.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.radiobtn.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.tabs.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/gumby.navbar.js"></script>
+            <script src="bower_components/gumby/js/libs/ui/jquery.validation.js"></script>
+            <script src="bower_components/gumby/js/libs/gumby.init.js"></script>
+            <script src="bower_components/gumby/js/plugins.js"></script>
+            <script src="bower_components/gumby/js/main.js"></script>
+            <script src="js/browser.js"></script>
+            <script>
+            channel = new goog.appengine.Channel('{{.ChannelToken}}');
+            socket = channel.open();
+            socket.onopen = function() {
             console.log("connected");
             showDataBrowser("{{.PathPrefix}}", "{{.GlucoseUnit}}");
+            
             enableRangeSelection();
-        };
-        socket.onmessage = function(message) {
+            };
+            socket.onmessage = function(message) {
             // We assume it's always a refresh
             console.log(message.data);
             showDataBrowser("{{.PathPrefix}}", "{{.GlucoseUnit}}");
             enableRangeSelection();
-        };
-        socket.onerror = function() {
+            };
+            socket.onerror = function() {
             console.log("error");
-        };
-        socket.onclose = function() {
+            };
+            socket.onclose = function() {
             console.log("close");
-        };
-        </script>
-        <script>
-        window._gaq = [
+            };
+            </script>
+            <script>
+            window._gaq = [
             ['_setAccount', 'UA-52689137-1'],
             ['_trackPageview'],
             ['_trackPageLoadTime']
-        ];
-        Modernizr.load({
+            ];
+            Modernizr.load({
             load: ('https:' == location.protocol ? '//ssl' : '//www') + '.google-analytics.com/ga.js'
-        });
-        </script>
-</body>
-
-</html>
+            });
+            </script>
+        </body>
+    </html>
