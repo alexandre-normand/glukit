@@ -436,8 +436,6 @@ function showProfile(dashboardData, sectionName) {
     var lowerBound = dashboardData.scoreDetails.LowerBound;
     var upperBound = dashboardData.scoreDetails.UpperBound;
     var joinedOn = dashboardData.joinedOn;
-    var angle = getAngleForA1C(4.4)
-    $(".a1cNeedle").attr("style", "-ms-transform: rotate(" + angle + "deg); -moz-transform:rotate(" + angle + "deg); -webkit-transform:rotate(" + angle + "deg); ");
     $("#" + sectionName + "-profilePic").html("<img src=\"" + profilePicture + "\" class=\"avatar bubble\"/>");
     document.getElementById(sectionPrefix + "userName").innerHTML = firstName + " " + lastName;
     document.getElementById(sectionPrefix + "lastSync").innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();
@@ -458,6 +456,15 @@ function addTrendToProfile(pathPrefix, dashboardData, sectionName) {
         var trendClass = mostRecentScore < referenceScore ? "icon-up-dir score-trend up" : "icon-down-dir score-trend down";
 
         document.getElementById(sectionPrefix + "glukitScore").innerHTML = glukitScore + "<i class=\"" + trendClass + "\"></i>";
+    });
+
+    $.getJSON("/" + pathPrefix + "a1cs?limit=1", function(data) {
+        if (data && data.length > 0) {
+            var mostRecentA1C = data[0].Value;
+            var angle = getAngleForA1C(mostRecentA1C)
+            document.getElementById("a1c").innerHTML = mostRecentA1C;
+            $(".a1cNeedle").attr("style", "-ms-transform: rotate(" + angle + "deg); -moz-transform:rotate(" + angle + "deg); -webkit-transform:rotate(" + angle + "deg); ");
+        }
     });
 }
 
