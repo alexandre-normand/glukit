@@ -1818,7 +1818,7 @@ body { background: #f2f2f2; padding: 50px; }
 
 .a1c { color: rgba(79, 166, 229, 0.7); font-weight: bold; font-size: 2.5em; text-align: center; vertical-align: middle; line-height: 170%; }
 
-.a1cNeedle { width: 60px; height: 2px; background-color: rgba(27, 116, 179, 0.9); position: absolute; top: 50%; left: 0px; transform-origin: 100% 50%; -webkit-transform-origin: 100% 50%; -ms-transform: rotate(190deg); -moz-transform: rotate(190deg); -webkit-transform: rotate(190deg); }
+.a1cNeedle { width: 60px; height: 2px; background-color: rgba(27, 116, 179, 0.9); position: absolute; top: 50%; left: 0px; transform-origin: 100% 50%; -webkit-transform-origin: 100% 50%; -ms-transform: rotate(250deg); -moz-transform: rotate(250deg); -webkit-transform: rotate(250deg); -webkit-animation: spin infinite 1s linear; -ms-animation: spin infinite 1s linear; -moz-animation: spin infinite 1s linear; }
 
 .center { content: ""; position: absolute; border-radius: 50%; left: calc(50% - 36px); top: calc(50% - 36px); width: 72px; height: 72px; z-index: 2; background-color: #eeeeee; }
 

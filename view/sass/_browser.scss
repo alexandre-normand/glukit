@@ -456,15 +456,18 @@ body {
   left: 0px;
   transform-origin:100% 50%;
   -webkit-transform-origin:100% 50%;
-  -ms-transform:rotate(190deg); 
-  -moz-transform:rotate(190deg); 
-  -webkit-transform:rotate(190deg); 
+  -ms-transform:rotate(250deg); 
+  -moz-transform:rotate(250deg); 
+  -webkit-transform:rotate(250deg); 
+  -webkit-animation: spin infinite 1s linear;
+  -ms-animation: spin infinite 1s linear;
+  -moz-animation: spin infinite 1s linear;
 }
 
 .center {
   @include circleOfSize($a1c-center-size);
   z-index: 2;
-  background-color: #eeeeee;
+  background-color: #eeeeee;  
   // &:before {
   //   @include circleOfSize(4.2em);
   //   background-color: #c7dded;

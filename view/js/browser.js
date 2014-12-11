@@ -22,6 +22,20 @@ function formatGlucoseValue(value, unit) {
     return unit === "mmolPerL" ? (Math.round(value * 100) / 100).toFixed(1) : Math.round(value);
 }
 
+function getAngleForA1C(value) {
+    if (value < 4.0) {
+        return -60;
+    } else if (value <= 5.0) {
+        return 60 * value - 300;
+    } else if (value <= 6.9) {
+        return 73.6842 * value - 368.4211;
+    } else if (value <= 13.5) {
+        return 13.6364 * value + 45.9091;
+    } else {
+        return 230;
+    }
+}
+
 function showDataBrowser(pathPrefix, unit) {
     var highChartOffset = unit === "mmolPerL" ? 5.55 : 100;
     var TARGET_RANGE_LOWER_BOUND = getLowerRangeValue(unit);
@@ -422,7 +436,8 @@ function showProfile(dashboardData, sectionName) {
     var lowerBound = dashboardData.scoreDetails.LowerBound;
     var upperBound = dashboardData.scoreDetails.UpperBound;
     var joinedOn = dashboardData.joinedOn;
-    $(".a1cNeedle").attr("style", "-ms-transform: rotate(270deg); -moz-transform:rotate(270deg); -webkit-transform:rotate(270deg); ");
+    var angle = getAngleForA1C(4.4)
+    $(".a1cNeedle").attr("style", "-ms-transform: rotate(" + angle + "deg); -moz-transform:rotate(" + angle + "deg); -webkit-transform:rotate(" + angle + "deg); ");
     $("#" + sectionName + "-profilePic").html("<img src=\"" + profilePicture + "\" class=\"avatar bubble\"/>");
     document.getElementById(sectionPrefix + "userName").innerHTML = firstName + " " + lastName;
     document.getElementById(sectionPrefix + "lastSync").innerHTML = moment(lastSync, "YYYY-MM-DDHH:mm:ssZ").fromNow();
