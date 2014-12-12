@@ -369,23 +369,6 @@ i[class^="icon-"].score-trend {
   }
 }
 
-// .a1cDashboard {
-//   background-image: -webkit-gradient(
-//   linear,
-//   right bottom,
-//   left bottom,
-//   color-stop(0.14, rgba(235, 23, 23, 0.8)),
-//   color-stop(0.3, rgba(247, 169, 24, 0.5)),
-//   color-stop(0.67, rgba(250, 218, 35, 0.5)),
-//   color-stop(0.94, rgba(51, 173, 51, 0.8))
-// );
-// background-image: -o-linear-gradient(left, rgba(235, 23, 23, 0.8) 14%, rgba(247, 169, 24, 0.5) 30%, rgba(250, 218, 35, 0.5) 67%, rgba(51, 173, 51, 0.8) 94%);
-// background-image: -moz-linear-gradient(left, rgba(235, 23, 23, 0.8) 14%, rgba(247, 169, 24, 0.5) 30%, rgba(250, 218, 35, 0.5) 67%, rgba(51, 173, 51, 0.8) 94%);
-// background-image: -webkit-linear-gradient(left, rgba(235, 23, 23, 0.8) 14%, rgba(247, 169, 24, 0.5) 30%, rgba(250, 218, 35, 0.5) 67%, rgba(51, 173, 51, 0.8) 94%);
-// background-image: -ms-linear-gradient(left, rgba(235, 23, 23, 0.8) 14%, rgba(247, 169, 24, 0.5) 30%, rgba(250, 218, 35, 0.5) 67%, rgba(51, 173, 51, 0.8) 94%);
-// background-image: linear-gradient(to left, rgba(235, 23, 23, 0.8) 14%, rgba(247, 169, 24, 0.5) 30%, rgba(250, 218, 35, 0.5) 67%, rgba(51, 173, 51, 0.8) 94%);
-// }
-
 @mixin circleOfSize($size) {
   content: "";
   position: absolute;
@@ -396,7 +379,7 @@ i[class^="icon-"].score-trend {
   height: $size;
 }
 
-.wheel, .umbrella, .color {
+.wheel, .a1cUmbrella, .color {
   @include circleOfSize($bubble-height);
 }
 .wheel {
@@ -405,7 +388,7 @@ i[class^="icon-"].score-trend {
   height: $bubble-height;
   position: relative;
 }
-.umbrella {
+.a1cUmbrella {
   position: relative;
   -webkit-filter: blur(0.7em);
   -webkit-transform: scale(1.35);
@@ -421,7 +404,6 @@ i[class^="icon-"].score-trend {
 // Orange: rgba(247, 169, 24, 1.0)
 // Green: rgba(51, 173, 51, 1.0)
 $colors: (rgba(247, 169, 24, 0.9), rgba(235, 23, 23, 0.9), rgba(51, 173, 51, 0.9), rgba(250, 218, 35, 0.9));
-// (#9ED110, #50B517, #179067, #476EAF, #9f49ac, #CC42A2, #FF3BA7, #FF5800, #FF8100, #FEAC00, #FFCC00, #EDE604);
 @for $i from 0 to length($colors) {
   .color:nth-child(#{1+$i}):after {
     background-color: nth($colors, $i+1);
@@ -434,10 +416,6 @@ $colors: (rgba(247, 169, 24, 0.9), rgba(235, 23, 23, 0.9), rgba(51, 173, 51, 0.9
   }
 }
 
-body {
-  background: #f2f2f2;
-  padding: 50px;
-}
 .a1c { 
   color:rgba(lighten($normal-range-color, 10%), 0.7);
   font-weight:bold;
@@ -458,26 +436,11 @@ body {
   -webkit-transform-origin:100% 50%;
   -ms-transform:rotate(250deg); 
   -moz-transform:rotate(250deg); 
-  -webkit-transform:rotate(250deg); 
-  -webkit-animation: spin infinite 1s linear;
-  -ms-animation: spin infinite 1s linear;
-  -moz-animation: spin infinite 1s linear;
+  -webkit-transform:rotate(250deg);   
 }
 
 .center {
   @include circleOfSize($a1c-center-size);
   z-index: 2;
   background-color: #eeeeee;  
-  // &:before {
-  //   @include circleOfSize(4.2em);
-  //   background-color: #c7dded;
-  // }
-  // &:after {
-  //   @include circleOfSize(3em);
-  //   background-color: #c7dded;
-  // }
-}
-.pin {
-  @include circleOfSize($bubble-height);
-    z-index: -1;
 }

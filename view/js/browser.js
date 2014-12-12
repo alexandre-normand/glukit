@@ -30,7 +30,7 @@ function getAngleForA1C(value) {
     } else if (value <= 6.9) {
         return 73.6842 * value - 368.4211;
     } else if (value <= 13.5) {
-        return 13.6364 * value + 45.9091;
+        return 15.1515 * value + 35.4545;
     } else {
         return 230;
     }
