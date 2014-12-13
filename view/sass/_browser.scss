@@ -439,8 +439,13 @@ $colors: (rgba(247, 169, 24, 0.9), rgba(235, 23, 23, 0.9), rgba(51, 173, 51, 0.9
   -webkit-transform:rotate(250deg);   
 }
 
-.center {
+.a1cPin {
   @include circleOfSize($a1c-center-size);
   z-index: 2;
   background-color: #eeeeee;  
+}
+
+.a1cLabel {
+  font-size: 1em;
+  font-variant: small-caps;
 }
