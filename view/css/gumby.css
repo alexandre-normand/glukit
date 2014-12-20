@@ -1792,10 +1792,6 @@ i[class^="icon-"].score-trend.down { color: #f6b83f; }
 .glucoseLine.HIGH.active { stroke: #de2333; }
 .glucoseLine.LOW.active { stroke: #de2333; }
 
-.rangeSelection { cursor: pointer; background-color: #eeeeee; color: #404041; border-style: solid; border-color: #fff; padding: 6px; padding-left: 6px; padding-right: 6px; padding-top: 14px; float: left; min-width: 300px; font-size: 16px; font-size: 1rem; }
-.rangeSelection:hover { background-color: #9e2064 !important; color: white !important; }
-.rangeSelection.active { background-color: #9e2064 !important; color: white !important; }
-
 .wheel, .a1cUmbrella, .color { content: ""; position: absolute; border-radius: 50%; left: calc(50% - 60px); top: calc(50% - 60px); width: 120px; height: 120px; }
 
 .wheel { overflow: hidden; width: 120px; height: 120px; position: relative; }
@@ -1820,7 +1816,19 @@ i[class^="icon-"].score-trend.down { color: #f6b83f; }
 
 .a1cPin { content: ""; position: absolute; border-radius: 50%; left: calc(50% - 36px); top: calc(50% - 36px); width: 72px; height: 72px; z-index: 2; background-color: #eeeeee; }
 
-.a1cLabel { font-size: 1em; font-variant: small-caps; }
+.a1cLabel { font-size: 1em; font-variant: small-caps; text-align: center; }
+
+div.rangeSelection { cursor: pointer; background-color: #eeeeee; color: #404041; border-style: solid; border-color: #cccccc; border-width: 1px; padding: 6px; padding-left: 6px; padding-right: 6px; padding-top: 14px; line-height: 1.4em; float: left; min-width: 320px; font-size: 16px; font-size: 1rem; }
+div.rangeSelection:hover { color: white !important; }
+div.rangeSelection:hover.aboveTarget:hover, div.rangeSelection:hover.belowTarget:hover { background-color: rgba(247, 169, 24, 0.9) !important; }
+div.rangeSelection:hover.inTarget:hover { background-color: rgba(51, 173, 51, 0.8) !important; }
+div.rangeSelection.active { color: white !important; }
+div.rangeSelection.active.aboveTarget, div.rangeSelection.active.belowTarget { background-color: rgba(247, 169, 24, 0.9) !important; }
+div.rangeSelection.active.inTarget { background-color: rgba(51, 173, 51, 0.8) !important; }
+div.rangeSelection:not(.active):not(:hover).aboveTarget, div.rangeSelection:not(.active):not(:hover).belowTarget { background-color: rgba(247, 169, 24, 0.3) !important; }
+div.rangeSelection:not(.active):not(:hover).inTarget { background-color: rgba(51, 173, 51, 0.2) !important; }
+
+i.rangeIcon { text-indent: .25em; }
 
 @-webkit-keyframes beat { 0% { -webkit-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); -o-transform: scale(1); transform: scale(1); }
   20% { -webkit-transform: scale(0.6); -moz-transform: scale(0.6); -ms-transform: scale(0.6); -o-transform: scale(0.6); transform: scale(0.6); }
