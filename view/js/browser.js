@@ -462,7 +462,7 @@ function addTrendToProfile(pathPrefix, dashboardData, sectionName) {
         if (data && data.length > 0) {
             var mostRecentA1C = data[0].Value;
             var angle = getAngleForA1C(mostRecentA1C)
-            document.getElementById("a1c").innerHTML = mostRecentA1C;
+            document.getElementById("a1c").innerHTML = mostRecentA1C.toFixed(1);
             $(".a1cNeedle").attr("style", "-ms-transform: rotate(" + angle + "deg); -moz-transform:rotate(" + angle + "deg); -webkit-transform:rotate(" + angle + "deg); ");
         }
     });
