@@ -1796,19 +1796,19 @@ i[class^="icon-"].score-trend.down { color: #f6b83f; }
 
 .wheel { overflow: hidden; width: 120px; height: 120px; position: relative; }
 
-.a1cUmbrella { position: relative; -webkit-filter: blur(0.7em); -webkit-transform: scale(1.35); }
+.a1cUmbrella { position: relative; -webkit-filter: blur(0.7em); -webkit-transform: scale(1.35); filter: blur(0.7em); transform: scale(1.35); -moz-filter: blur(0.7em); -moz-transform: scale(1.35); }
 
 .color, .color:nth-child(n+3):after { clip: rect(0, 120px, 120px, 60px); }
 
 .color:after, .color:nth-child(n+3) { content: ""; position: absolute; border-radius: 50%; left: calc(50% - 60px); top: calc(50% - 60px); width: 120px; height: 120px; clip: rect(0, 60px, 120px, 0); }
 
-.color:nth-child(1):after { background-color: rgba(247, 169, 24, 0.9); transform: rotate(90deg); z-index: 4; }
+.color:nth-child(1):after { background-color: rgba(247, 169, 24, 0.9); transform: rotate(90deg); -moz-transform: rotate(90deg); -webkit-transform: rotate(90deg); z-index: 4; }
 
-.color:nth-child(2):after { background-color: rgba(235, 23, 23, 0.9); transform: rotate(180deg); z-index: 3; }
+.color:nth-child(2):after { background-color: rgba(235, 23, 23, 0.9); transform: rotate(180deg); -moz-transform: rotate(180deg); -webkit-transform: rotate(180deg); z-index: 3; }
 
-.color:nth-child(3):after { background-color: rgba(51, 173, 51, 0.9); transform: rotate(180deg); }
+.color:nth-child(3):after { background-color: rgba(51, 173, 51, 0.9); transform: rotate(180deg); -moz-transform: rotate(180deg); -webkit-transform: rotate(180deg); }
 
-.color:nth-child(4):after { background-color: rgba(250, 218, 35, 0.9); transform: rotate(270deg); }
+.color:nth-child(4):after { background-color: rgba(250, 218, 35, 0.9); transform: rotate(270deg); -moz-transform: rotate(270deg); -webkit-transform: rotate(270deg); }
 
 .a1c { color: rgba(79, 166, 229, 0.7); font-weight: bold; font-size: 2.5em; text-align: center; vertical-align: middle; line-height: 170%; }
 

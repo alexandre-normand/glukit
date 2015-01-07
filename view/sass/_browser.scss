@@ -372,6 +372,10 @@ i[class^="icon-"].score-trend {
   position: relative;
   -webkit-filter: blur(0.7em);
   -webkit-transform: scale(1.35);
+  filter: blur(0.7em);
+  transform: scale(1.35);
+  -moz-filter: blur(0.7em);
+  -moz-transform: scale(1.35);
 }
 .color, .color:nth-child(n+3):after {
   clip: rect(0, $bubble-height, $bubble-height, #{$bubble-height/2});
@@ -389,9 +393,13 @@ $colors: (rgba(247, 169, 24, 0.9), rgba(235, 23, 23, 0.9), rgba(51, 173, 51, 0.9
     background-color: nth($colors, $i+1);
     @if $i < 2 {
        transform: rotate(#{360/length($colors)*(1+$i)}deg);
+       -moz-transform: rotate(#{360/length($colors)*(1+$i)}deg);
+       -webkit-transform: rotate(#{360/length($colors)*(1+$i)}deg);
        z-index: #{length($colors)-$i};
      } @else {
       transform: rotate(#{-1 * 360/length($colors)+(360/length($colors)*(1+$i))}deg);
+      -moz-transform: rotate(#{-1 * 360/length($colors)+(360/length($colors)*(1+$i))}deg);
+      -webkit-transform: rotate(#{-1 * 360/length($colors)+(360/length($colors)*(1+$i))}deg);
     }
   }
 }

@@ -860,7 +860,7 @@ func storeGlukitScoreChunk(context appengine.Context, parentKey *datastore.Key, 
 func GetGlukitScores(context appengine.Context, email string, scanQuery ScoreScanQuery) (scores []model.GlukitScore, err error) {
 	key := GetUserKey(context, email)
 
-	context.Infof("Scanning for glukit scores with limit [%d], from [%s], to [%s]", scanQuery.Limit, scanQuery.From, scanQuery.To)
+	context.Infof("Scanning for glukit scores with limit [%d], from [%s], to [%s]", *scanQuery.Limit, scanQuery.From, scanQuery.To)
 
 	query := datastore.NewQuery("GlukitScore").Ancestor(key)
 	if scanQuery.From != nil {
@@ -921,7 +921,7 @@ func storeA1CChunk(context appengine.Context, parentKey *datastore.Key, a1cChunk
 func GetA1CEstimates(context appengine.Context, email string, scanQuery ScoreScanQuery) (scores []model.A1CEstimate, err error) {
 	key := GetUserKey(context, email)
 
-	context.Infof("Scanning for a1c estimates scores with limit [%d], from [%s], to [%s]", scanQuery.Limit, scanQuery.From, scanQuery.To)
+	context.Infof("Scanning for a1c estimates scores with limit [%d], from [%s], to [%s]", *scanQuery.Limit, scanQuery.From, scanQuery.To)
 
 	query := datastore.NewQuery("A1CEstimate").Ancestor(key)
 	if scanQuery.From != nil {
