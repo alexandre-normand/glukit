@@ -187,6 +187,11 @@ func processSingleFile(context appengine.Context, token *oauth.Token, file *driv
 				if err != nil {
 					context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", userEmail, err)
 				}
+
+				err = engine.StartA1CCalculationBatch(context, glukitUser)
+				if err != nil {
+					context.Warningf("Error starting a1c calculation batch for user [%s]: %v", userEmail, err)
+				}
 			}
 		}
 	}
@@ -225,6 +230,11 @@ func processStaticDemoFile(context appengine.Context, userProfileKey *datastore.
 	} else {
 		if err := engine.StartGlukitScoreBatch(context, userProfile); err != nil {
 			context.Warningf("Error while starting batch calculation of glukit scores for %s: %v", DEMO_EMAIL, err)
+		}
+
+		err = engine.StartA1CCalculationBatch(context, userProfile)
+		if err != nil {
+			context.Warningf("Error starting a1c calculation batch for user [%s]: %v", DEMO_EMAIL, err)
 		}
 	}
 

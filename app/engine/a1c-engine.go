@@ -39,6 +39,7 @@ func CalculateA1CEstimate(context appengine.Context, reads []apimodel.GlucoseRea
 	} else {
 		average := stat.Mean(model.ReadStatsSlice(reads))
 		a1c := (average + 77.3) / 35.6
+		context.Debugf("Estimated a1c is [%f]", a1c)
 		return &model.A1CEstimate{
 			Value:          a1c,
 			LowerBound:     lowerBound,
