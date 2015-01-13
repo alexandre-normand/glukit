@@ -23,12 +23,12 @@ const (
 )
 
 func TestA1cEstimationsFromFixedMeans(t *testing.T) {
-	testA1CEstimateFromFixedAverage(t, 65, 4.0)
+	testA1CEstimateFromFixedAverage(t, 65, 3.9)
 	testA1CEstimateFromFixedAverage(t, 79, 4.4)
-	testA1CEstimateFromFixedAverage(t, 90, 4.7)
-	testA1CEstimateFromFixedAverage(t, 101, 5.0)
-	testA1CEstimateFromFixedAverage(t, 158, 6.6)
-	testA1CEstimateFromFixedAverage(t, 403, 13.5)
+	testA1CEstimateFromFixedAverage(t, 90, 4.8)
+	testA1CEstimateFromFixedAverage(t, 101, 5.1)
+	testA1CEstimateFromFixedAverage(t, 158, 7.1)
+	testA1CEstimateFromFixedAverage(t, 403, 15.7)
 }
 
 func TestCalculationWithInsufficientCoverage(t *testing.T) {
@@ -89,7 +89,7 @@ func setupTestData(t *testing.T, average float32, upperDate time.Time) (c aetest
 	var oauthToken oauth.Token
 	user := model.GlukitUser{TEST_USER, "", "", upperDate,
 		"", "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
-		model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", upperDate}
+		model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", upperDate, model.UNDEFINED_A1C_ESTIMATE}
 
 	key, err = store.StoreUserProfile(c, upperDate, user)
 	if err != nil {
