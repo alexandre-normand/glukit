@@ -55,8 +55,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	s := &OsinAppEngineStore{}
 
 	err := s.addClient(&osin.Client{
-		Id:          "***REMOVED***",
-		Secret:      "***REMOVED***",
+		Id:          "ENV_GLUKLOADER_CLIENT_ID",
+		Secret:      "ENV_GLUKLOADER_CLIENT_SECRET",
 		RedirectUri: "urn:ietf:wg:oauth:2.0:oob",
 		UserData:    "",
 	}, c)
@@ -66,8 +66,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
-		Id:          "***REMOVED***",
-		Secret:      "***REMOVED***",
+		Id:          "ENV_POSTMAN_CLIENT_ID",
+		Secret:      "ENV_POSTMAN_CLIENT_SECRET",
 		RedirectUri: "https://www.getpostman.com/oauth2/callback",
 		UserData:    "",
 	}, c)
@@ -77,8 +77,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
-		Id:          "***REMOVED***",
-		Secret:      "***REMOVED***",
+		Id:          "ENV_SIMPLE_CLIENT_ID",
+		Secret:      "ENV_SIMPLE_CLIENT_SECRET",
 		RedirectUri: "http://localhost:14000/appauth/code",
 		UserData:    "",
 	}, c)
@@ -88,19 +88,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
-		Id:          "***REMOVED***",
-		Secret:      "***REMOVED***",
-		RedirectUri: "https://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
-		UserData:    "",
-	}, c)
-
-	if err != nil {
-		c.Warningf("Failed to initialize oauth server: %v", err)
-	}
-
-	err = s.addClient(&osin.Client{
-		Id:          "***REMOVED***",
-		Secret:      "***REMOVED***",
+		Id:          "ENV_CHROMADEX_CLIENT_ID",
+		Secret:      "ENV_CHROMADEX_CLIENT_SECRET",
 		RedirectUri: "https://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
 		UserData:    "",
 	}, c)

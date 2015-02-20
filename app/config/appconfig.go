@@ -20,12 +20,12 @@ type AppConfig struct {
 // newTestAppConfig returns the AppConfig for a test environment
 func newTestAppConfig() *AppConfig {
 	appConfig := new(AppConfig)
-	appConfig.GoogleClientId = "***REMOVED***"
-	appConfig.GoogleClientSecret = "***REMOVED***"
+	appConfig.GoogleClientId = "ENV_TEST_CLIENT_ID"
+	appConfig.GoogleClientSecret = "ENV_TEST_CLIENT_SECRET"
 	appConfig.Host = "localhost:8080"
 	appConfig.SSLHost = "http://localhost:8080"
-	appConfig.StripeKey = "***REMOVED***"
-	appConfig.StripePublishableKey = "***REMOVED***"
+	appConfig.StripeKey = "ENV_TEST_STRIPE_KEY"
+	appConfig.StripePublishableKey = "ENV_TEST_STRIPE_PUBLISHABLE_KEY"
 
 	return appConfig
 }
@@ -33,12 +33,12 @@ func newTestAppConfig() *AppConfig {
 // newProdAppConfig returns the AppConfig for the production environment
 func newProdAppConfig() *AppConfig {
 	appConfig := new(AppConfig)
-	appConfig.GoogleClientId = "***REMOVED***"
-	appConfig.GoogleClientSecret = "***REMOVED***"
+	appConfig.GoogleClientId = "ENV_PROD_CLIENT_ID"
+	appConfig.GoogleClientSecret = "ENV_PROD_CLIENT_SECRET"
 	appConfig.Host = "www.mygluk.it"
 	appConfig.SSLHost = "https://glukit.appspot.com"
-	appConfig.StripeKey = "***REMOVED***"
-	appConfig.StripePublishableKey = "***REMOVED***"
+	appConfig.StripeKey = "ENV_PROD_STRIPE_KEY"
+	appConfig.StripePublishableKey = "ENV_PROD_STRIPE_PUBLISHABLE_KEY"
 
 	return appConfig
 }

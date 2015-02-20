@@ -17,7 +17,7 @@ func TestGetClient(t *testing.T) {
 	t.Logf("Request is [%v] from context [%v]", c.Request(), c)
 
 	osinStorage := NewOsinAppEngineStoreWithContext(c)
-	_, err = osinStorage.GetClientWithContext("***REMOVED***", c)
+	_, err = osinStorage.GetClientWithContext("ENV_GLUKLOADER_CLIENT_ID", c)
 
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +33,7 @@ func TestAccessDataStorage(t *testing.T) {
 	t.Logf("Request is [%v] from context [%v]", c.Request(), c)
 
 	osinStorage := NewOsinAppEngineStoreWithContext(c)
-	client, err := osinStorage.GetClientWithContext("***REMOVED***", c)
+	client, err := osinStorage.GetClientWithContext("ENV_GLUKLOADER_CLIENT_ID", c)
 	d := osin.AccessData{client, nil, nil, "token", "test", 0, "scope", "uri", time.Now(), TEST_USER}
 	err = osinStorage.SaveAccessWithContext(&d, c)
 	if err != nil {
@@ -54,7 +54,7 @@ func TestAuthorizeDataStorage(t *testing.T) {
 	defer c.Close()
 
 	osinStorage := NewOsinAppEngineStoreWithContext(c)
-	client, err := osinStorage.GetClientWithContext("***REMOVED***", c)
+	client, err := osinStorage.GetClientWithContext("ENV_GLUKLOADER_CLIENT_ID", c)
 	d := osin.AuthorizeData{client, "code", 0, "scope", "uri", "state", time.Now(), TEST_USER}
 	err = osinStorage.SaveAuthorizeWithContext(&d, c)
 	if err != nil {
@@ -75,7 +75,7 @@ func TestFullAccessDataStorage(t *testing.T) {
 	defer c.Close()
 
 	osinStorage := NewOsinAppEngineStoreWithContext(c)
-	client, err := osinStorage.GetClientWithContext("***REMOVED***", c)
+	client, err := osinStorage.GetClientWithContext("ENV_GLUKLOADER_CLIENT_ID", c)
 	d := osin.AuthorizeData{client, "code", 0, "scope", "uri", "state", time.Now(), TEST_USER}
 	err = osinStorage.SaveAuthorizeWithContext(&d, c)
 	if err != nil {
