@@ -33,3 +33,4 @@ notes.log
 .notes/
 .sass-cache/
 bower_components/
+app/secrets/appsecrets.go
