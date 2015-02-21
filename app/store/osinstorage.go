@@ -4,10 +4,13 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"errors"
+	"github.com/alexandre-normand/glukit/app/secrets"
 	"github.com/alexandre-normand/osin"
 	"net/http"
 	"time"
 )
+
+var appSecrets = secrets.NewAppSecrets()
 
 type OsinAppEngineStore struct {
 }
@@ -55,8 +58,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	s := &OsinAppEngineStore{}
 
 	err := s.addClient(&osin.Client{
-		Id:          "ENV_GLUKLOADER_CLIENT_ID",
-		Secret:      "ENV_GLUKLOADER_CLIENT_SECRET",
+		Id:          appSecrets.GlukloaderClientId,
+		Secret:      appSecrets.GlukloaderClientSecret,
 		RedirectUri: "urn:ietf:wg:oauth:2.0:oob",
 		UserData:    "",
 	}, c)
@@ -66,8 +69,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
-		Id:          "ENV_POSTMAN_CLIENT_ID",
-		Secret:      "ENV_POSTMAN_CLIENT_SECRET",
+		Id:          appSecrets.PostManClientId,
+		Secret:      appSecrets.PostManClientSecret,
 		RedirectUri: "https://www.getpostman.com/oauth2/callback",
 		UserData:    "",
 	}, c)
@@ -77,8 +80,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
-		Id:          "ENV_SIMPLE_CLIENT_ID",
-		Secret:      "ENV_SIMPLE_CLIENT_SECRET",
+		Id:          appSecrets.SimpleClientId,
+		Secret:      appSecrets.SimpleClientSecret,
 		RedirectUri: "http://localhost:14000/appauth/code",
 		UserData:    "",
 	}, c)
@@ -88,8 +91,8 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
-		Id:          "ENV_CHROMADEX_CLIENT_ID",
-		Secret:      "ENV_CHROMADEX_CLIENT_SECRET",
+		Id:          appSecrets.ChromadexClientId,
+		Secret:      appSecrets.ChromadexClientSecret,
 		RedirectUri: "https://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
 		UserData:    "",
 	}, c)

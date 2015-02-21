@@ -3,6 +3,7 @@ package config
 
 import (
 	"appengine"
+	"github.com/alexandre-normand/glukit/app/secrets"
 )
 
 // AppConfig is all global application configuration values
@@ -18,27 +19,27 @@ type AppConfig struct {
 }
 
 // newTestAppConfig returns the AppConfig for a test environment
-func newTestAppConfig() *AppConfig {
+func newTestAppConfig(appSecrets *secrets.AppSecrets) *AppConfig {
 	appConfig := new(AppConfig)
-	appConfig.GoogleClientId = "ENV_TEST_CLIENT_ID"
-	appConfig.GoogleClientSecret = "ENV_TEST_CLIENT_SECRET"
+	appConfig.GoogleClientId = appSecrets.LocalGoogleClientId
+	appConfig.GoogleClientSecret = appSecrets.LocalGoogleClientSecret
 	appConfig.Host = "localhost:8080"
 	appConfig.SSLHost = "http://localhost:8080"
-	appConfig.StripeKey = "ENV_TEST_STRIPE_KEY"
-	appConfig.StripePublishableKey = "ENV_TEST_STRIPE_PUBLISHABLE_KEY"
+	appConfig.StripeKey = appSecrets.LocalStripeKey
+	appConfig.StripePublishableKey = appSecrets.LocalStripePublishableKey
 
 	return appConfig
 }
 
 // newProdAppConfig returns the AppConfig for the production environment
-func newProdAppConfig() *AppConfig {
+func newProdAppConfig(appSecrets *secrets.AppSecrets) *AppConfig {
 	appConfig := new(AppConfig)
-	appConfig.GoogleClientId = "ENV_PROD_CLIENT_ID"
-	appConfig.GoogleClientSecret = "ENV_PROD_CLIENT_SECRET"
+	appConfig.GoogleClientId = appSecrets.ProdGoogleClientId
+	appConfig.GoogleClientSecret = appSecrets.ProdGoogleClientSecret
 	appConfig.Host = "www.mygluk.it"
 	appConfig.SSLHost = "https://glukit.appspot.com"
-	appConfig.StripeKey = "ENV_PROD_STRIPE_KEY"
-	appConfig.StripePublishableKey = "ENV_PROD_STRIPE_PUBLISHABLE_KEY"
+	appConfig.StripeKey = appSecrets.ProdStripeKey
+	appConfig.StripePublishableKey = appSecrets.ProdStripePublishableKey
 
 	return appConfig
 }
@@ -46,9 +47,10 @@ func newProdAppConfig() *AppConfig {
 // NewAppConfig returns the AppConfig that matches the current environment (test or prod)
 // as returned by appengine.IsDevAppServer()
 func NewAppConfig() *AppConfig {
+	appSecrets := secrets.NewAppSecrets()
 	if appengine.IsDevAppServer() {
-		return newTestAppConfig()
+		return newTestAppConfig(appSecrets)
 	} else {
-		return newProdAppConfig()
+		return newProdAppConfig(appSecrets)
 	}
 }
