@@ -9,6 +9,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
+	"sort"
 	"time"
 )
 
@@ -18,7 +19,7 @@ const (
 	// A1C estimation scoring period requirement
 	A1C_ESTIMATION_SCORE_PERIOD = 95
 
-	A1C_SCORING_VERSION = 2
+	A1C_SCORING_VERSION = 3
 )
 
 // CalculateA1CEstimate calculates an estimate of a a1c given the last 3 months of data. The current algo is naively assuming that the average of the last
@@ -39,9 +40,11 @@ func CalculateA1CEstimate(context appengine.Context, reads []apimodel.GlucoseRea
 	if days < A1C_READ_COVERAGE_REQUIREMENT_IN_DAYS {
 		return nil, errors.New(fmt.Sprintf("Insufficient read coverage to estimate a1c, got [%d] days but requires [%d]", days, A1C_READ_COVERAGE_REQUIREMENT_IN_DAYS))
 	} else {
-		average := stat.Mean(model.ReadStatsSlice(reads))
+		sortedReads := model.ReadStatsSlice(reads)
+		sort.Sort(sortedReads)
+		median := stat.MedianFromSortedData(sortedReads)
 		//a1c := (average + 77.3) / 35.6
-		a1c := (average + 46.7) / 28.7
+		a1c := (median + 77.3) / 35.6
 		context.Debugf("Estimated a1c is [%f]", a1c)
 		return &model.A1CEstimate{
 			Value:          a1c,

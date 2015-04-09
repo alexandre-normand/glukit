@@ -23,12 +23,12 @@ const (
 )
 
 func TestA1cEstimationsFromFixedMeans(t *testing.T) {
-	testA1CEstimateFromFixedAverage(t, 65, 3.9)
+	testA1CEstimateFromFixedAverage(t, 65, 4.0)
 	testA1CEstimateFromFixedAverage(t, 79, 4.4)
-	testA1CEstimateFromFixedAverage(t, 90, 4.8)
-	testA1CEstimateFromFixedAverage(t, 101, 5.1)
-	testA1CEstimateFromFixedAverage(t, 158, 7.1)
-	testA1CEstimateFromFixedAverage(t, 403, 15.7)
+	testA1CEstimateFromFixedAverage(t, 90, 4.7)
+	testA1CEstimateFromFixedAverage(t, 101, 5.0)
+	testA1CEstimateFromFixedAverage(t, 158, 6.6)
+	testA1CEstimateFromFixedAverage(t, 403, 13.5)
 }
 
 func TestCalculationWithInsufficientCoverage(t *testing.T) {
