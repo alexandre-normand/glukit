@@ -23,6 +23,8 @@ Requirements:
     PROD_STRIPE_PUBLISHABLE_KEY=""
     GLUKLOADER_CLIENT_ID="glukloader-client-id (make one up)"
     GLUKLOADER_CLIENT_SECRET="glukloader-client-secret (make one up)"
+    GLUKLOADER_SHARE_EDITION_CLIENT_ID="glukloader-client-id (make one up)"
+    GLUKLOADER_SHARE_EDITION_CLIENT_SECRET="glukloader-client-secret (make one up)"
     POSTMAN_CLIENT_ID=""
     POSTMAN_CLIENT_SECRET=""
     SIMPLE_CLIENT_ID=""

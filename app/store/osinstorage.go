@@ -69,6 +69,17 @@ func NewOsinAppEngineStoreWithContext(c appengine.Context) *OsinAppEngineStore {
 	}
 
 	err = s.addClient(&osin.Client{
+		Id:          appSecrets.GlukloaderShareEditionClientId,
+		Secret:      appSecrets.GlukloaderShareEditionClientSecret,
+		RedirectUri: "x-glukloader://oauth/callback",
+		UserData:    "",
+	}, c)
+
+	if err != nil {
+		c.Warningf("Failed to initialize oauth server: %v", err)
+	}
+
+	err = s.addClient(&osin.Client{
 		Id:          appSecrets.PostManClientId,
 		Secret:      appSecrets.PostManClientSecret,
 		RedirectUri: "https://www.getpostman.com/oauth2/callback",
