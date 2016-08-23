@@ -94,7 +94,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 			} else {
-				redirectUrl := fmt.Sprintf("%s?code=%s", resp.URL, data["code"].(string))
+				redirectUrl := fmt.Sprintf("%s?code=%s&state=%s", resp.URL, data["code"].(string), data["state"].(string))
 				c.Infof("Redirecting to [%s] with valid code.", redirectUrl)
 				http.Redirect(w, req, redirectUrl, 200)
 				return
@@ -112,7 +112,9 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 		c := appengine.NewContext(req)
 		resp := server.NewResponse()
 		req.ParseForm()
-		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
+		if _, _, ok := req.BasicAuth(); !ok {
+			req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
+		}
 		c.Debugf("Processing token request: %v with form [%v]", req, req.PostForm)
 		if ar := server.HandleAccessRequest(resp, req); ar != nil {
 			c.Debugf("Retrieved authorize data [%v]", ar)
