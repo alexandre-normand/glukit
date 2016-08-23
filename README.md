@@ -12,6 +12,7 @@ Requirements:
   4. Run `./setup.sh` (needs to be done once)
   5. Go in `./view` and run `claymate install`. 
   6. Setup environment variables with the following and run `goapp generate github.com/alexandre-normand/glukit/app/secrets`:
+  
     ```
     LOCAL_CLIENT_ID="google-client-id-for-localhost"
     LOCAL_CLIENT_SECRET="google-client-secret-for-localhost"
