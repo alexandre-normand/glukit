@@ -24,6 +24,8 @@ const (
 	READS_REQUIREMENT = 288 * (GLUKIT_SCORE_PERIOD - 1)
 	// The current Glukit scoring version
 	SCORING_VERSION = 1
+	// The max number of days to look back when starting a new batch of calculation
+	MAX_CALCULATION_DAYS_TO_LOOK_BACK = 30
 )
 
 // January 1st, 2014
@@ -112,8 +114,17 @@ func CalculateUserFacingScore(internal model.GlukitScore) (external *int64) {
 // StartGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
 func StartGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
 	lowerBoundOfLastScore := glukitUser.MostRecentScore.LowerBound
+
+	// Calculate our minimum allowed lower bound since we don't want to incur the cost of too many reads when
+	// a user is coming back from a long absence
+	minLowerBound := time.Now().AddDate(0, 0, -1*MAX_CALCULATION_DAYS_TO_LOOK_BACK)
+
 	// Set the lower bound to one day after the last lower bound
 	lowerBound := lowerBoundOfLastScore.AddDate(0, 0, -1*GLUKIT_SCORE_PERIOD+1)
+
+	if lowerBound.Before(minLowerBound) {
+		lowerBound = minLowerBound
+	}
 
 	// Kick off the first chunk of glukit score calculation
 	task, err := RunGlukitScoreCalculationChunk.Task(glukitUser.Email, lowerBound)
@@ -137,8 +148,16 @@ func StartA1CCalculationBatch(context appengine.Context, glukitUser *model.Gluki
 		lowerBoundOfLastA1C = A1C_CALCULATION_START
 	}
 
+	// Calculate our minimum allowed lower bound since we don't want to incur the cost of too many reads when
+	// a user is coming back from a long absence
+	minLowerBound := time.Now().AddDate(0, 0, -1*MAX_CALCULATION_DAYS_TO_LOOK_BACK)
+
 	// Set the lower bound to one day after the last lower bound
 	lowerBound := lowerBoundOfLastA1C.AddDate(0, 0, -1*A1C_ESTIMATION_SCORE_PERIOD+1)
+
+	if lowerBound.Before(minLowerBound) {
+		lowerBound = minLowerBound
+	}
 
 	// Kick off the first chunk of glukit score calculation
 	task, err := RunA1CCalculationChunk.Task(glukitUser.Email, lowerBound)
