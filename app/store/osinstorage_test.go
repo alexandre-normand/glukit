@@ -1,9 +1,9 @@
 package store_test
 
 import (
-	"appengine/aetest"
 	. "github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/osin"
+	"google.golang.org/appengine/aetest"
 	"testing"
 	"time"
 )

@@ -38,8 +38,9 @@
 package oauth
 
 import (
-	"appengine"
 	"encoding/json"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/log"
 	"io/ioutil"
 	"mime"
 	"net/http"
@@ -189,7 +190,7 @@ func (c *Config) AuthCodeURL(state string) string {
 }
 
 // Exchange takes a code and gets access Token from the remote server.
-func (t *Transport) Exchange(context appengine.Context, code string) (*Token, error) {
+func (t *Transport) Exchange(context context.Context, code string) (*Token, error) {
 	if t.Config == nil {
 		return nil, OAuthError{"Exchange", "no Config supplied"}
 	}
@@ -198,11 +199,11 @@ func (t *Transport) Exchange(context appengine.Context, code string) (*Token, er
 	// passed to `updateToken` to preserve existing refresh token.
 	tok := t.Token
 	if tok == nil && t.TokenCache != nil {
-		context.Infof("Already had a token, refreshing instead with token [%v]", tok)
+		log.Infof(context, "Already had a token, refreshing instead with token [%v]", tok)
 		tok, _ = t.TokenCache.Token()
 	}
 	if tok == nil {
-		context.Infof("Creating brand new token...")
+		log.Infof(context, "Creating brand new token...")
 		tok = new(Token)
 	}
 	err := t.updateToken(context, tok, url.Values{
@@ -276,7 +277,7 @@ func cloneRequest(r *http.Request) *http.Request {
 }
 
 // Refresh renews the Transport's AccessToken using its RefreshToken.
-func (t *Transport) Refresh(context appengine.Context) error {
+func (t *Transport) Refresh(context context.Context) error {
 	if t.Config == nil {
 		return OAuthError{"Refresh", "no Config supplied"}
 	} else if t.Token == nil {
@@ -296,11 +297,11 @@ func (t *Transport) Refresh(context appengine.Context) error {
 	return nil
 }
 
-func (t *Transport) updateToken(context appengine.Context, tok *Token, v url.Values) error {
+func (t *Transport) updateToken(context context.Context, tok *Token, v url.Values) error {
 	v.Set("client_id", t.ClientId)
 	v.Set("client_secret", t.ClientSecret)
 	if context != nil {
-		context.Infof("Posting form to url [%s]: [%v]", t.TokenURL, v)
+		log.Infof(context, "Posting form to url [%s]: [%v]", t.TokenURL, v)
 	}
 	r, err := (&http.Client{Transport: t.transport()}).PostForm(t.TokenURL, v)
 	if err != nil {

@@ -1,26 +1,27 @@
 package engine
 
 import (
-	"appengine"
-	"appengine/delay"
-	"appengine/taskqueue"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/delay"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/taskqueue"
 	"time"
 )
 
-var RunGlukitScoreCalculationChunk = delay.Func(GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, func(context appengine.Context, userEmail string,
+var RunGlukitScoreCalculationChunk = delay.Func(GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, func(context context.Context, userEmail string,
 	lowerBound time.Time) {
-	context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that " +
-		"shows up because the function calls itself. This implementation defines the same signature as the " +
+	log.Criticalf(context, "This function purely exists as a workaround to the \"initialization loop\" error that "+
+		"shows up because the function calls itself. This implementation defines the same signature as the "+
 		"real one which we define in init() to override this implementation!")
 })
 
-var RunA1CCalculationChunk = delay.Func(A1C_BATCH_CALCULATION_FUNCTION_NAME, func(context appengine.Context, userEmail string,
+var RunA1CCalculationChunk = delay.Func(A1C_BATCH_CALCULATION_FUNCTION_NAME, func(context context.Context, userEmail string,
 	lowerBound time.Time) {
-	context.Criticalf("This function purely exists as a workaround to the \"initialization loop\" error that " +
-		"shows up because the function calls itself. This implementation defines the same signature as the " +
+	log.Criticalf(context, "This function purely exists as a workaround to the \"initialization loop\" error that "+
+		"shows up because the function calls itself. This implementation defines the same signature as the "+
 		"real one which we define in init() to override this implementation!")
 })
 
@@ -31,10 +32,10 @@ const (
 	A1C_BATCH_CALCULATION_FUNCTION_NAME          = "runA1CCalculationChunk"
 )
 
-func RunGlukitScoreBatchCalculation(context appengine.Context, userEmail string, lowerBound time.Time) {
+func RunGlukitScoreBatchCalculation(context context.Context, userEmail string, lowerBound time.Time) {
 	glukitUser, _, _, err := store.GetUserData(context, userEmail)
 	if _, ok := err.(store.StoreError); err != nil && !ok {
-		context.Errorf("We're trying to run a batch glukit score calculation for user [%s] that doesn't exist. "+
+		log.Errorf(context, "We're trying to run a batch glukit score calculation for user [%s] that doesn't exist. "+
 			"Got error: %v", userEmail, err)
 		return
 	}
@@ -44,7 +45,7 @@ func RunGlukitScoreBatchCalculation(context appengine.Context, userEmail string,
 	glukitScoreBatch := make([]model.GlukitScore, 0)
 	var periodUpperBound time.Time
 
-	context.Debugf("Calculating batch of GlukitScores for user [%s] with current best of [%v] and most recent score of [%v]",
+	log.Debugf(context, "Calculating batch of GlukitScores for user [%s] with current best of [%v] and most recent score of [%v]",
 		userEmail, glukitUser.BestScore, mostRecentScore)
 	upperBound := lowerBound.AddDate(0, 0, PERIODS_PER_BATCH*GLUKIT_SCORE_PERIOD)
 
@@ -80,7 +81,7 @@ func RunGlukitScoreBatchCalculation(context appengine.Context, userEmail string,
 		if _, err := store.StoreUserProfile(context, time.Now(), *glukitUser); err != nil {
 			util.Propagate(err)
 		} else {
-			context.Debugf("Updated glukit user [%s] with an improved GlukitScore of [%v] and most recent score of [%v]",
+			log.Debugf(context, "Updated glukit user [%s] with an improved GlukitScore of [%v] and most recent score of [%v]",
 				glukitUser.Email, bestScore, mostRecentScore)
 		}
 	}
@@ -89,21 +90,21 @@ func RunGlukitScoreBatchCalculation(context appengine.Context, userEmail string,
 	if !periodUpperBound.Before(upperBound) {
 		task, err := RunGlukitScoreCalculationChunk.Task(userEmail, periodUpperBound)
 		if err != nil {
-			context.Criticalf("Couldn't schedule the next execution of [%s] for user [%s]. "+
+			log.Criticalf(context, "Couldn't schedule the next execution of [%s] for user [%s]. "+
 				"This breaks batch calculation of glukit scores for that user!: %v", GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, userEmail, err)
 		}
 		taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
 
-		context.Infof("Queued up next chunk of glukit score calculation for user [%s] and lowerBound [%s]", userEmail, periodUpperBound.Format(util.TIMEFORMAT))
+		log.Infof(context, "Queued up next chunk of glukit score calculation for user [%s] and lowerBound [%s]", userEmail, periodUpperBound.Format(util.TIMEFORMAT))
 	} else {
-		context.Infof("Done with glukit score calculation for user [%s]", userEmail)
+		log.Infof(context, "Done with glukit score calculation for user [%s]", userEmail)
 	}
 }
 
-func RunA1CBatchCalculation(context appengine.Context, userEmail string, lowerBound time.Time) {
+func RunA1CBatchCalculation(context context.Context, userEmail string, lowerBound time.Time) {
 	glukitUser, _, _, err := store.GetUserData(context, userEmail)
 	if _, ok := err.(store.StoreError); err != nil && !ok {
-		context.Errorf("We're trying to run a batch of a1c estimates for user [%s] that doesn't exist. "+
+		log.Errorf(context, "We're trying to run a batch of a1c estimates for user [%s] that doesn't exist. "+
 			"Got error: %v", userEmail, err)
 		return
 	}
@@ -112,7 +113,7 @@ func RunA1CBatchCalculation(context appengine.Context, userEmail string, lowerBo
 	a1cBatch := make([]model.A1CEstimate, 0)
 	var periodUpperBound time.Time
 
-	context.Debugf("Calculating batch of A1C estimates for user [%s]", userEmail)
+	log.Debugf(context, "Calculating batch of A1C estimates for user [%s]", userEmail)
 	upperBound := lowerBound.AddDate(0, 0, PERIODS_PER_BATCH*A1C_ESTIMATION_SCORE_PERIOD)
 
 	// Calculate the GlukitScore for every period until now by increment of 1 day. This is a moving estimate over the last A1C_ESTIMATION_SCORE_PERIOD that gets a new value every day.
@@ -121,7 +122,7 @@ func RunA1CBatchCalculation(context appengine.Context, userEmail string, lowerBo
 	for periodUpperBound = lowerBound.AddDate(0, 0, 1); periodUpperBound.Before(time.Now()) && periodUpperBound.Before(upperBound); periodUpperBound = periodUpperBound.AddDate(0, 0, 1) {
 		a1cEstimate, err := EstimateA1C(context, glukitUser, periodUpperBound)
 		if err != nil {
-			context.Warningf("Error trying to calculate a1c for user [%s] with upper bound [%s]: %v", userEmail, periodUpperBound, err)
+			log.Warningf(context, "Error trying to calculate a1c for user [%s] with upper bound [%s]: %v", userEmail, periodUpperBound, err)
 		} else {
 			a1cBatch = append(a1cBatch, *a1cEstimate)
 			if periodUpperBound.After(mostRecentA1C.UpperBound) {
@@ -139,7 +140,7 @@ func RunA1CBatchCalculation(context appengine.Context, userEmail string, lowerBo
 		if _, err := store.StoreUserProfile(context, time.Now(), *glukitUser); err != nil {
 			util.Propagate(err)
 		} else {
-			context.Debugf("Updated glukit user [%s] with a most recent a1c [%v]",
+			log.Debugf(context, "Updated glukit user [%s] with a most recent a1c [%v]",
 				glukitUser.Email, mostRecentA1C)
 		}
 	}
@@ -148,13 +149,13 @@ func RunA1CBatchCalculation(context appengine.Context, userEmail string, lowerBo
 	if !periodUpperBound.Before(upperBound) {
 		task, err := RunA1CCalculationChunk.Task(userEmail, periodUpperBound)
 		if err != nil {
-			context.Criticalf("Couldn't schedule the next execution of [%s] for user [%s]. "+
+			log.Criticalf(context, "Couldn't schedule the next execution of [%s] for user [%s]. "+
 				"This breaks batch calculation of glukit scores for that user!: %v", A1C_BATCH_CALCULATION_FUNCTION_NAME, userEmail, err)
 		}
 		taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
 
-		context.Infof("Queued up next chunk of a1c calculation for user [%s] and lowerBound [%s]", userEmail, periodUpperBound.Format(util.TIMEFORMAT))
+		log.Infof(context, "Queued up next chunk of a1c calculation for user [%s] and lowerBound [%s]", userEmail, periodUpperBound.Format(util.TIMEFORMAT))
 	} else {
-		context.Infof("Done with a1c estimation for user [%s]", userEmail)
+		log.Infof(context, "Done with a1c estimation for user [%s]", userEmail)
 	}
 }

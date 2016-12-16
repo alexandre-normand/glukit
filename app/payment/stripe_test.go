@@ -1,12 +1,12 @@
 package payment_test
 
 import (
-	"appengine/aetest"
-	"appengine/urlfetch"
-	"appengine/user"
 	"github.com/alexandre-normand/glukit/app/config"
 	. "github.com/alexandre-normand/glukit/app/payment"
 	"github.com/cosn/stripe"
+	"google.golang.org/appengine/aetest"
+	"google.golang.org/appengine/urlfetch"
+	"google.golang.org/appengine/user"
 	"strconv"
 	"strings"
 	"testing"

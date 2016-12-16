@@ -1,8 +1,6 @@
 package importer
 
 import (
-	"appengine"
-	"appengine/datastore"
 	"encoding/xml"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
@@ -11,6 +9,9 @@ import (
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
 	"github.com/alexandre-normand/glukit/app/util"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 	"io"
 	"strings"
 	"time"
@@ -19,7 +20,7 @@ import (
 // ParseContent is the big function that parses the Dexcom xml file. It is given a reader to the file and it parses batches of days of GlucoseReads/Events. It streams the content but
 // keeps some in memory until it reaches a full batch of a type. A batch is an array of DayOf[GlucoseReads,Injection,Meals,Exercises]. A batch is flushed to the datastore once it reaches
 // the given batchSize or we reach the end of the file.
-func ParseContent(context appengine.Context, reader io.Reader, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, meals []apimodel.DayOfGlucoseReads) ([]*datastore.Key, error), mealsBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfMeals []apimodel.DayOfMeals) ([]*datastore.Key, error), injectionBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfInjections []apimodel.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context appengine.Context, userProfileKey *datastore.Key, daysOfExercises []apimodel.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time, err error) {
+func ParseContent(context context.Context, reader io.Reader, parentKey *datastore.Key, startTime time.Time, readsBatchHandler func(context context.Context, userProfileKey *datastore.Key, meals []apimodel.DayOfGlucoseReads) ([]*datastore.Key, error), mealsBatchHandler func(context context.Context, userProfileKey *datastore.Key, daysOfMeals []apimodel.DayOfMeals) ([]*datastore.Key, error), injectionBatchHandler func(context context.Context, userProfileKey *datastore.Key, daysOfInjections []apimodel.DayOfInjections) ([]*datastore.Key, error), exerciseBatchHandler func(context context.Context, userProfileKey *datastore.Key, daysOfExercises []apimodel.DayOfExercises) ([]*datastore.Key, error)) (lastReadTime time.Time, err error) {
 	decoder := xml.NewDecoder(reader)
 
 	calibrationDataStoreWriter := store.NewDataStoreCalibrationBatchWriter(context, parentKey)
@@ -47,7 +48,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 		// Read tokens from the XML document in a stream.
 		t, _ := decoder.Token()
 		if t == nil {
-			context.Debugf("finished reading file")
+			log.Debugf(context, "finished reading file")
 			break
 		}
 
@@ -80,7 +81,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 				decoder.DecodeElement(&event, &se)
 				internalEventTime, err := util.GetTimeUTC(event.InternalTime)
 				if err != nil {
-					context.Warningf("Skipping [%s] event [%v], bad internal time [%s]: %v", event.EventType, event, event.InternalTime, err)
+					log.Warningf(context, "Skipping [%s] event [%v], bad internal time [%s]: %v", event.EventType, event, event.InternalTime, err)
 					continue
 				}
 
@@ -90,7 +91,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 
 					eventTime, err := util.GetTimeWithImpliedLocation(event.EventTime, location)
 					if err != nil {
-						context.Warningf("Skipping [%s] event [%v], bad event time [%s]: %v", event.EventType, event, event.EventTime, err)
+						log.Warningf(context, "Skipping [%s] event [%v], bad event time [%s]: %v", event.EventType, event, event.EventTime, err)
 						continue
 					}
 
@@ -109,7 +110,7 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 						var insulinUnits float32
 						_, err := fmt.Sscanf(event.Description, "Insulin %f units", &insulinUnits)
 						if err != nil {
-							context.Warningf("Failed to parse event as injection [%s]: %v", event.Description, err)
+							log.Warningf(context, "Failed to parse event as injection [%s]: %v", event.Description, err)
 						} else {
 							injection := apimodel.Injection{apimodel.Time{apimodel.GetTimeMillis(eventTime), location.String()}, float32(insulinUnits), "", ""}
 
@@ -173,6 +174,6 @@ func ParseContent(context appengine.Context, reader io.Reader, parentKey *datast
 		return lastRead.GetTime(), err
 	}
 
-	context.Infof("Done parsing and storing all data")
+	log.Infof(context, "Done parsing and storing all data")
 	return lastRead.GetTime(), nil
 }

@@ -1,8 +1,6 @@
 package engine_test
 
 import (
-	"appengine/aetest"
-	"appengine/datastore"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/bufio"
 	"github.com/alexandre-normand/glukit/app/engine"
@@ -11,6 +9,8 @@ import (
 	"github.com/alexandre-normand/glukit/app/streaming"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
+	"google.golang.org/appengine/aetest"
+	"google.golang.org/appengine/datastore"
 	"log"
 	"sort"
 	"testing"

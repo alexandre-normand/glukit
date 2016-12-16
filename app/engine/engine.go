@@ -3,12 +3,13 @@
 package engine
 
 import (
-	"appengine"
-	"appengine/taskqueue"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/taskqueue"
 	"math"
 	"time"
 )
@@ -37,13 +38,13 @@ var A1C_CALCULATION_START = time.Unix(1388534400, 0)
 //      contribution and add it to the GlukitScore.
 //   3. If we had enough reads to satisfy the requirements, we return the sum of
 //      all individual score contributions.
-func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUser, endOfPeriod time.Time) (glukitScore *model.GlukitScore, err error) {
+func CalculateGlukitScore(context context.Context, glukitUser *model.GlukitUser, endOfPeriod time.Time) (glukitScore *model.GlukitScore, err error) {
 	// Get the last period's worth of reads
 	upperBound := util.GetMidnightUTCBefore(endOfPeriod)
 	lowerBound := upperBound.AddDate(0, 0, -1*GLUKIT_SCORE_PERIOD)
 	score := model.UNDEFINED_SCORE_VALUE
 
-	context.Debugf("Getting reads for glukit score calculation from [%s] to [%s]", lowerBound, upperBound)
+	log.Debugf(context, "Getting reads for glukit score calculation from [%s] to [%s]", lowerBound, upperBound)
 	if reads, err := store.GetGlucoseReads(context, glukitUser.Email, lowerBound, upperBound); err != nil {
 		return &model.UNDEFINED_SCORE, err
 	} else {
@@ -59,9 +60,9 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 			readCount = readCount + 1
 		}
 
-		context.Infof("Readcount of [%d] used for glukit score calculation of [%d]", readCount, score)
+		log.Infof(context, "Readcount of [%d] used for glukit score calculation of [%d]", readCount, score)
 		if readCount < READS_REQUIREMENT {
-			context.Infof("Received only [%d] but required [%d] to calculate valid GlukitScore", readCount, READS_REQUIREMENT)
+			log.Infof(context, "Received only [%d] but required [%d] to calculate valid GlukitScore", readCount, READS_REQUIREMENT)
 			return &model.UNDEFINED_SCORE, nil
 		}
 	}
@@ -82,7 +83,7 @@ func CalculateGlukitScore(context appengine.Context, glukitUser *model.GlukitUse
 
 // An individual score is either 0 if it's straight on perfection (83) or it's the deviation from 83 weighted
 // by whether it's high (multiplier of 2) or lower (multiplier of 1)
-func CalculateIndividualReadScoreWeight(context appengine.Context, read apimodel.GlucoseRead) (weightedScoreContribution float64) {
+func CalculateIndividualReadScoreWeight(context context.Context, read apimodel.GlucoseRead) (weightedScoreContribution float64) {
 	weightedScoreContribution = 0.
 	convertedValue, err := read.GetNormalizedValue(apimodel.MG_PER_DL)
 	if err != nil {
@@ -112,7 +113,7 @@ func CalculateUserFacingScore(internal model.GlukitScore) (external *int64) {
 }
 
 // StartGlukitScoreBatch tries to calculate glukit scores for any week following the most recent calculated score
-func StartGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
+func StartGlukitScoreBatch(context context.Context, glukitUser *model.GlukitUser) (err error) {
 	lowerBoundOfLastScore := glukitUser.MostRecentScore.LowerBound
 
 	// Calculate our minimum allowed lower bound since we don't want to incur the cost of too many reads when
@@ -129,18 +130,18 @@ func StartGlukitScoreBatch(context appengine.Context, glukitUser *model.GlukitUs
 	// Kick off the first chunk of glukit score calculation
 	task, err := RunGlukitScoreCalculationChunk.Task(glukitUser.Email, lowerBound)
 	if err != nil {
-		context.Criticalf("Couldn't schedule the next execution of [%s] for user [%s]. "+
+		log.Criticalf(context, "Couldn't schedule the next execution of [%s] for user [%s]. "+
 			"This breaks batch calculation of glukit scores for that user!: %v", GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, glukitUser.Email, err)
 	}
 	taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
-	context.Infof("Queued up first chunk of glukit score calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lowerBound.Format(util.TIMEFORMAT))
+	log.Infof(context, "Queued up first chunk of glukit score calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lowerBound.Format(util.TIMEFORMAT))
 
 	return nil
 }
 
 // StartA1CCalculationBatch tries to calculate a1c estimates for any week following the most recent calculated glukit score (a hack, we should have the most recent
 // a1c calculation date)
-func StartA1CCalculationBatch(context appengine.Context, glukitUser *model.GlukitUser) (err error) {
+func StartA1CCalculationBatch(context context.Context, glukitUser *model.GlukitUser) (err error) {
 	lowerBoundOfLastA1C := glukitUser.MostRecentA1C.LowerBound
 
 	// Uninitialized, default to January 1st, 2014
@@ -162,11 +163,11 @@ func StartA1CCalculationBatch(context appengine.Context, glukitUser *model.Gluki
 	// Kick off the first chunk of glukit score calculation
 	task, err := RunA1CCalculationChunk.Task(glukitUser.Email, lowerBound)
 	if err != nil {
-		context.Criticalf("Couldn't schedule the next execution of [%s] for user [%s]. "+
+		log.Criticalf(context, "Couldn't schedule the next execution of [%s] for user [%s]. "+
 			"This breaks batch calculation of a1c estimates scores for that user!: %v", A1C_BATCH_CALCULATION_FUNCTION_NAME, glukitUser.Email, err)
 	}
 	taskqueue.Add(context, task, BATCH_CALCULATION_QUEUE_NAME)
-	context.Infof("Queued up first chunk of a1c calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lowerBound.Format(util.TIMEFORMAT))
+	log.Infof(context, "Queued up first chunk of a1c calculation for user [%s] and lowerBound [%s]", glukitUser.Email, lowerBound.Format(util.TIMEFORMAT))
 
 	return nil
 }

@@ -35,8 +35,7 @@
         However, there is a blank style.css in the css directory should you prefer -->
         <link rel="stylesheet" href="css/gumby.css">
         <!-- <link rel="stylesheet" href="css/style.css"> -->
-        <script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>
-        <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+        <script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>        
         <script src="js/d3.v3.min.js"></script>
         <script src="js/moment-with-langs.min.js"></script>
         <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
@@ -431,28 +430,11 @@
             <script src="bower_components/gumby/js/libs/gumby.init.js"></script>
             <script src="bower_components/gumby/js/plugins.js"></script>
             <script src="bower_components/gumby/js/main.js"></script>
-            <script src="js/browser.js"></script>
+            <script src="js/browser.js"></script>            
             <script>
-            channel = new goog.appengine.Channel('{{.ChannelToken}}');
-            socket = channel.open();
-            socket.onopen = function() {
-            console.log("connected");
             showDataBrowser("{{.PathPrefix}}", "{{.GlucoseUnit}}");
             
             enableRangeSelection();
-            };
-            socket.onmessage = function(message) {
-            // We assume it's always a refresh
-            console.log(message.data);
-            showDataBrowser("{{.PathPrefix}}", "{{.GlucoseUnit}}");
-            enableRangeSelection();
-            };
-            socket.onerror = function() {
-            console.log("error");
-            };
-            socket.onclose = function() {
-            console.log("close");
-            };
             </script>
             <script>
             window._gaq = [

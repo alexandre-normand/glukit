@@ -1,19 +1,19 @@
 package store
 
 import (
-	"appengine"
-	"appengine/datastore"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/glukitio"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
 )
 
 type DataStoreCalibrationBatchWriter struct {
-	c appengine.Context
+	c context.Context
 	k *datastore.Key
 }
 
 // NewDataStoreCalibrationBatchWriter creates a new CalibrationBatchWriter that persists to the datastore
-func NewDataStoreCalibrationBatchWriter(context appengine.Context, userProfileKey *datastore.Key) *DataStoreCalibrationBatchWriter {
+func NewDataStoreCalibrationBatchWriter(context context.Context, userProfileKey *datastore.Key) *DataStoreCalibrationBatchWriter {
 	w := new(DataStoreCalibrationBatchWriter)
 	w.c = context
 	w.k = userProfileKey

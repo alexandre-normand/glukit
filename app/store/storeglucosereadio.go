@@ -1,19 +1,19 @@
 package store
 
 import (
-	"appengine"
-	"appengine/datastore"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/glukitio"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
 )
 
 type DataStoreGlucoseReadBatchWriter struct {
-	c appengine.Context
+	c context.Context
 	k *datastore.Key
 }
 
 // NewDataStoreGlucoseReadBatchWriter creates a new GlucoseReadBatchWriter that persists to the datastore
-func NewDataStoreGlucoseReadBatchWriter(context appengine.Context, userProfileKey *datastore.Key) *DataStoreGlucoseReadBatchWriter {
+func NewDataStoreGlucoseReadBatchWriter(context context.Context, userProfileKey *datastore.Key) *DataStoreGlucoseReadBatchWriter {
 	w := new(DataStoreGlucoseReadBatchWriter)
 	w.c = context
 	w.k = userProfileKey

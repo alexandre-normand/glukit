@@ -1,12 +1,7 @@
-package glukit
+// +build !appengine
+package main
 
 import (
-	"appengine"
-	"appengine/channel"
-	"appengine/datastore"
-	"appengine/delay"
-	"appengine/taskqueue"
-	"appengine/user"
 	"code.google.com/p/gorilla/mux"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/config"
@@ -15,6 +10,12 @@ import (
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/delay"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/taskqueue"
+	"google.golang.org/appengine/user"
 	"html/template"
 	"net/http"
 	"sync"
@@ -36,14 +37,13 @@ const (
 // Some variables that are used during rendering of templates
 type RenderVariables struct {
 	PathPrefix           string
-	ChannelToken         string
 	StripePublishableKey string
 	SSLHost              string
 	GlucoseUnit          apimodel.GlucoseUnit
 }
 
 // init initializes the routes and global initialization
-func init() {
+func main() {
 	appConfig = config.NewAppConfig()
 
 	http.Handle("/", muxRouter)
@@ -93,6 +93,8 @@ func init() {
 	processFile = delay.Func(PROCESS_FILE_FUNCTION_NAME, processSingleFile)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
 	engine.RunA1CCalculationChunk = delay.Func(engine.A1C_BATCH_CALCULATION_FUNCTION_NAME, engine.RunA1CBatchCalculation)
+
+	appengine.Main()
 }
 
 // landing executes the landing page template
@@ -114,7 +116,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 
 	_, key, _, err := store.GetUserData(context, DEMO_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
-		context.Infof("No data found for demo user [%s], creating it", DEMO_EMAIL)
+		log.Infof(context, "No data found for demo user [%s], creating it", DEMO_EMAIL)
 		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
 		// TODO: Populate GlukitUser correctly, this will likely require
 		// getting rid of all data from the store when this is ready
@@ -135,7 +137,7 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		context.Infof("Data already stored for demo user [%s], continuing...", DEMO_EMAIL)
+		log.Infof(context, "Data already stored for demo user [%s], continuing...", DEMO_EMAIL)
 	}
 
 	render(DEMO_EMAIL, DEMO_PATH_PREFIX, w, request)
@@ -158,10 +160,10 @@ func demoReport(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
+	renderVariables := &RenderVariables{PathPrefix: DEMO_PATH_PREFIX, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
-		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
+		log.Criticalf(context, "Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -176,10 +178,10 @@ func report(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	renderVariables := &RenderVariables{PathPrefix: "", ChannelToken: "none", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
+	renderVariables := &RenderVariables{PathPrefix: "", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
-		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
+		log.Criticalf(context, "Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -187,12 +189,6 @@ func report(w http.ResponseWriter, request *http.Request) {
 // render executed the graph page template
 func render(email string, datapath string, w http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	token, err := channel.Create(context, email)
-	if err != nil {
-		context.Criticalf("Error creating channel for user [%s]", email)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	unitValue, err := resolveGlucoseUnit(email, request)
 	if err != nil {
@@ -200,10 +196,10 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 		return
 	}
 
-	renderVariables := &RenderVariables{PathPrefix: datapath, ChannelToken: token, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
+	renderVariables := &RenderVariables{PathPrefix: datapath, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
 
 	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {
-		context.Criticalf("Error executing template [%s]", dataBrowserTemplate.Name())
+		log.Criticalf(context, "Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -232,10 +228,10 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 
 	glukitUser, _, _, err := store.GetUserData(context, user.Email)
 	if _, ok := err.(store.StoreError); err != nil && !ok || len(glukitUser.RefreshToken) == 0 {
-		context.Infof("Redirecting [%s], glukitUser [%v] for authorization. Error: [%v]", user.Email, glukitUser, err)
+		log.Infof(context, "Redirecting [%s], glukitUser [%v] for authorization. Error: [%v]", user.Email, glukitUser, err)
 
 		configuration := configuration()
-		context.Debugf("We don't current have a refresh token (either lost or it's " +
+		log.Debugf(context, "We don't current have a refresh token (either lost or it's "+
 			"the first access). Let's set the ApprovalPrompt to force to get a new one...")
 
 		configuration.ApprovalPrompt = "force"
@@ -243,7 +239,7 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 		url := configuration.AuthCodeURL(request.URL.RawQuery)
 		http.Redirect(writer, request, url, http.StatusFound)
 	} else {
-		context.Infof("User [%s] already exists with a valid refresh token [%s], skipping authorization step...",
+		log.Infof(context, "User [%s] already exists with a valid refresh token [%s], skipping authorization step...",
 			glukitUser.RefreshToken, user.Email)
 		oauthCallback(writer, request)
 	}
@@ -252,7 +248,7 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 func warmUp(writer http.ResponseWriter, request *http.Request) {
 	initOnce.Do(func() {
 		c := appengine.NewContext(request)
-		c.Infof("Initializing application...")
+		log.Infof(c, "Initializing application...")
 		initializeApp(writer, request)
 	})
 }

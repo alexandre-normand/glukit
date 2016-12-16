@@ -2,8 +2,8 @@
 package config
 
 import (
-	"appengine"
 	"github.com/alexandre-normand/glukit/app/secrets"
+	"google.golang.org/appengine"
 )
 
 // AppConfig is all global application configuration values

@@ -2,6 +2,7 @@ application: glukit
 version: 1beta
 runtime: go
 api_version: go1
+nobuild_files: app/.*
 
 handlers:
 - url: /favicon.ico

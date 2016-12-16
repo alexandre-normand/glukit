@@ -1,9 +1,6 @@
-package glukit
+package main
 
 import (
-	"appengine"
-	"appengine/datastore"
-	"appengine/user"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/model"
@@ -11,6 +8,10 @@ import (
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"github.com/alexandre-normand/osin"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/user"
 	"html/template"
 	"net/http"
 	"strings"
@@ -51,7 +52,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 		resp := server.NewResponse()
 		req.ParseForm()
 		req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
-		c.Debugf("Processing authorization request: %v and form [%v]", req, req.PostForm)
+		log.Debugf(c, "Processing authorization request: %v and form [%v]", req, req.PostForm)
 		if ar := server.HandleAuthorizeRequest(resp, req); ar != nil {
 			// Nothing to do since the page is already login restricted by gae app configuration
 			ar.Authorized = true
@@ -59,7 +60,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 
 			_, _, _, err := store.GetUserData(c, user.Email)
 			if err == datastore.ErrNoSuchEntity {
-				c.Debugf("Creating GlukitUser on first oauth access for [%s]: ", user.Email)
+				log.Debugf(c, "Creating GlukitUser on first oauth access for [%s]: ", user.Email)
 				// If the user doesn't exist already, create it
 				glukitUser := model.GlukitUser{user.Email, "", "", time.Now(),
 					model.DIABETES_TYPE_1, "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
@@ -90,20 +91,20 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 				renderVariables := &OauthRenderVariables{Code: data["code"].(string), State: data["state"].(string)}
 
 				if err := authorizeLocalAppTemplate.Execute(w, renderVariables); err != nil {
-					c.Criticalf("Error executing template [%s]", authorizeLocalAppTemplate.Name())
+					log.Criticalf(c, "Error executing template [%s]", authorizeLocalAppTemplate.Name())
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 			} else {
 				redirectUrl := fmt.Sprintf("%s?code=%s&state=%s", resp.URL, data["code"].(string), data["state"].(string))
-				c.Infof("Redirecting to [%s] with valid code.", redirectUrl)
+				log.Infof(c, "Redirecting to [%s] with valid code.", redirectUrl)
 				http.Redirect(w, req, redirectUrl, 200)
 				return
 			}
 		}
 		if resp.IsError && resp.InternalError != nil {
-			c.Debugf("ERROR: %s\n", resp.InternalError)
+			log.Debugf(c, "ERROR: %s\n", resp.InternalError)
 		}
-		c.Debugf("Writing response: %v", resp.Output)
+		log.Debugf(c, "Writing response: %v", resp.Output)
 		osin.OutputJSON(resp, w, req)
 	})
 
@@ -115,23 +116,23 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 		if _, _, ok := req.BasicAuth(); !ok {
 			req.SetBasicAuth(req.Form.Get("client_id"), req.Form.Get("client_secret"))
 		}
-		c.Debugf("Processing token request: %v with form [%v]", req, req.PostForm)
+		log.Debugf(c, "Processing token request: %v with form [%v]", req, req.PostForm)
 		if ar := server.HandleAccessRequest(resp, req); ar != nil {
-			c.Debugf("Retrieved authorize data [%v]", ar)
+			log.Debugf(c, "Retrieved authorize data [%v]", ar)
 			ar.Authorized = true
 			server.FinishAccessRequest(resp, req, ar)
 		}
-		c.Debugf("Writing response: %v", resp.Output)
+		log.Debugf(c, "Writing response: %v", resp.Output)
 		osin.OutputJSON(resp, w, req)
 	})
 	context := appengine.NewContext(request)
-	context.Debugf("Oauth server loaded: [%v]", server)
+	log.Debugf(context, "Oauth server loaded: [%v]", server)
 }
 
 func (handler *oauthAuthenticatedHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	c := appengine.NewContext(request)
 	request.ParseForm()
-	c.Debugf("Checking authentication for request [%s]...", request.RequestURI)
+	log.Debugf(c, "Checking authentication for request [%s]...", request.RequestURI)
 
 	ret := server.NewResponse()
 	authorizationValue := request.Header.Get("Authorization")

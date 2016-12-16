@@ -1,12 +1,12 @@
 package importer
 
 import (
-	"appengine"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/drive"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/log"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -28,10 +28,7 @@ func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.F
 			for i := range filelist.Items {
 				file := filelist.Items[i]
 				if strings.HasSuffix(file.OriginalFilename, ".xml") {
-					log.Printf("Found match with id [%s] and original filename [%s]\n", file.Id, file.OriginalFilename)
 					files = append(files, file)
-				} else {
-					log.Printf("Skipping search result item: %s\n", file)
 				}
 			}
 		}
@@ -41,17 +38,17 @@ func SearchDataFiles(client *http.Client, lastUpdate time.Time) (file []*drive.F
 }
 
 // GetFileReader returns the file reader for the GoogleDrive file. The caller is responsible for calling Close() when done.
-func GetFileReader(context appengine.Context, client http.RoundTripper, file *drive.File) (reader io.ReadCloser, err error) {
+func GetFileReader(context context.Context, client http.RoundTripper, file *drive.File) (reader io.ReadCloser, err error) {
 	// t parameter should use an oauth.Transport
 	downloadUrl := file.DownloadUrl
 	if downloadUrl == "" {
 		// If there is no downloadUrl, there is no body
-		context.Errorf("An error occurred: File is not downloadable")
+		log.Errorf(context, "An error occurred: File is not downloadable")
 		return nil, nil
 	}
 	req, err := http.NewRequest("GET", downloadUrl, nil)
 	if err != nil {
-		context.Errorf("An error occurred: %v\n", err)
+		log.Errorf(context, "An error occurred: %v\n", err)
 		return nil, err
 	}
 	// Request for compressed files to make download faster
@@ -60,7 +57,7 @@ func GetFileReader(context appengine.Context, client http.RoundTripper, file *dr
 
 	resp, err := client.RoundTrip(req)
 	if err != nil {
-		context.Errorf("An error occurred: %v\n", err)
+		log.Errorf(context, "An error occurred: %v\n", err)
 		return nil, err
 	}
 

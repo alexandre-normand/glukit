@@ -1,10 +1,10 @@
 package glukitio_test
 
 import (
-	"appengine/aetest"
 	. "github.com/alexandre-normand/glukit/app/io"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
+	"google.golang.org/appengine/aetest"
 	"testing"
 	"time"
 )

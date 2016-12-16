@@ -1,8 +1,6 @@
-package glukit
+package main
 
 import (
-	"appengine"
-	"appengine/datastore"
 	"bytes"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
@@ -12,6 +10,10 @@ import (
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 	"io"
 	"net/http"
 	"strings"
@@ -35,7 +37,7 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 
 	_, _, _, err := store.GetUserData(context, GLUKIT_BERNSTEIN_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
-		context.Infof("No data found for glukit bernstein user [%s], creating it", GLUKIT_BERNSTEIN_EMAIL)
+		log.Infof(context, "No data found for glukit bernstein user [%s], creating it", GLUKIT_BERNSTEIN_EMAIL)
 		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
 		userProfileKey, err := store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{GLUKIT_BERNSTEIN_EMAIL, "Glukit", "Bernstein", BERNSTEIN_BIRTH_DATE, model.DIABETES_TYPE_1, "America/New_York", time.Now(),
@@ -56,29 +58,29 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 			LastDataProcessed: lastReadTime, ImportResult: "Success"})
 
 		if glukitUser, err := store.GetUserProfile(context, userProfileKey); err != nil {
-			context.Warningf("Error getting retrieving GlukitUser [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
+			log.Warningf(context, "Error getting retrieving GlukitUser [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 		} else {
 			// Start batch calculation of the glukit scores
 			err := engine.StartGlukitScoreBatch(context, glukitUser)
 
 			if err != nil {
-				context.Warningf("Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
+				log.Warningf(context, "Error starting batch calculation of GlukitScores for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 			}
 
 			err = engine.StartA1CCalculationBatch(context, glukitUser)
 			if err != nil {
-				context.Warningf("Error starting batch calculation of a1cs for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
+				log.Warningf(context, "Error starting batch calculation of a1cs for [%s], this needs attention: [%v]", GLUKIT_BERNSTEIN_EMAIL, err)
 			}
 		}
 	} else if err != nil {
 		util.Propagate(err)
 	} else {
-		context.Infof("Data already stored for user [%s], continuing...", GLUKIT_BERNSTEIN_EMAIL)
+		log.Infof(context, "Data already stored for user [%s], continuing...", GLUKIT_BERNSTEIN_EMAIL)
 	}
 }
 
 // generateBernsteinData generates an in-memory dexcom file for the user Glukit Bernstein.
-func generateBernsteinData(context appengine.Context) (reader io.Reader) {
+func generateBernsteinData(context context.Context) (reader io.Reader) {
 	buffer := new(bytes.Buffer)
 	buffer.WriteString("<Patient Id=\"{E1B2FE4C-35F0-40B8-A15A-D3CBCA27B666}\" SerialNumber=\"sm11111111\" IsDataBlinded=\"0\" IsKeepPrivate=\"1\">\n")
 	buffer.WriteString("<MeterReadings></MeterReadings>\n")
@@ -87,7 +89,7 @@ func generateBernsteinData(context appengine.Context) (reader io.Reader) {
 	startTime := BERNSTEIN_EARLIEST_READ
 	endTime := BERNSTEIN_MOST_RECENT_READ_TIME
 
-	context.Debugf("Data for bernstein from %s to %s:", startTime.In(time.UTC).Format(util.TIMEFORMAT_NO_TZ),
+	log.Debugf(context, "Data for bernstein from %s to %s:", startTime.In(time.UTC).Format(util.TIMEFORMAT_NO_TZ),
 		endTime.In(time.UTC).Format(util.TIMEFORMAT_NO_TZ))
 	for currentTime := startTime; !currentTime.After(endTime); currentTime = currentTime.Add(time.Duration(5 * time.Minute)) {
 		line := fmt.Sprintf("<Glucose InternalTime=\"%s\" DisplayTime=\"%s\" Value=\"%d\"/>\n",

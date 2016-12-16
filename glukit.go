@@ -1,21 +1,21 @@
 // The glukit package is the main package for the application. This is where it all starts.
-package glukit
+package main
 
 import (
-	"appengine"
-	"appengine/datastore"
-	"appengine/taskqueue"
-	"appengine/urlfetch"
-	"appengine/user"
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
-	"github.com/alexandre-normand/glukit/lib/drive"
 	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"github.com/alexandre-normand/glukit/lib/oauth2"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/taskqueue"
+	"google.golang.org/appengine/urlfetch"
+	"google.golang.org/appengine/user"
 	"net/http"
 	"time"
 )
@@ -32,7 +32,7 @@ func configuration() *oauth.Config {
 	configuration := oauth.Config{
 		ClientId:     appConfig.GoogleClientId,
 		ClientSecret: appConfig.GoogleClientSecret,
-		Scope:        "https://www.googleapis.com/auth/userinfo.profile " + drive.DriveReadonlyScope,
+		Scope:        "https://www.googleapis.com/auth/userinfo.profile",
 		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
 		TokenURL:     "https://accounts.google.com/o/oauth2/token",
 		AccessType:   "offline",
@@ -59,7 +59,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 	if err == datastore.ErrNoSuchEntity {
 		oauthToken, transport = getOauthToken(request)
 
-		context.Infof("No data found for user [%s], creating it", user.Email)
+		log.Infof(context, "No data found for user [%s], creating it", user.Email)
 
 		// TODO: Populate GlukitUser correctly, this will likely require getting rid of all data from the store when
 		// this is ready
@@ -80,7 +80,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		oauthToken = glukitUser.Token
 
-		context.Debugf("Initializing transport from token [%s]", oauthToken)
+		log.Debugf(context, "Initializing transport from token [%s]", oauthToken)
 		transport = &oauth.Transport{
 			Config: configuration(),
 			Transport: &urlfetch.Transport{
@@ -90,18 +90,18 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 		}
 
 		if !oauthToken.Expired() && len(glukitUser.RefreshToken) > 0 {
-			context.Debugf("Token [%s] still valid, reusing it...", oauthToken)
+			log.Debugf(context, "Token [%s] still valid, reusing it...", oauthToken)
 		} else {
 			if oauthToken.Expired() {
-				context.Infof("Token [%v] expired on [%s], refreshing with refresh token [%s]...",
+				log.Infof(context, "Token [%v] expired on [%s], refreshing with refresh token [%s]...",
 					oauthToken, oauthToken.Expiry, glukitUser.RefreshToken)
 			} else if len(glukitUser.RefreshToken) == 0 {
-				context.Warningf("No refresh token stored, getting a new one and saving it...")
+				log.Warningf(context, "No refresh token stored, getting a new one and saving it...")
 			}
 
 			// We lost the refresh token, we need to force approval and get a new one
 			if len(glukitUser.RefreshToken) == 0 {
-				context.Criticalf("We lost the refresh token for user [%s], getting a new one "+
+				log.Criticalf(context, "We lost the refresh token for user [%s], getting a new one "+
 					"with the force approval.", user.Email)
 				oauthToken, transport = getOauthToken(request)
 				glukitUser.RefreshToken = oauthToken.RefreshToken
@@ -111,7 +111,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 				err := transport.Refresh(context)
 				util.Propagate(err)
 
-				context.Debugf("Storing new refreshed token [%s] in datastore...", oauthToken)
+				log.Debugf(context, "Storing new refreshed token [%s] in datastore...", oauthToken)
 				glukitUser.LastUpdated = time.Now()
 				glukitUser.Token = oauthToken
 			}
@@ -127,7 +127,7 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 			util.Propagate(err)
 
 		} else {
-			context.Infof("User profile refreshed to %v", userInfo)
+			log.Infof(context, "User profile refreshed to %v", userInfo)
 
 			glukitUser.PictureUrl = userInfo.Picture
 			glukitUser.FirstName = userInfo.Given_name
@@ -142,10 +142,10 @@ func handleLoggedInUser(writer http.ResponseWriter, request *http.Request) {
 
 	task, err := refreshUserData.Task(user.Email, scheduleAutoRefresh)
 	if err != nil {
-		context.Criticalf("Could not schedule execution of the data refresh for user [%s]: %v", user.Email, err)
+		log.Criticalf(context, "Could not schedule execution of the data refresh for user [%s]: %v", user.Email, err)
 	}
 	taskqueue.Add(context, task, "refresh")
-	context.Infof("Kicked off data update for user [%s]...", user.Email)
+	log.Infof(context, "Kicked off data update for user [%s]...", user.Email)
 
 	// Render the graph view, it might take some time to show something but it will as soon as a file import
 	// completes
@@ -159,7 +159,7 @@ func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oa
 	// Exchange code for an access token at OAuth provider.
 	code := request.FormValue("code")
 	configuration := configuration()
-	context.Debugf("Getting token with configuration [%v]...", configuration)
+	log.Debugf(context, "Getting token with configuration [%v]...", configuration)
 
 	t := &oauth.Transport{
 		Config: configuration,
@@ -171,7 +171,7 @@ func getOauthToken(request *http.Request) (oauthToken oauth.Token, transport *oa
 	token, err := t.Exchange(context, code)
 	util.Propagate(err)
 
-	context.Infof("Got brand new oauth token [%v] with refresh token [%s]", token, token.RefreshToken)
+	log.Infof(context, "Got brand new oauth token [%v] with refresh token [%s]", token, token.RefreshToken)
 	return *token, t
 }
 

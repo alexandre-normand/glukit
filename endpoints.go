@@ -1,8 +1,6 @@
-package glukit
+package main
 
 import (
-	"appengine"
-	"appengine/user"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +11,9 @@ import (
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/user"
 	"net/http"
 	"sort"
 	"strconv"
@@ -66,7 +67,7 @@ func mostRecentWeekAsJson(writer http.ResponseWriter, request *http.Request, ema
 	lowerBound := util.GetEndOfDayBoundaryBefore(upperBound).Add(model.DEFAULT_LOOKBACK_PERIOD)
 
 	if err != nil && err == store.ErrNoImportedDataFound {
-		context.Debugf("No imported data found for user [%s]", email)
+		log.Debugf(context, "No imported data found for user [%s]", email)
 		http.Error(writer, err.Error(), 204)
 	} else if err != nil {
 		util.Propagate(err)
@@ -123,7 +124,7 @@ func steadySailorDataForEmail(writer http.ResponseWriter, request *http.Request,
 	// Overscan by a day so that we have enough data to cover for a partial day of the user's data
 	lowerBound := upperBound.Add(model.DEFAULT_LOOKBACK_PERIOD + time.Duration(-24)*time.Hour)
 	if err != nil && err == store.ErrNoSteadySailorMatchFound {
-		context.Debugf("No steady sailor match found for user [%s]", recipientEmail)
+		log.Debugf(context, "No steady sailor match found for user [%s]", recipientEmail)
 		http.Error(writer, err.Error(), 204)
 	} else if err != nil {
 		util.Propagate(err)
@@ -201,7 +202,7 @@ func dashboardDataForUser(writer http.ResponseWriter, request *http.Request, ema
 	lowerBound := util.GetEndOfDayBoundaryBefore(upperBound).Add(time.Duration(-1*24) * time.Hour)
 
 	if err != nil && err == store.ErrNoImportedDataFound {
-		context.Debugf("No imported data found for user [%s]", email)
+		log.Debugf(context, "No imported data found for user [%s]", email)
 		http.Error(writer, err.Error(), 204)
 	} else if err != nil {
 		util.Propagate(err)
@@ -363,7 +364,7 @@ func handleDonation(writer http.ResponseWriter, request *http.Request) {
 	stripeClient := payment.NewStripeClient(appConfig)
 	err := stripeClient.SubmitDonation(context, token, amountInCentsVal)
 	if err != nil {
-		context.Warningf("Error processing donation from [%v] of [%d] cents with token [%s]: [%v]", user, amountInCentsVal, token, err)
+		log.Warningf(context, "Error processing donation from [%v] of [%d] cents with token [%s]: [%v]", user, amountInCentsVal, token, err)
 		writer.WriteHeader(502)
 	} else {
 		writer.WriteHeader(200)
