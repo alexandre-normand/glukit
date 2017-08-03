@@ -8,59 +8,76 @@ handlers:
 - url: /favicon.ico
   static_files: view/images/Glukit.ico
   upload: view/images/Glukit.ico
-
+  secure: always
+  
 - url: /js
   static_dir: view/js
+  secure: always
 
 - url: /css
   static_dir: view/css
+  secure: always
 
 - url: /bower_components
   static_dir: view/bower_components
+  secure: always
 
 - url: /images
   static_dir: view/images
+  secure: always
 
 - url: /fonts
   static_dir: view/fonts
+  secure: always
 
 - url: /browse
   script: _go_app
   login: required
+  secure: always
 
 - url: /report
   script: _go_app
   login: required
+  secure: always
 
 - url: /data
   script: _go_app
   login: required
+  secure: always
 
 - url: /demo.report
   script: _go_app
+  secure: always
 
 - url: /googleauth
   script: _go_app
   login: required
+  secure: always
 
 - url: /initpower
   script: _go_app  
   login: admin
+  secure: always
 
 - url: /v1/calibrations
   script: _go_app 
+  secure: always
 
 - url: /v1/injections
   script: _go_app 
+  secure: always
 
 - url: /v1/meals
   script: _go_app 
+  secure: always
 
 - url: /v1/glucosereads
   script: _go_app  
+  secure: always
 
 - url: /v1/exercises
   script: _go_app 
+  secure: always
 
 - url: /authorize
   script: _go_app
@@ -73,6 +90,7 @@ handlers:
 
 - url: /.*
   script: _go_app
+  secure: always  
 
 inbound_services:
 - warmup
