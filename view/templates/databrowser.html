@@ -38,7 +38,7 @@
         <script src="bower_components/gumby/js/libs/modernizr-2.6.2.min.js"></script>        
         <script src="js/d3.v3.min.js"></script>
         <script src="js/moment-with-langs.min.js"></script>
-        <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+        <script type="text/javascript" src="https://js.stripe.com/v3/"></script>
         <script src="js/main.js"></script>
     </head>
     <body>
@@ -309,7 +309,7 @@
             }
             }
             </script>
-            <script src="https://malsup.github.io/min/jquery.form.min.js">
+            <script src="js/jquery.form.min.js">
             </script>
             <script src="js/jquery.payment.js"></script>
             <script>
@@ -329,7 +329,7 @@
             });
             </script>
             <script type="text/javascript">
-            Stripe.setPublishableKey('{{.StripePublishableKey}}');
+            var stripe = Stripe('{{.StripePublishableKey}}');
             jQuery(function($) {
             $('input.cc-num').payment('formatCardNumber');
             $('input.cc-exp').payment('formatCardExpiry');

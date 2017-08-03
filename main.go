@@ -29,9 +29,10 @@ var muxRouter = mux.NewRouter()
 var initOnce sync.Once
 
 const (
-	DEMO_PATH_PREFIX       = "demo."
-	DEMO_PICTURE_URL       = "http://farm8.staticflickr.com/7389/10813078553_ab4e1397f4_b_d.jpg"
-	GLUCOSE_UNIT_PARAMETER = "unit"
+	DEMO_PATH_PREFIX        = "demo."
+	DEMO_PICTURE_URL        = "https://farm8.staticflickr.com/7389/10813078553_ab4e1397f4_b_d.jpg"
+	GLUCOSE_UNIT_PARAMETER  = "unit"
+	CONTENT_SECURITY_POLICY = "default-src 'self'; img-src *; style-src 'unsafe-inline' 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com; script-src 'self' 'unsafe-inline' js.stripe.com *.googleapis.com"
 )
 
 // Some variables that are used during rendering of templates
@@ -179,6 +180,7 @@ func report(w http.ResponseWriter, request *http.Request) {
 	}
 
 	renderVariables := &RenderVariables{PathPrefix: "", StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
+	w.Header().Set("Content-Security-Policy", CONTENT_SECURITY_POLICY)
 
 	if err := reportTemplate.Execute(w, renderVariables); err != nil {
 		log.Criticalf(context, "Error executing template [%s]", dataBrowserTemplate.Name())
@@ -198,6 +200,7 @@ func render(email string, datapath string, w http.ResponseWriter, request *http.
 
 	renderVariables := &RenderVariables{PathPrefix: datapath, StripePublishableKey: appConfig.StripePublishableKey, SSLHost: appConfig.SSLHost, GlucoseUnit: *unitValue}
 
+	w.Header().Set("Content-Security-Policy", CONTENT_SECURITY_POLICY)
 	if err := dataBrowserTemplate.Execute(w, renderVariables); err != nil {
 		log.Criticalf(context, "Error executing template [%s]", dataBrowserTemplate.Name())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
