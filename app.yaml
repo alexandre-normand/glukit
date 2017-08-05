@@ -61,23 +61,18 @@ handlers:
 
 - url: /v1/calibrations
   script: _go_app 
-  secure: always
 
 - url: /v1/injections
   script: _go_app 
-  secure: always
 
 - url: /v1/meals
   script: _go_app 
-  secure: always
 
 - url: /v1/glucosereads
   script: _go_app  
-  secure: always
 
 - url: /v1/exercises
   script: _go_app 
-  secure: always
 
 - url: /authorize
   script: _go_app
@@ -86,11 +81,10 @@ handlers:
 
 - url: /token
   script: _go_app  
-  secure: always
 
 - url: /.*
   script: _go_app
-  secure: always  
+  secure: always
 
 inbound_services:
 - warmup
