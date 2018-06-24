@@ -96,7 +96,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 			} else {
 				redirectUrl := fmt.Sprintf("%s?code=%s&state=%s", resp.URL, data["code"].(string), data["state"].(string))
 				log.Infof(c, "Redirecting to [%s] with valid code.", redirectUrl)
-				http.Redirect(w, req, redirectUrl, 200)
+				http.Redirect(w, req, redirectUrl, http.StatusTemporaryRedirect)
 				return
 			}
 		}
