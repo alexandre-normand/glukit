@@ -793,7 +793,11 @@ func FindSteadySailor(context context.Context, recipientEmail string) (sailorPro
 	var steadySailors []model.GlukitUser
 	_, err = query.GetAll(context, &steadySailors)
 	if err != nil {
-		return nil, nil, util.GLUKIT_EPOCH_TIME, err
+		if unknownFields, ok := err.(*datastore.ErrFieldMismatch); ok {
+			log.Infof(context, "Ignoring unknown fields [%s]", unknownFields.Error())
+		} else {
+			return nil, nil, util.GLUKIT_EPOCH_TIME, err
+		}
 	}
 
 	log.Debugf(context, "Found a few unfiltered matches [%v]", steadySailors)
