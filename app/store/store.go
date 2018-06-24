@@ -65,9 +65,13 @@ func StoreUserProfile(context context.Context, updatedAt time.Time, userProfile 
 func GetUserProfile(context context.Context, key *datastore.Key) (userProfile *model.GlukitUser, err error) {
 	userProfile = new(model.GlukitUser)
 	log.Infof(context, "Fetching user profile for key: %s", key.String())
-	error := datastore.Get(context, key, userProfile)
-	if error != nil {
-		return nil, error
+	err = datastore.Get(context, key, userProfile)
+	if err != nil {
+		if unknownFields, ok := err.(*datastore.ErrFieldMismatch); ok {
+			log.Infof(context, "Ignoring unknown fields [%s]", unknownFields.Error())
+		} else {
+			return nil, err
+		}
 	}
 
 	return userProfile, nil

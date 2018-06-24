@@ -7,7 +7,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
-	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
+	"github.com/grd/stat"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/log"
 	"sort"

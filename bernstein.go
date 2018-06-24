@@ -9,7 +9,6 @@ import (
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
-	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -38,10 +37,9 @@ func initializeGlukitBernstein(writer http.ResponseWriter, reader *http.Request)
 	_, _, _, err := store.GetUserData(context, GLUKIT_BERNSTEIN_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		log.Infof(context, "No data found for glukit bernstein user [%s], creating it", GLUKIT_BERNSTEIN_EMAIL)
-		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
 		userProfileKey, err := store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{GLUKIT_BERNSTEIN_EMAIL, "Glukit", "Bernstein", BERNSTEIN_BIRTH_DATE, model.DIABETES_TYPE_1, "America/New_York", time.Now(),
-				BERNSTEIN_MOST_RECENT_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, "", time.Now(), model.UNDEFINED_A1C_ESTIMATE})
+				BERNSTEIN_MOST_RECENT_READ, model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, "", time.Now(), model.UNDEFINED_A1C_ESTIMATE})
 		if err != nil {
 			util.Propagate(err)
 		}

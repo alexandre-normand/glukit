@@ -8,7 +8,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/streaming"
 	"github.com/alexandre-normand/glukit/app/util"
-	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
+	"golang.org/x/oauth2"
 	"google.golang.org/appengine/aetest"
 	"google.golang.org/appengine/datastore"
 	"log"
@@ -86,9 +86,8 @@ func setupTestData(t *testing.T, average float32, upperDate time.Time) (c aetest
 		t.Fatal(err)
 	}
 
-	var oauthToken oauth.Token
 	user := model.GlukitUser{TEST_USER, "", "", upperDate,
-		"", "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauthToken, oauthToken.RefreshToken,
+		"", "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ,
 		model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", upperDate, model.UNDEFINED_A1C_ESTIMATE}
 
 	key, err = store.StoreUserProfile(c, upperDate, user)

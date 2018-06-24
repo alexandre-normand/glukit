@@ -8,11 +8,10 @@ Requirements:
   2. Read the Getting Started case in case of need:
   [https://developers.google.com/appengine/docs/go/gettingstarted/devenvironment](https://developers.google.com/appengine/docs/go/gettingstarted/devenvironment)
   3. Get ruby (only for SCSS support), compass, bower and claymate (for [gumby](http://www.gumbyframework.com) and front-end) 
-  4. [safekeeper](https://github.com/alexandre-normand/safekeeper) for generating source with client ids/secrets: `go get github.com/alexandre-normand/safekeeper`
-  4. Run `./setup.sh` (needs to be done once)
+  4. [safekeeper](https://github.com/alexandre-normand/safekeeper) for generating source with client ids/secrets: `go get github.com/alexandre-normand/safekeeper`  
   5. Go in `./view` and run `claymate install`. 
-  6. Setup environment variables with the following and run `goapp generate github.com/alexandre-normand/glukit/app/secrets`:
-  
+  6. Setup environment variables with the following and run `go generate github.com/alexandre-normand/glukit/app/secrets`:
+    
     ```
     LOCAL_CLIENT_ID="google-client-id-for-localhost"
     LOCAL_CLIENT_SECRET="google-client-secret-for-localhost"
@@ -22,17 +21,14 @@ Requirements:
     TEST_STRIPE_PUBLISHABLE_KEY="stripe-test-publishable-key"
     PROD_STRIPE_KEY=""
     PROD_STRIPE_PUBLISHABLE_KEY=""
-    GLUKLOADER_CLIENT_ID="glukloader-client-id (make one up)"
-    GLUKLOADER_CLIENT_SECRET="glukloader-client-secret (make one up)"
-    GLUKLOADER_SHARE_EDITION_CLIENT_ID="glukloader-client-id (make one up)"
-    GLUKLOADER_SHARE_EDITION_CLIENT_SECRET="glukloader-client-secret (make one up)"
-    POSTMAN_CLIENT_ID=""
-    POSTMAN_CLIENT_SECRET=""
-    SIMPLE_CLIENT_ID=""
-    SIMPLE_CLIENT_SECRET=""
-    CHROMADEX_CLIENT_ID=""
-    CHROMADEX_CLIENT_SECRET=""
     ```
+
+  7. Setup client ids and secrets using the datastore [administration UI](https://console.cloud.google.com/datastore/entities/query?project=glukit&ns=&kind=osin.client) (as an `osin.client` entity):
+  
+    * Generate a client secret using something like `openssl rand -base64 24`
+    * Generate a client id using something like `echo "`openssl rand -hex 14`.mygluk.it"`
+    * Note the `RedirectUri` expected by the authenticating application (i.e. `x-glukloader://oauth/callback`)
+    * Create a new `osin.client` entity using those values. The `key.identifier` should match the generated client id.
 
 Misc
 ====

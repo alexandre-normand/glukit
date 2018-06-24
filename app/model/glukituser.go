@@ -2,11 +2,9 @@ package model
 
 import (
 	"github.com/alexandre-normand/glukit/app/apimodel"
-	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"time"
 )
 
-// TODO: Add most recent A1C estimate
 // Represents a GlukitUser profile
 type GlukitUser struct {
 	Email           string               `datastore:"email"`
@@ -17,8 +15,6 @@ type GlukitUser struct {
 	Timezone        string               `datastore:"timezoneId,noindex"`
 	LastUpdated     time.Time            `datastore:"lastUpdated"`
 	MostRecentRead  apimodel.GlucoseRead `datastore:"mostRecentRead"`
-	Token           oauth.Token          `datastore:"token",noindex`
-	RefreshToken    string               `datastore:"refreshToken",noindex`
 	BestScore       GlukitScore          `datastore:"bestScore"`
 	MostRecentScore GlukitScore          `datastore:"mostRecentScore"`
 	Internal        bool                 `datastore:"internal"`

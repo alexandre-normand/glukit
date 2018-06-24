@@ -2,14 +2,14 @@
 package main
 
 import (
-	"code.google.com/p/gorilla/mux"
+	"fmt"
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/alexandre-normand/glukit/app/engine"
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
-	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
+	"github.com/gorilla/mux"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/delay"
@@ -75,7 +75,8 @@ func main() {
 	// Static pages
 	muxRouter.HandleFunc("/", landing)
 
-	muxRouter.HandleFunc("/googleauth", handleRealUser)
+	muxRouter.HandleFunc("/googleauth", googleauth)
+	muxRouter.HandleFunc("/userlogin", loginUser)
 	muxRouter.HandleFunc("/oauth2callback", oauthCallback)
 
 	// Client API endpoints
@@ -90,8 +91,6 @@ func main() {
 	muxRouter.HandleFunc("/authorize", initializeAndHandleRequest).Methods("GET").Name(AUTHORIZE_ROUTE)
 
 	// Initialize task functions that would otherwise be prone to initialization loops
-	refreshUserData = delay.Func(REFRESH_USER_DATA_FUNCTION_NAME, updateUserData)
-	processFile = delay.Func(PROCESS_FILE_FUNCTION_NAME, processSingleFile)
 	engine.RunGlukitScoreCalculationChunk = delay.Func(engine.GLUKIT_SCORE_BATCH_CALCULATION_FUNCTION_NAME, engine.RunGlukitScoreBatchCalculation)
 	engine.RunA1CCalculationChunk = delay.Func(engine.A1C_BATCH_CALCULATION_FUNCTION_NAME, engine.RunA1CBatchCalculation)
 
@@ -118,12 +117,12 @@ func renderDemo(w http.ResponseWriter, request *http.Request) {
 	_, key, _, err := store.GetUserData(context, DEMO_EMAIL)
 	if err == datastore.ErrNoSuchEntity {
 		log.Infof(context, "No data found for demo user [%s], creating it", DEMO_EMAIL)
-		dummyToken := oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}
+
 		// TODO: Populate GlukitUser correctly, this will likely require
 		// getting rid of all data from the store when this is ready
 		key, err = store.StoreUserProfile(context, time.Now(),
 			model.GlukitUser{DEMO_EMAIL, "Demo", "OfMe", time.Now(), model.DIABETES_TYPE_1, "", time.Now(),
-				apimodel.UNDEFINED_GLUCOSE_READ, dummyToken, "", model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, DEMO_PICTURE_URL, time.Now(),
+				apimodel.UNDEFINED_GLUCOSE_READ, model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, true, DEMO_PICTURE_URL, time.Now(),
 				model.UNDEFINED_A1C_ESTIMATE})
 		if err != nil {
 			util.Propagate(err)
@@ -224,11 +223,19 @@ func resolveGlucoseUnit(email string, request *http.Request) (unit *apimodel.Glu
 	}
 }
 
-// handleRealUser handles the flow for a real non-demo user. It will redirect to authorization if required
-func handleRealUser(writer http.ResponseWriter, request *http.Request) {
+func googleauth(writer http.ResponseWriter, request *http.Request) {
 	context := appengine.NewContext(request)
-	user := user.Current(context)
+	loginurl, err := user.LoginURL(context, fmt.Sprintf("https://%s/userlogin", appConfig.Host))
+	if err != nil {
+		util.Propagate(err)
+	}
 
+	http.Redirect(writer, request, loginurl, http.StatusTemporaryRedirect)
+}
+
+// loginUser handles the flow for a real non-demo user. It will redirect to authorization if required
+func loginUser(writer http.ResponseWriter, request *http.Request) {
+	/**
 	glukitUser, _, _, err := store.GetUserData(context, user.Email)
 	if _, ok := err.(store.StoreError); err != nil && !ok || len(glukitUser.RefreshToken) == 0 {
 		log.Infof(context, "Redirecting [%s], glukitUser [%v] for authorization. Error: [%v]", user.Email, glukitUser, err)
@@ -245,7 +252,9 @@ func handleRealUser(writer http.ResponseWriter, request *http.Request) {
 		log.Infof(context, "User [%s] already exists with a valid refresh token [%s], skipping authorization step...",
 			glukitUser.RefreshToken, user.Email)
 		oauthCallback(writer, request)
-	}
+	}*/
+
+	handleUserLogin(writer, request)
 }
 
 func warmUp(writer http.ResponseWriter, request *http.Request) {

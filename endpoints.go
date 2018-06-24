@@ -10,7 +10,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/payment"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
-	"github.com/alexandre-normand/glukit/lib/github.com/grd/stat"
+	"github.com/grd/stat"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/user"

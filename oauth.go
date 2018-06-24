@@ -6,7 +6,6 @@ import (
 	"github.com/alexandre-normand/glukit/app/model"
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
-	"github.com/alexandre-normand/glukit/lib/goauth2/oauth"
 	"github.com/alexandre-normand/osin"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -63,7 +62,7 @@ func initOauthProvider(writer http.ResponseWriter, request *http.Request) {
 				log.Debugf(c, "Creating GlukitUser on first oauth access for [%s]: ", user.Email)
 				// If the user doesn't exist already, create it
 				glukitUser := model.GlukitUser{user.Email, "", "", time.Now(),
-					model.DIABETES_TYPE_1, "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ, oauth.Token{"", "", util.GLUKIT_EPOCH_TIME}, "",
+					model.DIABETES_TYPE_1, "", util.GLUKIT_EPOCH_TIME, apimodel.UNDEFINED_GLUCOSE_READ,
 					model.UNDEFINED_SCORE, model.UNDEFINED_SCORE, false, "", time.Now(), model.UNDEFINED_A1C_ESTIMATE}
 				_, err = store.StoreUserProfile(c, time.Now(), glukitUser)
 				if err != nil {

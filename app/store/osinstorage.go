@@ -2,7 +2,6 @@ package store
 
 import (
 	"errors"
-	"github.com/alexandre-normand/glukit/app/secrets"
 	"github.com/alexandre-normand/osin"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -11,8 +10,6 @@ import (
 	"net/http"
 	"time"
 )
-
-var appSecrets = secrets.NewAppSecrets()
 
 type OsinAppEngineStore struct {
 }
@@ -58,61 +55,6 @@ func NewOsinAppEngineStoreWithRequest(r *http.Request) *OsinAppEngineStore {
 
 func NewOsinAppEngineStoreWithContext(c context.Context) *OsinAppEngineStore {
 	s := &OsinAppEngineStore{}
-
-	err := s.addClient(&osin.Client{
-		Id:          appSecrets.GlukloaderClientId,
-		Secret:      appSecrets.GlukloaderClientSecret,
-		RedirectUri: "urn:ietf:wg:oauth:2.0:oob",
-		UserData:    "",
-	}, c)
-
-	if err != nil {
-		log.Warningf(c, "Failed to initialize oauth server: %v", err)
-	}
-
-	err = s.addClient(&osin.Client{
-		Id:          appSecrets.GlukloaderShareEditionClientId,
-		Secret:      appSecrets.GlukloaderShareEditionClientSecret,
-		RedirectUri: "x-glukloader://oauth/callback",
-		UserData:    "",
-	}, c)
-
-	if err != nil {
-		log.Warningf(c, "Failed to initialize oauth server: %v", err)
-	}
-
-	err = s.addClient(&osin.Client{
-		Id:          appSecrets.PostManClientId,
-		Secret:      appSecrets.PostManClientSecret,
-		RedirectUri: "https://www.getpostman.com/oauth2/callback",
-		UserData:    "",
-	}, c)
-
-	if err != nil {
-		log.Warningf(c, "Failed to initialize oauth server: %v", err)
-	}
-
-	err = s.addClient(&osin.Client{
-		Id:          appSecrets.SimpleClientId,
-		Secret:      appSecrets.SimpleClientSecret,
-		RedirectUri: "http://localhost:14000/appauth/code",
-		UserData:    "",
-	}, c)
-
-	if err != nil {
-		log.Warningf(c, "Failed to initialize oauth server: %v", err)
-	}
-
-	err = s.addClient(&osin.Client{
-		Id:          appSecrets.ChromadexClientId,
-		Secret:      appSecrets.ChromadexClientSecret,
-		RedirectUri: "https://aeapkfdflpgdigehfhjpgccjodakkjje.chromiumapp.org/provider_cb",
-		UserData:    "",
-	}, c)
-
-	if err != nil {
-		log.Warningf(c, "Failed to initialize oauth server: %v", err)
-	}
 
 	return s
 }
