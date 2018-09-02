@@ -32,7 +32,7 @@ const (
 	DEMO_PATH_PREFIX        = "demo."
 	DEMO_PICTURE_URL        = "https://farm8.staticflickr.com/7389/10813078553_ab4e1397f4_b_d.jpg"
 	GLUCOSE_UNIT_PARAMETER  = "unit"
-	CONTENT_SECURITY_POLICY = "default-src 'self'; img-src *; style-src 'unsafe-inline' 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com; script-src 'self' 'unsafe-inline' js.stripe.com *.googleapis.com"
+	CONTENT_SECURITY_POLICY = "default-src 'self'; img-src *; style-src 'unsafe-inline' 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com; script-src 'self' 'unsafe-inline' js.stripe.com *.googleapis.com *.google-analytics.com"
 )
 
 // Some variables that are used during rendering of templates

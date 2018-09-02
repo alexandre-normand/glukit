@@ -36,4 +36,8 @@ To make `SCSS` changes, use `compass build` or `compass watch`.
 
 Running it:
 ===========
-From <repo path>, execute ```goapp serve``` and hit [http://localhost:8080](http://localhost:8080).
+From <repo path>, execute `goapp serve` and hit [http://localhost:8080](http://localhost:8080).
+
+Deploy:
+=======
+`gcloud app deploy`
