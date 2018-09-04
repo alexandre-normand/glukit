@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/alexandre-normand/glukit/app/config"
 	"github.com/cosn/stripe"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/urlfetch"
 	"google.golang.org/appengine/user"

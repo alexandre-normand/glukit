@@ -8,7 +8,7 @@ import (
 	"github.com/alexandre-normand/glukit/app/store"
 	"github.com/alexandre-normand/glukit/app/util"
 	"github.com/grd/stat"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine/log"
 	"sort"
 	"time"

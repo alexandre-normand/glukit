@@ -3,7 +3,7 @@ package store
 import (
 	"github.com/alexandre-normand/glukit/app/apimodel"
 	"github.com/alexandre-normand/glukit/app/glukitio"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine/datastore"
 )
 
