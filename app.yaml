@@ -1,5 +1,4 @@
-runtime: go
-api_version: go1
+runtime: go111
 nobuild_files: app/.*
 
 handlers:
@@ -29,59 +28,59 @@ handlers:
   secure: always
 
 - url: /browse
-  script: _go_app
+  script: auto
   login: required
   secure: always
 
 - url: /report
-  script: _go_app
+  script: auto
   login: required
   secure: always
 
 - url: /data
-  script: _go_app
+  script: auto
   login: required
   secure: always
 
 - url: /demo.report
-  script: _go_app
+  script: auto
   secure: always
 
 - url: /googleauth
-  script: _go_app
+  script: auto
   login: required
   secure: always
 
 - url: /initpower
-  script: _go_app  
+  script: auto  
   login: admin
   secure: always
 
 - url: /v1/calibrations
-  script: _go_app 
+  script: auto 
 
 - url: /v1/injections
-  script: _go_app 
+  script: auto 
 
 - url: /v1/meals
-  script: _go_app 
+  script: auto 
 
 - url: /v1/glucosereads
-  script: _go_app  
+  script: auto  
 
 - url: /v1/exercises
-  script: _go_app 
+  script: auto 
 
 - url: /authorize
-  script: _go_app
+  script: auto
   login: required  
   secure: always
 
 - url: /token
-  script: _go_app  
+  script: auto  
 
 - url: /.*
-  script: _go_app
+  script: auto
   secure: always
 
 inbound_services:
